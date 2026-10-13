@@ -1,3 +1,8 @@
 de421.bsp
 __pycache__/
 *.grib2
+app/de421.bsp
+app/icone.ico
+build/
+dist/
+*.spec

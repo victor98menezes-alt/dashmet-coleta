@@ -1,0 +1,66 @@
+name: Aplicativo Windows
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "app/**"
+      - "coleta.py"
+      - "fontes_extra.py"
+      - "aisweb.py"
+      - ".github/workflows/app.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Dependências
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller skyfield pywebview pillow
+          pip install eccodes eccodeslib
+          if ($LASTEXITCODE -ne 0) { Write-Host "ecCodes indisponível no Windows — o app usará rucsoundings"; $global:LASTEXITCODE = 0 }
+
+      - name: Efeméride JPL e ícone
+        shell: pwsh
+        run: |
+          python -c "from skyfield.api import Loader; Loader('app', verbose=False)('de421.bsp')"
+          python -c "from PIL import Image; im=Image.open('app/web/icone.png').convert('RGBA'); s=max(im.size); c=Image.new('RGBA',(s,s),(0,0,0,0)); c.paste(im,((s-im.width)//2,(s-im.height)//2)); c.save('app/icone.ico', sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])"
+
+      - name: Gerar executável
+        shell: pwsh
+        run: |
+          $extra = @()
+          python -c "import eccodes" 2>$null
+          if ($LASTEXITCODE -eq 0) { $extra = @("--collect-all", "eccodes", "--collect-all", "eccodeslib", "--collect-all", "gribapi") } else { $global:LASTEXITCODE = 0 }
+          pyinstaller --noconfirm --onefile --noconsole --name DashMetPrecursores --icon app/icone.ico --paths . `
+            --add-data "app/web;web" --add-data "app/de421.bsp;." `
+            --collect-data skyfield --collect-all webview `
+            --hidden-import coleta --hidden-import fontes_extra --hidden-import aisweb @extra app/dashmet.py
+
+      - name: Diagnóstico do executável
+        shell: pwsh
+        run: |
+          $env:LOCALAPPDATA = "$env:RUNNER_TEMP\teste"
+          Start-Process -FilePath dist\DashMetPrecursores.exe -ArgumentList "--diagnostico" -Wait
+          Get-Content "$env:RUNNER_TEMP\teste\DashMetPrecursores\diagnostico.json"
+          New-Item -ItemType Directory -Force -Path app_saida | Out-Null
+          Copy-Item "$env:RUNNER_TEMP\teste\DashMetPrecursores\diagnostico.json" app_saida\diagnostico.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DashMetPrecursores
+          path: |
+            dist/DashMetPrecursores.exe
+            app_saida/diagnostico.json

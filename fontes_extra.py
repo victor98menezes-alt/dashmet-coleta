@@ -12,12 +12,13 @@ def _hm(t, tz):
     return t.utc_datetime().astimezone(ZoneInfo(tz)).strftime("%Y-%m-%dT%H:%M")
 
 
-def astronomia_skyfield(lat, lon, data, fuso):
+def astronomia_skyfield(lat, lon, data, fuso, pasta_efemerides=None):
     """Crepúsculos (civil −6°, náutico −12°), nascer/pôr do Sol e da Lua, fase e iluminação — efemérides JPL DE421.
     Noite operacional: FCVC (fim do crepúsculo vespertino civil) até ICMC (início do crepúsculo matutino civil) do dia seguinte;
     'luar' = Lua acima do horizonte (entre nascer e ocaso), 'visibilidade nula' = Lua abaixo do horizonte."""
     from skyfield import almanac
-    from skyfield.api import load, wgs84
+    from skyfield.api import Loader, wgs84
+    load = Loader(pasta_efemerides or ".", verbose=False)
     ts = load.timescale()
     eph = load("de421.bsp")
     loc = wgs84.latlon(lat, lon)
