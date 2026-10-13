@@ -225,7 +225,7 @@ def main():
 
     # Fontes complementares
     import fontes_extra as fx
-    extra = {"coletado_em_utc": agora}
+    extra = {"coletado_em_utc": agora, "lat": lat, "lon": lon, "data": data, "fuso": fuso}
     try:
         extra["skyfield"] = fx.astronomia_skyfield(lat, lon, data, fuso)
     except Exception as e:
@@ -233,7 +233,7 @@ def main():
     extra["usno"] = fx.usno(lat, lon, data, fuso, baixar)
     json.dump(extra, open(os.path.join(pasta, "astro.json"), "w", encoding="utf-8"), ensure_ascii=False)
     try:
-        ob = {"coletado_em_utc": agora, "inmet": fx.inmet(lat, lon, baixar, os.environ.get("INMET_TOKEN", "")),
+        ob = {"coletado_em_utc": agora, "lat": lat, "lon": lon, "inmet": fx.inmet(lat, lon, baixar, os.environ.get("INMET_TOKEN", "")),
               "redemet": fx.redemet(icao, baixar, os.environ.get("REDEMET_API_KEY", ""))}
     except Exception as e:
         ob = {"coletado_em_utc": agora, "erro": repr(e)}

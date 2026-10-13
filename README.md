@@ -5,6 +5,18 @@ Este repositório busca, sob demanda, os dados de modelo que o dashboard não co
 - **Open-Meteo**: GFS (NOAA/NCEP), ECMWF IFS 0,25° e ICON (DWD), em superfície e de 1000 a 300 hPa, de D-1 a D+1, com vento em nós.
 - **Sondagem NOAA**: GFS 0,25° do servidor oficial NOMADS (ciclo mais recente que cubra H, níveis de 1000 a 250 hPa, ponto de grade mais próximo). Alternativa: rucsoundings.noaa.gov.
 
+- **Astronomia**: Skyfield com efemérides JPL DE421 (NASA) — ICMN/FCVN (Sol a −12°), nascer/pôr da Lua, iluminação, períodos de luar — conferida com a API da USNO (U.S. Naval Observatory).
+- **INMET**: estações automáticas operantes a até 120 km (lista pública). Os dados horários exigem token do INMET — secret `INMET_TOKEN`.
+- **REDEMET**: METAR/SPECI (6 h) e TAF da estação OACI da missão pela API do DECEA — exige chave, secret `REDEMET_API_KEY`.
+- Time and Date bloqueia acesso automatizado (Cloudflare); fica como conferência manual.
+
+## Secrets (Settings → Secrets and variables → Actions → New repository secret)
+
+| Nome | Origem |
+|---|---|
+| `REDEMET_API_KEY` | Chave da API REDEMET fornecida pelo DECEA |
+| `INMET_TOKEN` | Token da API de estações fornecido pelo INMET |
+
 ## Fluxo
 
 1. O Claude lê a missão salva no dashboard.
