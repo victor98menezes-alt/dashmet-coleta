@@ -57,14 +57,14 @@ def astronomia_skyfield(lat, lon, data, fuso):
         n = 241
         passos = [ti_ + (tf_ - ti_) * i / (n - 1) for i in range(n)]
         alts = [obs.at(p).observe(lua).apparent().altaz()[0].degrees for p in passos]
-        acima = [h > 0 for h in alts]
+        acima = [bool(h > 0) for h in alts]
         intervalos, inicio = [], 0
         for i in range(1, n + 1):
             if i == n or acima[i] != acima[inicio]:
-                intervalos.append({"de": _hm(passos[inicio], fuso), "ate": _hm(passos[i - 1] if i == n else passos[i], fuso), "lua": acima[inicio]})
+                intervalos.append({"de": _hm(passos[inicio], fuso), "ate": _hm(passos[i - 1] if i == n else passos[i], fuso), "lua": bool(acima[inicio])})
                 inicio = i
         meio = ti_ + (tf_ - ti_) * 0.5
-        noites.append({"de": ini, "ate": fim, "intervalos": intervalos, "alt_max_lua": round(max(alts), 1),
+        noites.append({"de": ini, "ate": fim, "intervalos": intervalos, "alt_max_lua": round(float(max(alts)), 1),
                        "iluminacao": round(float(almanac.fraction_illuminated(eph, "moon", meio)) * 100, 1)})
     out["noites"] = noites
     return out
