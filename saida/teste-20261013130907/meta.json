@@ -1,0 +1,44 @@
+{
+  "run_id": "teste-20261013130907",
+  "coletado_em_utc": "2026-10-13T13:09:38+00:00",
+  "lat": -22.875,
+  "lon": -43.384,
+  "data": "2026-10-14",
+  "hora_local": 10,
+  "fuso": "America/Sao_Paulo",
+  "fontes": {
+    "openmeteo": {
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=-22.8750&longitude=-43.3840&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,showers,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,pressure_msl,wind_speed_1000hPa,wind_direction_1000hPa,geopotential_height_1000hPa,temperature_1000hPa,wind_speed_925hPa,wind_direction_925hPa,geopotential_height_925hPa,temperature_925hPa,wind_speed_850hPa,wind_direction_850hPa,geopotential_height_850hPa,temperature_850hPa,wind_speed_700hPa,wind_direction_700hPa,geopotential_height_700hPa,temperature_700hPa,wind_speed_600hPa,wind_direction_600hPa,geopotential_height_600hPa,temperature_600hPa,wind_speed_500hPa,wind_direction_500hPa,geopotential_height_500hPa,temperature_500hPa,wind_speed_400hPa,wind_direction_400hPa,geopotential_height_400hPa,temperature_400hPa,wind_speed_300hPa,wind_direction_300hPa,geopotential_height_300hPa,temperature_300hPa&models=gfs_seamless,ecmwf_ifs025,icon_seamless&wind_speed_unit=kn&timezone=America/Sao_Paulo&start_date=2026-10-13&end_date=2026-10-15",
+      "status": 200,
+      "erro": null
+    },
+    "sondagem_noaa": [
+      {
+        "url": "https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=GFS&n_hrs=1&fcst_len=shortest&airport=-22.875%2C-43.384&text=Ascii+text+%28GSD+format%29&hydrometeors=false&start_year=2026&start_month_name=Oct&start_mday=14&start_hour=12&start_min=0",
+        "status": null,
+        "valido_para_utc": "2026-10-14T12:00:00+00:00",
+        "niveis": false,
+        "erro": "URLError(TimeoutError('timed out'))"
+      },
+      {
+        "url": "https://rucsoundings.noaa.gov/get_soundings.cgi?data_source=GFS&n_hrs=1&fcst_len=shortest&airport=-22.875%2C-43.384&text=Ascii+text+%28GSD+format%29&hydrometeors=false&latest=latest&start=latest",
+        "status": null,
+        "valido_para_utc": "latest",
+        "niveis": false,
+        "erro": "URLError(TimeoutError('timed out'))"
+      }
+    ]
+  },
+  "transformacao": {
+    "modelos": {
+      "ok": true,
+      "modelos": [
+        "GFS",
+        "ECMWF",
+        "ICON"
+      ],
+      "horas": 72,
+      "kb": 48
+    }
+  }
+}
