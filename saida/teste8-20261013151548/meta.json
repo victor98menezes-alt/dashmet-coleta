@@ -1,0 +1,64 @@
+{
+  "run_id": "teste8-20261013151548",
+  "coletado_em_utc": "2026-10-13T15:16:14+00:00",
+  "lat": -22.875,
+  "lon": -43.384,
+  "data": "2026-10-14",
+  "hora_local": 10,
+  "fuso": "America/Sao_Paulo",
+  "fontes": {
+    "openmeteo": {
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=-22.8750&longitude=-43.3840&hourly=temperature_2m,dew_point_2m,precipitation_probability,precipitation,showers,cloud_cover,cloud_cover_low,cloud_cover_mid,cloud_cover_high,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape,pressure_msl,visibility,wind_speed_80m,wind_direction_80m,wind_speed_120m,wind_direction_120m,wind_speed_180m,wind_direction_180m,freezing_level_height,lifted_index,weather_code,wind_speed_1000hPa,wind_direction_1000hPa,geopotential_height_1000hPa,temperature_1000hPa,relative_humidity_1000hPa,cloud_cover_1000hPa,wind_speed_975hPa,wind_direction_975hPa,geopotential_height_975hPa,temperature_975hPa,relative_humidity_975hPa,cloud_cover_975hPa,wind_speed_950hPa,wind_direction_950hPa,geopotential_height_950hPa,temperature_950hPa,relative_humidity_950hPa,cloud_cover_950hPa,wind_speed_925hPa,wind_direction_925hPa,geopotential_height_925hPa,temperature_925hPa,relative_humidity_925hPa,cloud_cover_925hPa,wind_speed_900hPa,wind_direction_900hPa,geopotential_height_900hPa,temperature_900hPa,relative_humidity_900hPa,cloud_cover_900hPa,wind_speed_850hPa,wind_direction_850hPa,geopotential_height_850hPa,temperature_850hPa,relative_humidity_850hPa,cloud_cover_850hPa,wind_speed_800hPa,wind_direction_800hPa,geopotential_height_800hPa,temperature_800hPa,relative_humidity_800hPa,cloud_cover_800hPa,wind_speed_700hPa,wind_direction_700hPa,geopotential_height_700hPa,temperature_700hPa,relative_humidity_700hPa,cloud_cover_700hPa,wind_speed_600hPa,wind_direction_600hPa,geopotential_height_600hPa,temperature_600hPa,relative_humidity_600hPa,cloud_cover_600hPa,wind_speed_500hPa,wind_direction_500hPa,geopotential_height_500hPa,temperature_500hPa,relative_humidity_500hPa,cloud_cover_500hPa,wind_speed_400hPa,wind_direction_400hPa,geopotential_height_400hPa,temperature_400hPa,relative_humidity_400hPa,cloud_cover_400hPa,wind_speed_300hPa,wind_direction_300hPa,geopotential_height_300hPa,temperature_300hPa,relative_humidity_300hPa,cloud_cover_300hPa&models=gfs_seamless,ecmwf_ifs025,icon_seamless&wind_speed_unit=kn&timezone=America/Sao_Paulo&start_date=2026-10-13&end_date=2026-10-15",
+      "status": 200,
+      "erro": null
+    },
+    "sondagem_noaa": [
+      {
+        "fonte": "NOAA NOMADS GFS 0.25",
+        "url": "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?dir=%2Fgfs.20261013%2F06%2Fatmos&file=gfs.t06z.pgrb2.0p25.f031&var_HGT=on&var_TMP=on&var_RH=on&var_UGRD=on&var_VGRD=on&lev_1000_mb=on&lev_975_mb=on&lev_950_mb=on&lev_925_mb=on&lev_900_mb=on&lev_850_mb=on&lev_800_mb=on&lev_750_mb=on&lev_700_mb=on&lev_650_mb=on&lev_600_mb=on&lev_550_mb=on&lev_500_mb=on&lev_450_mb=on&lev_400_mb=on&lev_350_mb=on&lev_300_mb=on&lev_250_mb=on&subregion=&toplat=-22.38&bottomlat=-23.38&leftlon=316.12&rightlon=317.12",
+        "status": 200,
+        "ciclo_utc": "2026-10-13T06:00:00+00:00",
+        "prazo_h": 31,
+        "valido_para_utc": "2026-10-14T13:00:00+00:00",
+        "niveis": true,
+        "erro": null
+      }
+    ],
+    "aisweb": {
+      "SBAF": true,
+      "SBGL": true
+    },
+    "astronomia": {
+      "skyfield": true,
+      "usno": true
+    },
+    "inmet": {
+      "fonte": "INMET — estações automáticas",
+      "token": false,
+      "aviso": "Dados das estações exigem token do INMET (secret INMET_TOKEN não configurado)."
+    },
+    "redemet": {
+      "fonte": "REDEMET — API DECEA",
+      "chave": false,
+      "icao": "SBAF",
+      "aviso": "API REDEMET exige chave (secret REDEMET_API_KEY não configurado)."
+    }
+  },
+  "transformacao": {
+    "modelos": {
+      "ok": true,
+      "modelos": [
+        "GFS",
+        "ECMWF",
+        "ICON"
+      ],
+      "horas": 72,
+      "kb": 92
+    },
+    "sondagem": {
+      "ok": true,
+      "niveis": 18,
+      "validoPara": "2026-10-14T13:00:00+00:00"
+    }
+  }
+}
