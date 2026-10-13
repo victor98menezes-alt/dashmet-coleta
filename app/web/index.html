@@ -884,7 +884,9 @@ const MET = (() => {
   const nowIso = () => new Date().toISOString();
   const LS_KEY = 'dashmet.v1';
   const APP = !!window.DASHMET_APP;
+  const STANDALONE = !!window.DASHMET_STANDALONE;
   const api = async (path, body) => { const r = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); };
+  function baixar(nome, blob) { const u = URL.createObjectURL(blob), l = document.createElement('a'); l.href = u; l.download = nome; document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
   async function salvarArquivo(filename, payload) { const r = await api('/api/salvar', Object.assign({ filename }, payload)); return r.path; }
 
   function tomorrow(tz) { const p = M.localParts(Date.now() + 864e5, tz); return M.isoDate(p.y, p.mo, p.d); }
@@ -1553,6 +1555,7 @@ const MET = (() => {
     if (!count) { msg.textContent = 'Nenhuma camada para exportar.'; return; }
     const fname = `camadas_vento_${S.mission.date}_${M.pad(S.mission.hour)}h${S.selHour ? '+' + S.selHour : ''}.csv`;
     if (APP) { try { const p = await salvarArquivo(fname, { text }); msg.textContent = 'Salvo em ' + p; } catch (e) { msg.textContent = 'Falha ao salvar: ' + e.message; } return; }
+    if (STANDALONE) { baixar(fname, new Blob(['\ufeff' + text], { type: 'text/csv' })); msg.textContent = 'Arquivo baixado: ' + fname; return; }
     if (!S.downloads) { msg.textContent = 'Exportação de arquivo indisponível nesta visualização. Use “Copiar camadas”.'; return; }
     try { await S.downloads.save({ filename: `camadas_vento_${S.mission.date}_${M.pad(S.mission.hour)}h${S.selHour ? '+' + S.selHour : ''}.csv`, data: '﻿' + text }); msg.textContent = 'Arquivo enviado para download.'; }
     catch (e) { msg.textContent = e && e.code === 'declined' ? 'Download cancelado.' : 'Não foi possível salvar o arquivo (' + (e && e.code || 'erro') + ').'; }
@@ -1793,7 +1796,12 @@ const MET = (() => {
     const nM = opmetList('metars').length, nT = opmetList('tafs').length;
     $('#src-obs-state').innerHTML = (redemetOk() ? `<span class="st st-obs">REDEMET</span> ${(S.oficiais.redemet.metars || []).length} METAR · ${(S.oficiais.redemet.tafs || []).length} TAF (API DECEA) · total combinado ${nM} METAR, ${nT} TAF<br>` : '') + (S.obs ? `<span class="st st-obs">${(S.obs.metars || []).length} METAR · ${(S.obs.tafs || []).length} TAF</span> ${esc(S.obs.source || '')} · ${esc(whenStr(S.obs.updatedAt))}<div class="raw">${esc([...opmetList('metars'), ...opmetList('tafs')].join('\n'))}</div>` : `<span class="st st-ind">PENDENTE</span>`);
     const trig = S.sys && S.sys.triggerId;
-    if (APP) {
+    if (STANDALONE) {
+      $('#src-run').innerHTML = `<div class="row"><button type="button" class="btn" id="run-now" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Atualizando…' : 'Atualizar dados (pelo navegador)'}</button><span class="small">Versão HTML: busca direto do navegador os modelos GFS/ECMWF/ICON (Open-Meteo) e tenta METAR/TAF (NOAA/AWC). Sondagem NOAA, AISWEB, JPL/USNO, INMET e REDEMET só no aplicativo Windows; aqui podem ser inseridos manualmente nas outras abas.</span></div>
+        <ul class="etapas" id="run-msg">${(S.etapas || []).map(e => `<li class="${e.ok === true ? 'ok' : e.ok === false ? 'err' : ''}">${esc(e.txt)}</li>`).join('')}</ul>
+        <p class="small">Os dados ficam salvos neste navegador, neste computador.</p>`;
+      $('#run-now').addEventListener('click', runNow);
+    } else if (APP) {
       const cf = S.cfg || {};
       $('#src-run').innerHTML = `<div class="row"><button type="button" class="btn" id="run-now" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Atualizando…' : 'Atualizar dados da missão'}</button><span class="small">Coleta no próprio computador: modelos GFS/ECMWF/ICON, sondagem NOAA, astronomia JPL/USNO, AISWEB, INMET, REDEMET, METAR/TAF/SIGMET. Requer internet; leva de 30 s a 2 min.</span></div>
         <ul class="etapas" id="run-msg">${(S.etapas || []).map(e => `<li class="${e.ok === true ? 'ok' : e.ok === false ? 'err' : ''}">${esc(e.txt)}</li>`).join('')}</ul>
@@ -1812,6 +1820,30 @@ const MET = (() => {
     $$('.tabpane').forEach(p => { p.hidden = p.dataset.pane !== S.tab; });
   }
   async function runNow() {
+    if (STANDALONE) {
+      if (!hasPos()) { flash('Salve a missão antes de atualizar.', true); return; }
+      S.busy = true; S.etapas = [{ txt: 'Modelos GFS, ECMWF e ICON (Open-Meteo)…' }]; S.tab = 'auto'; renderSources(); updBtn();
+      const m = S.mission, step = (txt, ok) => { S.etapas.push({ txt, ok }); renderSources(); };
+      try {
+        const url = M.openMeteoUrl(m), r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const p = M.parseOpenMeteo(await r.text());
+        S.models = Object.assign(p, { fetchedAt: nowIso(), url }); await save('models', S.models);
+        step(`Modelos carregados: ${Object.keys(p.models).join(', ')}`, true);
+      } catch (e) { step('Modelos indisponíveis: ' + e.message, false); }
+      const ids = [...new Set([...(m.aerodromos || '').split(',').filter(Boolean), (m.icao || '').toUpperCase()].filter(Boolean))].join(',');
+      if (ids) {
+        try {
+          const [rm, rt] = await Promise.all([fetch(`https://aviationweather.gov/api/data/metar?ids=${ids}&format=raw&hours=6`), fetch(`https://aviationweather.gov/api/data/taf?ids=${ids}&format=raw`)]);
+          const metars = (await rm.text()).split('\n').map(x => x.trim().replace(/=$/, '')).filter(x => /^(METAR|SPECI)?\s?[A-Z]{4} \d{6}Z/.test(x)).map(x => /^(METAR|SPECI)/.test(x) ? x : 'METAR ' + x);
+          const tafs = M.splitMessages(await rt.text(), 'TAF');
+          S.obs = { metars, tafs, sigmets: (S.obs && S.obs.sigmets) || [], updatedAt: nowIso(), source: 'NOAA/AWC (consulta pelo navegador)' }; await save('obs', S.obs);
+          step(`OPMET: ${metars.length} METAR, ${tafs.length} TAF`, true);
+        } catch (e) { step('METAR/TAF não acessíveis pelo navegador (' + e.message + '). Cole as mensagens na aba METAR / TAF.', false); }
+      }
+      logHist('Atualização pela versão HTML');
+      S.busy = false; updBtn(); renderAll(); flash('Atualização concluída.'); return;
+    }
     if (APP) {
       try { const r = await api('/api/atualizar', {}); if (!r.ok) { flash(r.erro || 'Não foi possível iniciar.', true); return; } } catch (e) { flash('Falha: ' + e.message, true); return; }
       S.busy = true; S.etapas = []; S.tab = 'auto'; renderSources(); updBtn();
@@ -1894,7 +1926,7 @@ const MET = (() => {
     $('#png').addEventListener('click', exportPng);
   }
   async function exportPng() {
-    if (!APP && !S.downloads) { flash('Exportação de imagem indisponível nesta visualização.', true); return; }
+    if (!APP && !STANDALONE && !S.downloads) { flash('Exportação de imagem indisponível nesta visualização.', true); return; }
     const btn = $('#png'); btn.disabled = true; btn.textContent = 'Gerando…';
     try {
       if (!window.html2canvas) await new Promise((res, rej) => { const s = document.createElement('script'); s.src = APP ? 'html2canvas.min.js' : 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'; s.onload = res; s.onerror = () => rej(new Error('Biblioteca de captura não carregou.')); document.head.appendChild(s); });
@@ -1902,6 +1934,7 @@ const MET = (() => {
       const canvas = await window.html2canvas($('#brief'), { backgroundColor: bg, scale: 2, ignoreElements: el => el.classList && el.classList.contains('noexport') });
       const fname = `briefing_met_${S.mission.date}_${M.pad(S.mission.hour)}h.png`;
       if (APP) { const p = await salvarArquivo(fname, { base64: canvas.toDataURL('image/png').split(',')[1] }); flash('Imagem salva em ' + p); return; }
+      if (STANDALONE) { baixar(fname, await new Promise(r => canvas.toBlob(r, 'image/png'))); flash('Imagem baixada: ' + fname); return; }
       const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
       await S.downloads.save({ filename: `briefing_met_${S.mission.date}_${M.pad(S.mission.hour)}h.png`, data: blob });
       flash('Imagem gerada.');
@@ -1938,6 +1971,12 @@ const MET = (() => {
   async function init() {
     bind(); fillForm(); renderAll();
     if (!hasPos()) $('#mission').open = true;
+    if (STANDALONE) {
+      const top = $('.top-act'); if (top) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.id = 'upd-top'; b.textContent = 'Atualizar dados'; b.addEventListener('click', runNow); top.prepend(b); }
+      $('#store-note').hidden = true;
+      try { const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); Object.keys(all).forEach(k => applyDoc(k, all[k])); } catch (e) { }
+      fillForm(); renderAll(); if (!hasPos()) $('#mission').open = true; return;
+    }
     if (APP) {
       document.body.classList.add('app');
       const top = $('.top-act'); if (top) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.id = 'upd-top'; b.textContent = 'Atualizar dados'; b.addEventListener('click', runNow); top.prepend(b); }
