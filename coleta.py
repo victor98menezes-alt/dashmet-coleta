@@ -20,8 +20,10 @@ UA = "DashboardMeteorologicoSalto/1.0 (uso institucional nao comercial)"
 MODELOS = ["gfs_seamless", "ecmwf_ifs025", "icon_seamless"]
 SUPERFICIE = ["temperature_2m", "dew_point_2m", "precipitation_probability", "precipitation", "showers",
               "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
-              "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "cape", "pressure_msl"]
-NIVEIS = [1000, 925, 850, 700, 600, 500, 400, 300]
+              "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "cape", "pressure_msl", "visibility",
+              "wind_speed_80m", "wind_direction_80m", "wind_speed_120m", "wind_direction_120m", "wind_speed_180m", "wind_direction_180m",
+              "freezing_level_height", "lifted_index"]
+NIVEIS = [1000, 975, 950, 925, 900, 850, 800, 700, 600, 500, 400, 300]
 VARS_NIVEL = ["wind_speed", "wind_direction", "geopotential_height", "temperature"]
 MESES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
@@ -36,6 +38,9 @@ def entradas():
     data, hora = os.environ.get("DATA", ""), os.environ.get("HORA", "")
     fuso, run_id = os.environ.get("FUSO", "America/Sao_Paulo"), os.environ.get("RUN_ID", "")
     icao = os.environ.get("ICAO", "").strip().upper()
+    ads = [x for x in re.split(r"[ ,;]+", os.environ.get("AERODROMOS", "").strip().upper()) if x]
+    if any(not re.match(r"^[A-Z0-9]{4}$", x) for x in ads) or len(ads) > 4:
+        falha("lista de aeródromos inválida (até 4 códigos OACI)")
     if icao and not re.match(r"^[A-Z]{4}$", icao):
         falha("ICAO inválido")
     num = re.compile(r"^-?\d{1,3}(\.\d+)?$")
@@ -53,7 +58,7 @@ def entradas():
     ZoneInfo(fuso)
     if not re.match(r"^[A-Za-z0-9_\-]{1,64}$", run_id):
         falha("run_id inválido")
-    return lat, lon, data, int(hora), fuso, run_id, icao
+    return lat, lon, data, int(hora), fuso, run_id, icao, ads
 
 
 def baixar(url, tentativas=3, timeout=60, binario=False):
@@ -168,7 +173,7 @@ def tem_niveis(txt):
 
 
 def main():
-    lat, lon, data, hora, fuso, run_id, icao = entradas()
+    lat, lon, data, hora, fuso, run_id, icao, ads = entradas()
     pasta = os.path.join("saida", run_id)
     os.makedirs(pasta, exist_ok=True)
     agora = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
@@ -238,6 +243,21 @@ def main():
     except Exception as e:
         ob = {"coletado_em_utc": agora, "erro": repr(e)}
     json.dump(ob, open(os.path.join(pasta, "obs_oficiais.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    # AISWEB: ROTAER, distâncias declaradas, cartas IAC, METAR/TAF e RCR dos aeródromos da missão (e da estação de referência)
+    import aisweb
+    lista = list(dict.fromkeys(ads + ([icao] if icao else [])))
+    aer = {"coletado_em_utc": agora, "aerodromos": {}}
+    for c in lista:
+        st3, corpo3 = baixar(f"https://aisweb.decea.mil.br/?i=aerodromos&codigo={c}", tentativas=2, timeout=60)
+        if not st3:
+            aer["aerodromos"][c] = {"icao": c, "erro": str(corpo3)[:200]}
+            continue
+        try:
+            aer["aerodromos"][c] = aisweb.ler(corpo3, c)
+        except Exception as e:
+            aer["aerodromos"][c] = {"icao": c, "erro": "leitura: " + repr(e)}
+    json.dump(aer, open(os.path.join(pasta, "aerodromos.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    meta["fontes"]["aisweb"] = {c: ("erro" not in v) for c, v in aer["aerodromos"].items()}
     meta["fontes"]["astronomia"] = {"skyfield": "erro" not in extra["skyfield"], "usno": "erro" not in extra["usno"]}
     meta["fontes"]["inmet"] = {k: v for k, v in ob.get("inmet", {}).items() if k != "estacoes"}
     meta["fontes"]["redemet"] = {k: v for k, v in ob.get("redemet", {}).items() if k not in ("metars", "tafs")}

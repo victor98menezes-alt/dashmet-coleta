@@ -26,6 +26,10 @@ on:
         description: "Estação OACI (opcional)"
         required: false
         default: ""
+      aerodromos:
+        description: "Aeródromos de operação, OACI separados por vírgula (opcional, até 4)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -61,6 +65,7 @@ jobs:
           FUSO: ${{ inputs.fuso }}
           RUN_ID: ${{ inputs.run_id }}
           ICAO: ${{ inputs.icao }}
+          AERODROMOS: ${{ inputs.aerodromos }}
           INMET_TOKEN: ${{ secrets.INMET_TOKEN }}
           REDEMET_API_KEY: ${{ secrets.REDEMET_API_KEY }}
         run: |
