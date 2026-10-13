@@ -22,6 +22,10 @@ on:
       run_id:
         description: "Identificador da coleta"
         required: true
+      icao:
+        description: "Estação OACI (opcional)"
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -46,7 +50,7 @@ jobs:
           node-version: "20"
 
       - name: Instalar decodificador GRIB2 (ecCodes)
-        run: pip install --quiet eccodes eccodeslib
+        run: pip install --quiet eccodes eccodeslib skyfield
 
       - name: Coletar Open-Meteo e sondagem NOAA
         env:
@@ -56,6 +60,9 @@ jobs:
           HORA: ${{ inputs.hora }}
           FUSO: ${{ inputs.fuso }}
           RUN_ID: ${{ inputs.run_id }}
+          ICAO: ${{ inputs.icao }}
+          INMET_TOKEN: ${{ secrets.INMET_TOKEN }}
+          REDEMET_API_KEY: ${{ secrets.REDEMET_API_KEY }}
         run: python coleta.py
 
       - name: Converter para o formato do dashboard
@@ -65,7 +72,8 @@ jobs:
 
       - name: Manter apenas as 30 coletas mais recentes
         run: |
-          ls -1dt saida/*/ 2>/dev/null | tail -n +31 | xargs -r rm -rf
+          rm -f de421.bsp
+          ls -1dt saida/m*/ saida/teste*/ 2>/dev/null | tail -n +31 | xargs -r rm -rf
 
       - name: Gravar no repositório
         env:

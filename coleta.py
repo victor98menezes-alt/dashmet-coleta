@@ -35,6 +35,9 @@ def entradas():
     lat, lon = os.environ.get("LAT", ""), os.environ.get("LON", "")
     data, hora = os.environ.get("DATA", ""), os.environ.get("HORA", "")
     fuso, run_id = os.environ.get("FUSO", "America/Sao_Paulo"), os.environ.get("RUN_ID", "")
+    icao = os.environ.get("ICAO", "").strip().upper()
+    if icao and not re.match(r"^[A-Z]{4}$", icao):
+        falha("ICAO inválido")
     num = re.compile(r"^-?\d{1,3}(\.\d+)?$")
     if not num.match(lat) or not num.match(lon):
         falha("latitude/longitude inválidas")
@@ -50,7 +53,7 @@ def entradas():
     ZoneInfo(fuso)
     if not re.match(r"^[A-Za-z0-9_\-]{1,64}$", run_id):
         falha("run_id inválido")
-    return lat, lon, data, int(hora), fuso, run_id
+    return lat, lon, data, int(hora), fuso, run_id, icao
 
 
 def baixar(url, tentativas=3, timeout=60, binario=False):
@@ -165,7 +168,7 @@ def tem_niveis(txt):
 
 
 def main():
-    lat, lon, data, hora, fuso, run_id = entradas()
+    lat, lon, data, hora, fuso, run_id, icao = entradas()
     pasta = os.path.join("saida", run_id)
     os.makedirs(pasta, exist_ok=True)
     agora = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
@@ -219,6 +222,25 @@ def main():
                 open(os.path.join(pasta, "sondagem.txt"), "w", encoding="utf-8").write(corpo2)
                 break
     meta["fontes"]["sondagem_noaa"] = tentativas
+
+    # Fontes complementares
+    import fontes_extra as fx
+    extra = {"coletado_em_utc": agora}
+    try:
+        extra["skyfield"] = fx.astronomia_skyfield(lat, lon, data, fuso)
+    except Exception as e:
+        extra["skyfield"] = {"erro": repr(e)}
+    extra["usno"] = fx.usno(lat, lon, data, fuso, baixar)
+    json.dump(extra, open(os.path.join(pasta, "astro.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    try:
+        ob = {"coletado_em_utc": agora, "inmet": fx.inmet(lat, lon, baixar, os.environ.get("INMET_TOKEN", "")),
+              "redemet": fx.redemet(icao, baixar, os.environ.get("REDEMET_API_KEY", ""))}
+    except Exception as e:
+        ob = {"coletado_em_utc": agora, "erro": repr(e)}
+    json.dump(ob, open(os.path.join(pasta, "obs_oficiais.json"), "w", encoding="utf-8"), ensure_ascii=False)
+    meta["fontes"]["astronomia"] = {"skyfield": "erro" not in extra["skyfield"], "usno": "erro" not in extra["usno"]}
+    meta["fontes"]["inmet"] = {k: v for k, v in ob.get("inmet", {}).items() if k != "estacoes"}
+    meta["fontes"]["redemet"] = {k: v for k, v in ob.get("redemet", {}).items() if k not in ("metars", "tafs")}
 
     json.dump(meta, open(os.path.join(pasta, "meta.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     print(json.dumps(meta, ensure_ascii=False, indent=2))
