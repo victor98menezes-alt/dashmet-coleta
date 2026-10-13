@@ -13,7 +13,9 @@ def _hm(t, tz):
 
 
 def astronomia_skyfield(lat, lon, data, fuso):
-    """Crepúsculo náutico (Sol a -12°), nascer/pôr da Lua, iluminação e altura máxima — efemérides JPL DE421."""
+    """Crepúsculos (civil −6°, náutico −12°), nascer/pôr do Sol e da Lua, fase e iluminação — efemérides JPL DE421.
+    Noite operacional: FCVC (fim do crepúsculo vespertino civil) até ICMC (início do crepúsculo matutino civil) do dia seguinte;
+    'luar' = Lua acima do horizonte (entre nascer e ocaso), 'visibilidade nula' = Lua abaixo do horizonte."""
     from skyfield import almanac
     from skyfield.api import load, wgs84
     ts = load.timescale()
@@ -22,51 +24,60 @@ def astronomia_skyfield(lat, lon, data, fuso):
     z = ZoneInfo(fuso)
     d0 = dt.date.fromisoformat(data)
     out = {"fonte": "Skyfield + efemérides JPL DE421 (NASA)", "dias": {}}
-    terra, sol, lua = eph["earth"], eph["sun"], eph["moon"]
-    obs = terra + loc
-    for k in (-1, 0, 1):
+    lua = eph["moon"]
+    fl = almanac.risings_and_settings(eph, lua, loc)
+    for k in (-1, 0, 1, 2):
         dia = d0 + dt.timedelta(days=k)
         a = dt.datetime.combine(dia, dt.time(0), z)
         t0, t1 = ts.from_datetime(a), ts.from_datetime(a + dt.timedelta(days=1))
         f = almanac.dark_twilight_day(eph, loc)
         t, e = almanac.find_discrete(t0, t1, f)
-        icmn = fcvn = None
+        ev = {}
         prev = int(f(t0))
         for ti, ei in zip(t, e):
-            if prev == 1 and ei == 2:  # astronômico -> náutico (manhã)
-                icmn = _hm(ti, fuso)
-            if prev == 2 and ei == 1:  # náutico -> astronômico (tarde)
-                fcvn = _hm(ti, fuso)
-            prev = int(ei)
-        f2 = almanac.risings_and_settings(eph, lua, loc)
-        t, e = almanac.find_discrete(t0, t1, f2)
-        nasc = [_hm(ti, fuso) for ti, ei in zip(t, e) if ei]
-        poe = [_hm(ti, fuso) for ti, ei in zip(t, e) if not ei]
+            ei = int(ei)
+            if prev == 1 and ei == 2: ev["icmn"] = _hm(ti, fuso)
+            if prev == 2 and ei == 3: ev["icmc"] = _hm(ti, fuso)
+            if prev == 3 and ei == 4: ev["nascer_sol"] = _hm(ti, fuso)
+            if prev == 4 and ei == 3: ev["por_sol"] = _hm(ti, fuso)
+            if prev == 3 and ei == 2: ev["fcvc"] = _hm(ti, fuso)
+            if prev == 2 and ei == 1: ev["fcvn"] = _hm(ti, fuso)
+            prev = ei
+        t, e = almanac.find_discrete(t0, t1, fl)
+        ev["lua_nasce"] = [_hm(ti, fuso) for ti, ei in zip(t, e) if ei]
+        ev["lua_poe"] = [_hm(ti, fuso) for ti, ei in zip(t, e) if not ei]
         meio = ts.from_datetime(a + dt.timedelta(hours=12))
-        ilum = almanac.fraction_illuminated(eph, "moon", meio)
-        out["dias"][dia.isoformat()] = {"icmn": icmn, "fcvn": fcvn, "lua_nasce": nasc, "lua_poe": poe, "iluminacao_meio_dia": round(float(ilum) * 100, 1)}
-    # noites D-1→D e D→D+1: intervalos de Lua acima do horizonte durante a noite náutica
+        ev["iluminacao_meio_dia"] = round(float(almanac.fraction_illuminated(eph, "moon", meio)) * 100, 1)
+        ph = float(almanac.moon_phase(eph, meio).degrees)
+        ev["fase_graus"] = round(ph, 1)
+        out["dias"][dia.isoformat()] = ev
     noites = []
-    for k in (-1, 0):
+    for k in (-1, 0, 1):
         da, db = (d0 + dt.timedelta(days=k)).isoformat(), (d0 + dt.timedelta(days=k + 1)).isoformat()
-        ini, fim = out["dias"][da]["fcvn"], out["dias"][db]["icmn"]
+        ini, fim = out["dias"][da].get("fcvc"), out["dias"][db].get("icmc")
         if not ini or not fim:
             continue
         ti_ = ts.from_datetime(dt.datetime.fromisoformat(ini).replace(tzinfo=z))
         tf_ = ts.from_datetime(dt.datetime.fromisoformat(fim).replace(tzinfo=z))
-        n = 241
+        up = bool(fl(ti_))
+        t, e = almanac.find_discrete(ti_, tf_, fl)
+        intervalos, cur = [], ini
+        for ti, ei in zip(t, e):
+            intervalos.append({"de": cur, "ate": _hm(ti, fuso), "lua": up})
+            cur, up = _hm(ti, fuso), bool(ei)
+        intervalos.append({"de": cur, "ate": fim, "lua": up})
+        intervalos = [x for x in intervalos if x["de"] != x["ate"]]
+        obs = eph["earth"] + loc
+        n = 121
         passos = [ti_ + (tf_ - ti_) * i / (n - 1) for i in range(n)]
-        alts = [obs.at(p).observe(lua).apparent().altaz()[0].degrees for p in passos]
-        acima = [bool(h > 0) for h in alts]
-        intervalos, inicio = [], 0
-        for i in range(1, n + 1):
-            if i == n or acima[i] != acima[inicio]:
-                intervalos.append({"de": _hm(passos[inicio], fuso), "ate": _hm(passos[i - 1] if i == n else passos[i], fuso), "lua": bool(acima[inicio])})
-                inicio = i
+        alts = [float(obs.at(p).observe(lua).apparent().altaz()[0].degrees) for p in passos]
+        imax = max(range(n), key=lambda i: alts[i])
         meio = ti_ + (tf_ - ti_) * 0.5
-        noites.append({"de": ini, "ate": fim, "intervalos": intervalos, "alt_max_lua": round(float(max(alts)), 1),
+        noites.append({"de": ini, "ate": fim, "fcvn": out["dias"][da].get("fcvn"), "icmn": out["dias"][db].get("icmn"),
+                       "intervalos": intervalos, "alt_max_lua": round(alts[imax], 1), "hora_alt_max": _hm(passos[imax], fuso),
                        "iluminacao": round(float(almanac.fraction_illuminated(eph, "moon", meio)) * 100, 1)})
     out["noites"] = noites
+    out["definicao"] = "Noite: FCVC (Sol a −6°, fim do crepúsculo vespertino civil) até ICMC do dia seguinte. Luar: Lua acima do horizonte; visibilidade nula: Lua abaixo do horizonte."
     return out
 
 
