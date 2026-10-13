@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Basic -->
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>AISWEB - Informações Aeronáuticas do Brasil</title>
+<meta name="keywords" content="Informações Aeronáuticas,Espaço Aéreo,Cartografia, Aviação, Publicações Digitais" />
+<meta name="description" content="Fonte Oficial de Informações Aeronáuticas do Brasil">
+<meta name="author" content="Departamento de Controle do Espaço Aéreo">
+<!-- Favicon -->
+<link rel="shortcut icon" href="https://aisweb.decea.mil.br/assets/_img/favicon.ico" type="image/x-icon" >
+<!-- Mobile Metas -->
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no">
+<!-- Web Fonts -->
+<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800%7CShadows+Into+Light" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<!-- Vendor CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/bootstrap/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/font-awesome/css/fontawesome-all.min.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/animate/animate.min.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/simple-line-icons/css/simple-line-icons.min.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/owl.carousel/assets/owl.carousel.min.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/owl.carousel/assets/owl.theme.default.min.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/magnific-popup/magnific-popup.min.css">
+<!-- Theme CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/css/theme.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/css/theme-elements.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/css/theme-blog.css">
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/css/theme-shop.css">
+<!-- Skin CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/css/skins/default.css">
+<!-- Theme Custom CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/css/custom.css">
+<!-- Head Libs -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/modernizr/modernizr.min.js"></script>
+<!-- Admin Extension Specific Page Vendor CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-datepicker/css/bootstrap-datepicker3.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/jquery-ui/jquery-ui.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/jquery-ui/jquery-ui.theme.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/select2/css/select2.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/select2-bootstrap-theme/select2-bootstrap.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-multiselect/bootstrap-multiselect.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-tagsinput/bootstrap-tagsinput.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-colorpicker/css/bootstrap-colorpicker.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-timepicker/css/bootstrap-timepicker.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/dropzone/basic.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/dropzone/dropzone.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-markdown/css/bootstrap-markdown.min.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/summernote/summernote.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/summernote/summernote-bs4.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/codemirror/lib/codemirror.css" />
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/codemirror/theme/monokai.css" />
+<!-- Admin Extension CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/css/theme-admin-extension.css">
+<!-- Admin Extension Skin CSS -->
+<link rel="stylesheet" href="https://aisweb.decea.mil.br/assets/templates/portal/admin/css/skins/extension.css">
+<style>
+div.notam { margin-bottom: 40px; }
+div.notam span.badge { font-size: 1.0em; }
+div.notam .msg { font-size: 1.1em; padding: 6px 0 6px 0; margin-bottom: 0; font-family: courier; color: #000; }
+div.notam .msg p { margin-bottom: 1px; }
+div.notam p.metadata { margin-top: -12px; font-family: courier; }
+div.notam p.metadata .fa { color: #999999; }
+.center_text { text-align: center; }
+a.nav-link { color: #21415B !important; }
+</style>
+</head>
+<body>
+<style type="text/css">
+iframe#barra_decea {
+width: 100%;
+height: 120px;
+border: 0;
+margin: 0;
+}
+</style>
+<iframe class="hidden-lg-down" id="barra_decea" src="https://servicos.decea.mil.br/portal/barra/?app=aisweb&v=mil.br"></iframe>
+<div class="body" >
+<header style="border: 0; margin-top: 0;" id="header" data-plugin-options="{'stickyEnabled': false, 'stickyEnableOnBoxed': true, 'stickyEnableOnMobile': true, 'stickyStartAt': 57, 'stickySetTop': '-55px', 'stickyChangeLogo': true}" >
+<div class="header-body" style="background:#F7F7F7;">
+<div class="header-container container">
+<div class="header-row">
+<div class="header-column">
+<div class="header-row">
+<div class="header-logo">
+<a href="http://aisweb.decea.mil.br">
+<img alt="AISWEB" data-sticky-width="82" data-sticky-height="40" data-sticky-top="33" src="https://aisweb.decea.mil.br/assets/templates/portal/img/logo-aisweb.png">
+</a>
+</div>
+</div>
+</div>
+<div class="header-column justify-content-end">
+<div class="header-row pt-3">
+<nav class="header-nav-top">
+<ul class="nav nav-pills">
+<li class="nav-item d-lg-block">
+<a class="nav-link" href="?i=abreviaturas"><i class="fas fa-angle-right"></i> Abreviaturas</a>
+</li>
+<li class="nav-item d-none d-lg-block">
+<a class="nav-link" target="_blank" href="https://ajuda.decea.gov.br/artigo-categoria/aisweb/"><i class="fas fa-angle-right"></i> Central de Ajuda</a>
+</li>
+<li class="nav-item hidden-sm hidden-xs">
+<a id="idioma" class="nav-link hidden-sm hidden-md-down" href="core/i18n/change.cfm?idioma=en" role="button">
+<img src="https://aisweb.decea.mil.br/assets/templates/portal/img/blank.gif" class="flag flag-br" alt="Português" /> Português	<small>(Change)</small>
+</a>
+</li>
+<li class="nav-item d-none d-lg-block">
+<a class="nav-link" href="#"><i class="fas fa-calendar"></i> AMDT 41/26</a>
+</li>
+</ul>
+</nav>
+<div class="header-search d-none d-md-block">
+<form id="busca" action="?i=busca" method="post">
+<div class="input-group">
+<input type="text" class="form-control" maxlength="4" minlength="4" name="q" id="q" placeholder="Código Identificador" name="q" id="q" required>
+<span class="input-group-append">
+<button class="btn btn-light" type="submit"><i class="fas fa-search"></i></button>
+</span>
+</div>
+</form>
+</div>
+</div>
+<div class="header-row">
+<div class="header-nav">
+<div class="header-nav-main header-nav-main-effect-1 header-nav-main-sub-effect-1">
+<nav class="collapse">
+<ul class="nav nav-pills" id="mainNav">
+<li >
+<a class=" " href="?i=home">
+Início
+</a>
+</li>
+<li class="dropdown" >
+<a class="active dropdown-item dropdown-toggle" href="#">
+Aeródromos
+</a>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="?i=aerodromos&p=rotaer">ROTAER</a></li>
+<li><a class="dropdown-item" href="?i=aerodromos&p=temp">INFOTEMP</span></a></li>
+<li><a class="dropdown-item" href="?i=aerodromos&p=sol">Nascer/Por do Sol</a></li>
+<li><a class="dropdown-item" href="?i=aerodromos&p=rcr">RCR <span class="tip tip-danger">Novo!</span></a></li>
+<li><a class="dropdown-item" href="?i=aerodromos&p=opea">OPEA/Obstáculos <span class="tip tip-danger">Novo!</span></a></li>
+</ul>
+</li>
+<li class="dropdown" >
+<a class=" dropdown-item dropdown-toggle" href="#">
+Espaço Aéreo
+</a>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="?i=espaco-aereo&p=aerovias">Aerovias (Em breve)<span class="tip tip-dark">Em breve</span></a></li>
+<li><a class="dropdown-item" href="?i=espaco-aereo&p=playbook" title="Novo Rotas Preferenciais">Playbook de Rotas</a>
+<li><a class="dropdown-item" href="?i=espaco-aereo&p=playbook&tp=cont" title="Novo Rotas de Contigências">Playbook de Rotas (Plano de Contigência)</a>
+<li><a class="dropdown-item" href="?i=espaco-aereo&p=playbook&tp=swap">Playbook de Rotas (SWAP)</a></li>
+<li><a class="dropdown-item" target="_blank" href="https://servicos2.decea.mil.br/swap/">Dashboard (SWAP)</a></li>
+<li><a class="dropdown-item" href="?i=espaco-aereo&p=fixos">Fixos</a></li>
+<li><a class="dropdown-item" href="?i=espaco-aereo&p=radiod">Radiodifusoras</a></li>
+</ul>
+</li>
+<li >
+<a class=" " href="?i=notam">
+NOTAM
+</a>
+</li>
+<li class="dropdown" >
+<a class=" dropdown-item dropdown-toggle" href="#">
+Cartas
+</a>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" href="?i=cartas">Aeródromos/TMA</a></li>
+<li><a class="dropdown-item" href="?i=cartas&p=rotas">Rotas</a></li>
+<li><a class="dropdown-item" href="?i=cartas&p=visuais">Visuais</a></li>
+<li><a class="dropdown-item" href="?i=cartas&p=procar">PROCAR</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=cartas">Checklist, Inserir/Destruir <span class="tip tip-danger">Novo!</span></a></li>
+</ul>
+</li>
+<li class="dropdown" >
+<a class=" dropdown-item dropdown-toggle" href="#">
+Publicações
+</a>
+<ul class="dropdown-menu">
+<li><a class="dropdown-item" target="_blank" href="http://publicacoes.decea.mil.br">Publicações DECEA</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=aic">AIC</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=aip">AIP-Brasil</a></li>
+<li><a class="dropdown-item" href="https://aisweb.decea.mil.br/eaip" target="_blank">E-AIP</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=suplementos">Suplementos AIP</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=aixm">AIXM</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=api">API-AISWEB</a></li>
+<li><a class="dropdown-item" target="_blank" href="https://www.eurocontrol.int/articles/ais-online">AIS por país (Eurocontrol)</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=calendario">Calendário AIRAC</a></li>
+<li><a class="dropdown-item" href="?i=publicacoes&p=prazos_para_sdia">Prazos para envio de SDIA</a></li>
+<li><a class="dropdown-item" href="https://aisweb.decea.mil.br/downloads/notam/Tabela-de-Criterios-para-expedicao-de-NOTAM.pdf" target="_blank">Critérios para Expedição de NOTAM</a></li>
+</ul>
+</li>
+<li >
+<a class=" " href="?i=consulta-previa">
+CONSULTA PRÉVIA
+</a>
+</li>
+</ul>
+</nav>
+</div>
+<button class="btn header-btn-collapse-nav" data-toggle="collapse" data-target=".header-nav-main nav">
+<i class="fas fa-bars"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</header>
+<div class="alert alert-warning alert-dismissible">
+<div class="center_text">	<strong></strong><i class="fa fa-exclamation-triangle"></i> Pesquisa de Satisfação do Cliente
+<br>
+Está sendo realizada a Pesquisa de Satisfação do Cliente do Instituto de Cartografia Aeronáutica.<br>
+O ICA pretende com esta pesquisa capturar a impressão dos seus clientes sobre os produtos e serviços disponibilizados, a fim de melhorar a qualidade e garantir mais segurança aos seus usuários.<br>
+Sua contribuição é muito importante para a melhoria contínua da Informação Aeronáutica no Brasil. </div>
+</div>
+<div class="alert alert-warning alert-dismissible">
+<div class="center_text">	<strong></strong><i class="fa fa-exclamation-triangle"></i> PESQUISA DE SATISFAÇÃO DO CLIENTE (AISWEB) - CUSTOMER SATISFACTION SURVEY (AISWEB) <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=yo0iJtNwF0mCMwg6w2VakU9ep0acx3JAj1iFvEOpQUBUNFJLMUFKOFlGTDlRNUk0MEhSSjVCSUZMMS4u" class="btn btn-xs btn-info">Acessar</a> </div>
+</div>
+<hr>
+<div role="main" class="main">
+<section class="page-header page-header-light" style="background:#F7F7F7 no-repeat center top url('https://aisweb.decea.mil.br/assets/templates/portal/img/page-top-bg.jpg');">
+<div class="container" >
+<div class="row align-items-center">
+<div class="col-lg-8">
+<h1>Galeão - Antônio Carlos Jobim (SBGL) <span>Rio de Janeiro/RJ &nbsp;&nbsp;&nbsp; <span style="display:inline; letter-spacing: 0;" title="Código Identificador de Aeródromos">CIAD:</span> 
+<strong title="Código Identificador de Aeródromos">RJ0001</strong></span></h1>
+</div>
+<div class="col-lg-4" >
+<ul class="breadcrumb">
+<li><a href="./">Início</a></li>
+<li class="active">Galeão - Antônio Carlos Jobim (SBGL)</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+<div class="container">
+<div class="row mb-4">
+<div class="col">
+<div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Basic example">
+<a class="btn btn-group-xs btn-outline-primary" href="#rotaer">ROTAER</a>
+<a class="btn btn-group-xs btn-outline-primary" href="#notam">NOTAM</a>
+<a class="btn btn-group-xs btn-outline-primary" href="#sup">Suplementos AIP</a>
+<a class="btn btn-group-xs btn-outline-primary" href="#cartas">Cartas</a>
+<a class="btn btn-group-xs btn-outline-primary" href="#met">Metar/TAF</a>
+<a class="btn btn-group-xs btn-outline-primary" href="#rotas">Rotas Preferenciais</a>
+</div>
+</div>
+</div>
+<style>
+div.notam span.badge { font-size: 1.0em; }
+div.notam pre { font-size: 1.1em; padding: 4px; }
+</style>
+<div class="row">
+<div class="col-lg-8 order-sm-1">
+<h4 id="rotaer" class="mb-0 heading-primary">
+<a href="?i=aerodromos&codigo=SBGL">ROTAER</a>
+<small class="pull-right">
+<span class="badge badge-primary badge-xs" title="08/10/26">
+D-AMDT 41/26
+</span>
+<a href="inc/geiloc/inc/diff-rotaer.cfm?amdt=14fbaf19-b0a1-408d-b432-a75e2fa31b7f" class="badge badge-info btn-3d badge-xs popup-external">
+<span title="Visualizar mudanças com relação a DAMDT anterior">
+<i class="fa fa-exchange-alt"></i> Ver mudanças
+</span>
+</a>
+</small>
+</h4>
+<p class="mb-2">
+</p>
+<style type="text/css">
+div.rotaer table tr td, div.rotaer table tr td p { color: #22262B; }
+</style>
+<div id="rotaer" class="rotaer">
+<style>
+#dist_declarada{
+border: 1px solid #ddd;
+text-align: left;
+font-size: 10px;
+border-collapse: collapse;
+}
+</style>
+<table class="rotaer" style="width: 100%; " >
+<tr><td><strong class="title" style="font-size: 18px;">
+<span title="Nome do Aeródromo">Galeão - Antônio Carlos Jobim</span>
+( <span title="Indicador de Localidade (ICAO Code)">SBGL</span> ) /
+<small><span title="cidade">RIO DE JANEIRO</span>,
+<span title="Estado">RJ</span></small>
+</strong>
+</td>
+<td style="width: 165px;">22 48 36S/043 15 02W</td>
+</tr>
+<tr><td style="padding-bottom: 4px;">
+<span title="Aeródromo">
+AD
+</span>
+INTL
+<span title="Aeródromo público que possui instalações militares do Comando da
+Aeronáutica.">PUB/MIL</span>
+<span title="Operador do Aeródromo">RIOgaleão - Concessionária Aeroporto Rio de Janeiro S A</span>
+<span title="Distância em KM do Centro da Cidade/Direção">13/NE</span>
+UTC-3
+VFR IFR
+<span title="Farol rotativo de aeródromo">L21</span>
+, 
+<span title="Luzes de obstáculo">L23</span>
+, 
+<span title="Indicador de direção de vento iluminado">L26</span>
+</td>
+<td style="padding-bottom: 4px;">8.51 <strong>(28)</strong></td>
+</tr>
+<tr><td style="vertical-align: top;">
+<p>
+<strong>10</strong> - 
+<span title="">L5</span>
+, 
+<span title="">L9</span>
+<span title="MEHT: a. RWY 10 - 72FT
+b. RWY 28 - 71FT">[1]</span>
+, 
+<span title="Luzes de zona de contato de alta intensidade">L11A</span>
+, 
+<span title="Luzes de cabeceira de alta intensidade (verde no início e vermelha no fim da pista).">L12A</span>
+-
+(
+4000x45
+CONC
+1170/R/B/W/T
+<span title="PCR	
+">[15]</span>
+<span title="Luzes ao longo das laterais da pista de alta intensidade, de 60 em 60 metros.">L14A</span>
+, 
+<span title="Luzes (azuis) de pista de táxi, indicando sua trajetória.">L15</span>
+, 
+<span title="Luzes de eixo de pista de alta intensidade">L19A</span>
+, 
+<span title="TWY AA, BB, CC e DD">[2]</span>
+<span title="Luzes de eixo-de-pista-de-táxi para saída à grande velocidade, de alta
+intensidade">L20A</span>
+)
+-
+<span title="">L4</span>
+, 
+<span title="">L9</span>
+<span title="MEHT: a. RWY 10 - 72FT
+b. RWY 28 - 71FT">[1]</span>
+, 
+<span title="Luzes de zona de contato de alta intensidade">L11A</span>
+, 
+<span title="Luzes de cabeceira de alta intensidade (verde no início e vermelha no fim da pista).">L12A</span>
+-
+<strong>28</strong>
+</p>
+<p>
+<strong>15</strong> - 
+<span title="Sistema de luzes de aproximação sem flash">L3</span>
+, 
+<span title="">L9</span>
+<span title="	
+MEHT: a. RWY 15 - 65FT b. RWY 33 - 70FT
+">[9]</span>
+, 
+<span title="Luzes de cabeceira de alta intensidade (verde no início e vermelha no fim da pista).">L12A</span>
+-
+(
+3180x47
+ASPH
+1260/R/B/W/T
+<span title="PCR	
+">[15]</span>
+<span title="Luzes ao longo das laterais da pista de alta intensidade, de 60 em 60 metros.">L14A</span>
+, 
+<span title="Luzes (azuis) de pista de táxi, indicando sua trajetória.">L15</span>
+)
+-
+<span title="">L9</span>
+<span title="	
+MEHT: a. RWY 15 - 65FT b. RWY 33 - 70FT
+">[9]</span>
+, 
+<span title="Luzes de cabeceira de alta intensidade (verde no início e vermelha no fim da pista).">L12A</span>
+-
+<strong>33</strong>
+</p>
+</td>
+<td style="vertical-align: top;">
+<span title="FIR">SBCW</span> (<span title="Jurisdição">CRCEA-SE</span>)
+</td>
+</tr>
+<tr><td style="padding: 8px 0;" colspan="2">
+<table border="0" cellpadding="0">
+<tr><td valign="top"><strong>COM</strong> - </td>
+<td>
+<div>
+TORRE GALEÃO
+<span title="D-CL.">[4]</span>
+118.000
+118.200
+121.500
+<span title="EMERG.">[3]</span>
+121.000
+121.650
+</div>
+<div>
+SOLO GALEÃO
+121.650
+128.350
+<span title="SRY">[6]</span>
+</div>
+<div>
+TRÁFEGO GALEÃO
+121.000
+135.100
+<span title="SRY">[6]</span>
+</div>
+<div>
+ATIS 
+<span title="D-ATIS">[5]</span>
+127.600
+</div>
+<div>
+PÁTIO GALEÃO
+121.950
+<span title="PRI	
+">[13]</span>
+130.675
+<span title="SRY">[6]</span>
+131.050
+<span title="ALTN">[12]</span>
+</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td style="padding: 8px 0;" colspan="2">
+<table border="0" cellpadding="0">
+<tr><td valign="top"><strong>RDONAV</strong> - </td>
+<td>
+<div>VOR/DME PCX
+114.6 2242.92S/04251.45W
+</div>
+<div>IM ITB
+75 2248.14S/04315.44W
+</div>
+<div>ILS/DME 15 IJB
+110.5 2249.81S/04314.22W
+</div>
+<div>ILS 10 CAT II
+ITB 109.3 2247.48S/04312.86W
+</div>
+<div>VOR/DME CXI
+112.30 2249.02S/04315.60W
+</div>
+<div>ILS/DME 28 ILM
+111.50 2248.16S/04315.51W
+</div>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding: 8px 0;" colspan="2">
+<strong>CMB</strong>-
+TF
+<strong style="margin-left: 16px;">SER</strong> - S1 &nbsp;
+<strong>RFFS</strong> -
+CAT CIVIL - 10
+</td>
+</tr>
+<tr><td style="padding: 8px 0;" colspan="2">
+<table border="0" cellpadding="0">
+<tr><td style="width: 70px;" valign="top">
+<strong>MET</strong> -
+</td>
+<td>
+<strong>MET CIVIL –</strong>
+<p>
+(21) 3398-3057 CMA 1,2,3,4,5,6,7,8,9,10,11
+</p>
+<strong>MET MIL –</strong>
+<p>
+<span title="Autoatendimento
+">[14]</span>
+(21) 2174-7580 CMM 1,2,3,4,5,6,7,8,9
+</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td style="padding: 8px 0;">
+<table border="0" cellpadding="0">
+<tr><td style="width: 70px;" valign="top"><strong>AIS</strong> - </td>
+<td>
+<strong>AIS CIVIL – </strong>
+<span title="(21) 3398-4565">[7]</span>
+<span title="C-AIS RJ aceita PLN e suas atualizações por: TEL CMA: (21) 3398-3057, 3398-3615 TEL PLN: (21) 3398-4738.">[10]</span>
+(21) 3398-3016
+<strong>AIS MIL –</strong>
+<span title="(DLY 0900-0100)">[8]</span>
+<span title="Aceita PLN e suas atualizações pelo TEL (21) 2174-7531.
+">[11]</span>
+(21) 2174-7531
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td style="padding: 8px 0" colspan="3">
+<table border="0" cellpadding="0" width="100%;">
+<tr><td style="vertical-align: top; width: 80px;"><p><strong>RMK - </strong></p></td>
+<td></td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">SERVIÇOS DE SALVAMENTO E COMBATE A INCÊNDIO</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>Plano de Remoção de ACFT inoperantes (PRAI): Capacidade para remoção até Embraer EMB-110 - Peso 5.900 Kg, sob responsabilidade do proprietário ou explorador, em coordenação com a administração aeroportuária, Tel: +55 (21) 96783-2123 , +55 (21) 3398 - 4444. Capacidade adicional mediante recursos externos. O explorador deverá assegurar a remoção da aeronave dentro dos seguintes prazos máximos: Cat 1–2: até 6h (leve), 12h (médio) e 18h (grave) Cat 3–4: até 18h (leve), 27h (médio) e 36h (grave) Cat 5–7: até 36h (leve), 42h (médio) e 48h (grave) Cat 8–10: até 48h (leve), 54h (médio) e 60h (grave) Prazos sujeitos a condições operacionais.</li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">DADOS DE PÁTIOS, PISTAS DE TÁXI E PONTOS DE VERIFICAÇÃO</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>Os pátios NR 1, 2 e 3 são destinados às ACFTS: de aviação comercial domésticas e internacionais, de aviação geral e táxis aéreos, de órgãos governamentais, em manutenção de baixa complexidade.
+</li>
+<li>O pátio NR 5 é destinado às ACFTS: cargueiros; de aviação geral e táxi aéreo, de aviação comercial para estadia prolongada, de transporte militar e em processo de nacionalização.
+</li>
+<li>As ACFT militares com destino ao pátio militar do SBGL deverão efetuar chamada na frequência de operações em 122,5 MHz.</li>
+<li>Pátio NR 1 exclusivo para ACFT com envergadura máxima de 36M.</li>
+<li>TWY Y1, Y2, Y3 e Y4 exclusivas para ACFT com envergadura máxima de 36M.</li>
+<li>TWY B entre TWY F e TWY G restrito à ACFT com envergadura máxima de 36M. ACFT com envergadura superior a 36M poderão transitar somente com auxílio de follow-me.</li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">OBSTÁCULOS DE AERÓDROMO</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>OBS OBST NEG LGDT:
+Edificação nas COORD 224829,70S/0432110,14W, ELEV 60M.</li>
+<li>OBS OBST LGDT: <br>
+Edificação nas COORD 224831,51S/0431211,07W, ELEV 193FT/58,81M.<br>
+COORD 224836.96S/0431206.85W ELEV 204FT/62,12M.<br>
+Edificação COORD 22°48'55,20"S/043°11'35,60"W ELEV 161FT/19,5M<br>
+Mastro COORD 22°50'22,99''S/043°17'04,99''W ELEV 223,42FT/68,10M<br>
+Edificação COORD 22°48'36,96''S/043°12'06,85''W ELEV 223,49FT/68,12M</li>
+<li>OBS OBST (EDIFICACAO) LGTD COORD 224829.70S/0431110.14W ELEV 69M MONTADO </li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">REGULAMENTOS LOCAIS DE AERÓDROMO</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>	
+Sistema Preferencial de Pistas de Pouso e Decolagem: a)Operações Segregadas
+a.1) RWY 15 uso preferencial para pouso/ a.2) RWY 10 uso preferencial para decolagem.
+</li>
+<li>Sistema Preferencial de Pistas de Pouso e Decolagem: b) Operações em Pista Única:
+b.1) Operação em Pista Única RWY 15/33: RWY 15 uso preferencial para pouso e decolagem / b.2) Operação em Pista Única RWY 10/28: RWY 10 uso preferencial para pouso e decolagem</li>
+<li>Sistema Preferencial de Pistas de Pouso e Decolagem: Em condições meteorológicas com componente de vento de cauda menor ou igual a 7 KT, a configuração preferencial de pista de pouso e decolagem será conforme estabelecido em a) e b), seguindo o cenário presente (Operações Segregadas ou Operações em Pista Única), desde que as superfícies das pistas estejam secas. Quando estiver sendo aplicado o conceito de uso de pistas preferenciais, os pilotos que solicitarem autorização para utilizar o sistema de pista alternativo, devem considerar que seu pouso ou decolagem pode sofrer atraso	
+</li>
+<li>Restrição a classes e tipos de ACFT:
+- ACFT WO EQPT RDO;
+- GLD;
+- ACFT WO transponder ou com falha neste EQPT;
+- FLT de ultraleves motorizados.</li>
+<li>OBS VAC para entrada ou saída do circuito de TFC.</li>
+<li>Restrição aos serviços aéreos:
+- Lançamento de objetos ou pulverização;
+- Reboque de ACFT;
+- Lançamento de paraquedas;
+- FLT acrobático.</li>
+<li>Multilateração de superfície em uso. É obrigatório o acionamento do transponder em modo Altitude Reporting e do ADS-B (quando equipado) durante toda a permanência nos pátios, taxiways e pista.</li>
+<li>Para acesso às áreas do pátio, é necessário solicitar autorização ao Controle de Pátio por meio das frequências 121.950MHz e 130.675MHz.</li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">PROCEDIMENTOS DE VOO</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>O AD pode ser utilizado regularmente por quaisquer ACFT compatíveis
+com o RCD 4E ou inferior;</li>
+<li>OPS Especiais: OPS da ACFT Boeing 747-8, Airbus A380 e Boeing 777-9 são
+permitidas de acordo com os PROC especiais descritos no MOPS
+aprovado pela ANAC.	
+</li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">INFORMAÇÃO ADICIONAL</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>OBS torre balizada com 72M de altura, situada no Morro do Inglês (Ilha do Governador)</li>
+<li>Atenção para não confundir, na aproximação para a RWY 15, ao norte do AD, a iluminação da Refinaria Duque de Caxias com as luzes da RWY, ambas na mesma direção.</li>
+<li>	
+Permitido treinamento de toque e arremetida de ACFT CIVIL e MIL nos períodos: (1) DLY BTN 0300-0800; (2) TUE, WED e SAT BTN 1400-1600.
+</li>
+<li>Proibido o cheque de motores na área de PRKG da Sala AIS MIL da Base Aérea do Galeão.</li>
+<li>	
+RWY 15/33: <br>
+Concentração de quero-quero (Vanellus chilensis) na THR 15 BTN TWY A e TWY C; e na THR 33 BTN TWY G e TWY H. <br>
+Concentração de socó-dorminhoco (Nycticorax nycticorax) na RWY 15/33 BTN TWY D e TWY E. <br>
+Concentração de garça-branca-grande (Ardea alba) na THR 15 BTN TWY A e TWY C. <br>
+Concentração de carcará (Caracara plancus) na THR 15 BTN TWY A e TWY C; e na THR 33 BTN TWY E e TWY J. <br>
+Concentração de urubu-preto (Coragyps atratus) na THR 15 BTN TWY A e TWY C. <br>
+Concentração de biguá (Nannopterum brasilianum) na THR 15 BTN TWY A e TWY C; e BTN TWY D e TWY E. <br>
+Concentração de fragata (Fregata magnificens) no final da THR 15 e THR 33. <br>
+<br>
+RWY 10/28: <br>
+Concentração de garça-branca-grande (Ardea alba) no final da THR 10; e BTN TWY CC e TWY BB. <br>
+Concentração de quero-quero (Vanellus chilensis) no final da THR 10 e THR 28; e BTN TWY CC e TWY Z. <br>
+Concentração de carcará (Caracara plancus) na THR 10 BTN TWY R e TWY AA; e BTN TWY AA e TWY BB. <br>
+Concentração de socó-dorminhoco (Nycticorax nycticorax) no final da THR 10. <br>
+Concentração de urubu-preto (Coragyps atratus) na THR 10 BTN TWY R e TWY AA; e TWY Z. <br>
+Concentração de biguá (Nannopterum brasilianum) no final da THR 28. <br>
+Concentração de fragata (Fregata magnificens) no final da THR 10.	
+</li>
+<li>As ACFT da aviação geral e do táxi aéreo deverão solicitar previamente sua operação, com antecedência mínima de 2 (duas) horas, por meio do site: voe.riogaleao.com ou pelos telefones: +55 (21) 3398-1502 / 1503 / 1504 / 1505.
+Para ACFT com envergadura superior a 24 metros, é mandatório o uso de barra para a realização de pushback.
+Obrigatório que o operador de ACFT de Grupo II posicione cones de sinalização para proteção dos motores e extremidades da aeronave durante a permanência desta nos pátios deste aeroporto.</li>
+<li>THR 15 deslocada em 130M
+<BR>THR 33 deslocada em 120M</li>
+<li>AVBL fornecimento de oxigênio gasoso pela Base Aérea do Galeão apenas para aeronaves militares.
+</li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+<h5 class="mb-0">CARTAS RELACIONADAS AO AERÓDROMO</h5>
+<ol style="list-style: lower-alpha; padding: 0;">
+<li>OBS VAC para entrada ou saída do circuito de tráfego.</li>
+<li>Em virtude dos requisitos OPR necessários para as STAR e/ou SID na TMA do Rio de Janeiro, a utilização das rotas RNAV 5, saindo ou chegando do AD, será destinada exclusivamente para as ACFT homologadas RNAV 1 ou RNP 1.</li>
+</ol>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr><td></td>
+<td>
+</td>
+</tr>
+<tr>
+<td></td>
+<td>
+<h5 class="mb-0">DISTÂNCIA(S) DECLARADA(S)</h5>
+<ol style="list-style: lower-alpha; padding: 0;"><li>&nbsp;</li></ol>
+<table id="dist_declarada" border="1" width="100%">
+<tr><th width="auto">RWY</th>
+<th width="auto">TORA(m)</th>
+<th width="auto">TODA(m)</th>
+<th width="auto">ASDA(m)</th>
+<th width="auto">LDA(m)</th>
+<th width="auto">ALT. GEOIDAL(m)</th>
+<th>COORDENADAS</th>
+</tr>
+<tbody>
+<tr><td width="auto">10</td>
+<td width="auto">4000</td>
+<td width="auto">4000</td>
+<td width="auto">4000</td>
+<td width="auto">4000</td>
+<td width="auto">- 5,37</td>
+<td>S 22 48 07 </br> W 043 15 19</td>
+</tr>
+<tr><td width="auto">28</td>
+<td width="auto">4000</td>
+<td width="auto">4000</td>
+<td width="auto">4000</td>
+<td width="auto">4000</td>
+<td width="auto">- 5,39</td>
+<td>S 22 47 32 </br> W 043 13 04</td>
+</tr>
+<tr><td width="auto">15</td>
+<td width="auto">3060</td>
+<td width="auto">3180</td>
+<td width="auto">3060</td>
+<td width="auto">2930</td>
+<td width="auto">- 5,37</td>
+<td>S 22 48 47 </br> W 043 15 46</td>
+</tr>
+<tr><td width="auto">33</td>
+<td width="auto">3050</td>
+<td width="auto">3180</td>
+<td width="auto">3050</td>
+<td width="auto">2930</td>
+<td width="auto">- 5,40</td>
+<td>S 22 49 43 </br> W 043 14 22</td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr><td style="padding: 8px 0">
+<table border="0" cellpadding="0" width="100%;">
+<tr><td style="vertical-align: top; width: 80px;"><strong>COMPL</strong> - </td>
+<td><ul style="list-style: none; padding: 0;">
+<li>[<strong>1</strong>] MEHT: a. RWY 10 - 72FT
+b. RWY 28 - 71FT</li>
+<li>[<strong>2</strong>] TWY AA, BB, CC e DD</li>
+<li>[<strong>3</strong>] EMERG.</li>
+<li>[<strong>4</strong>] D-CL.</li>
+<li>[<strong>5</strong>] D-ATIS</li>
+<li>[<strong>6</strong>] SRY</li>
+<li>[<strong>7</strong>] (21) 3398-4565</li>
+<li>[<strong>8</strong>] (DLY 0900-0100)</li>
+<li>[<strong>9</strong>] 
+MEHT: a. RWY 15 - 65FT b. RWY 33 - 70FT
+</li>
+<li>[<strong>10</strong>] C-AIS RJ aceita PLN e suas atualizações por: TEL CMA: (21) 3398-3057, 3398-3615 TEL PLN: (21) 3398-4738.</li>
+<li>[<strong>11</strong>] Aceita PLN e suas atualizações pelo TEL (21) 2174-7531.
+</li>
+<li>[<strong>12</strong>] ALTN</li>
+<li>[<strong>13</strong>] PRI	
+</li>
+<li>[<strong>14</strong>] Autoatendimento
+</li>
+<li>[<strong>15</strong>] PCR	
+</li>
+</ul>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</div>
+<h5 class="mt-0" >TEMP (0)</h5>
+<hr class="dashed">
+<h4 id="sup" class="heading-primary text-center">Suplementos AIP (1)</h4>
+<div class="notam">
+<h5><span class="badge badge-success">N0092 | 01/10/26</span> HORÁRIO DE FUNCIONAMENTO</h5>
+<p class="mb-0"><pre>- AIS MIL horário de serviço diariamente 1000-2200.
+
+REF: NOTAM E5162/26</pre></p>
+<span>
+Período: <strong>De 01 de Outubro de 2026, 0000 UTC até 02 de Janeiro de 2027, 2359 UTC.</strong><br>
+Ref: <strong>AIP AD 2.3</strong>
+<br>
+</div>
+<hr class="dashed">
+<section class="container-fluid" id="notam">
+<h4 id="notam_number_display" class="heading-primary mt-4 text-center">NOTAM (Carregando ...)</h4>
+<div id="notam_list"></div>
+<script type="text/javascript">
+// I para internacional, N para nacional e B ambos
+const language = 'N';
+const consultaNotam = {
+dictionary: {
+type: {
+I: 'type',
+N: 'tipo'
+},
+reference: {
+I: 'reference',
+N: 'NOTAM de referência'
+},
+creation: {
+I: 'creation date',
+N: 'data de expedição'
+},
+q_fir: {
+I: 'fir',
+N: 'região de informação'
+},
+q_code: {
+I: 'code',
+N: 'código'
+},
+q_traffic: {
+I: 'traffic',
+N: 'tráfego'
+},
+q_purpose: {
+I: 'purpose',
+N: 'propósito'
+},
+q_scope: {
+I: 'scope',
+N: 'âmbito'
+},
+q_lower: {
+I: 'lower limit',
+N: 'limite inferior'
+},
+q_upper: {
+I: 'upper limit',
+N: 'limite superior'
+},
+q_coords_radius: {
+I: 'coords and radius',
+N: 'coordenadas e raio'
+},
+e_datails: {
+I: 'E: text',
+N: 'E: texto'
+},
+source_document: {
+I: 'SOURCE DOCUMENT',
+N: 'ORIGEM'
+},
+f_lower: {
+I: 'F: lower limit',
+N: 'F: limite inferior'
+},
+g_upper: {
+I: 'G: upper limit',
+N: 'G: limite superior'
+},
+b_from: {
+I: 'B: valid from',
+N: 'B: início de vigência'
+},
+c_to: {
+I: 'C: valid to',
+N: 'C: fim de vigência'
+},
+d_schedule: {
+I: 'D: schedule',
+N: 'D: dias e horários'
+},
+},
+myState: {
+textbox: "notam_text",
+api_route: "https://aisweb.decea.mil.br/api/",
+request_params: {
+apiKey: "1587263166",
+apiPass: "3199249e-755b-1033-a49b-72567f175e3a",
+area: "notam",
+icaocode: null,
+dist: null,
+},
+notams: [],
+},
+getTranslated: function(term) {
+return this.dictionary[term][this.myState.request_params.dist];
+},
+get: function(url, callback) {
+const xhr = new XMLHttpRequest();
+xhr.onreadystatechange = callback;
+xhr.open("GET", url, true);
+xhr.send();
+},
+getIcaoCodeFromUrl: function() {
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const loc = urlParams.get('codigo');
+if (loc != '' && loc != null) {
+return loc;
+}
+return false;
+},
+updateParams: function() {
+const loc = this.getIcaoCodeFromUrl();
+if (loc) {
+this.myState.request_params.icaocode = loc;
+return true;
+}
+return false;
+},
+mountUrl: function() {
+if (!this.updateParams()) {
+return false;
+}
+const params_array = [];
+for (var param in this.myState.request_params) {
+if (this.myState.request_params.hasOwnProperty(param)) {
+if (this.myState.request_params[param] != null) {
+params_array.push(param + "=" + this.myState.request_params[param]);
+}
+}
+}
+const url = this.myState.api_route + "?" + params_array.join("&");
+return url;
+},
+parseOneNotamXml: function(item) {
+let notam = {};
+try {
+const arrayItem = item.childNodes;
+arrayItem.forEach(function(tag) {
+if (tag.tagName) {
+notam[tag.tagName] = tag.textContent;
+}
+});
+} catch (e) {
+notam = "";
+} finally {}
+return notam;
+},
+parseXml: function(text) {
+let notams = [];
+const parser = new DOMParser();
+const xmlDoc = parser.parseFromString(text, "text/xml");
+try {
+const items = xmlDoc.getElementsByTagName("item");
+for (var i = 0; i < items.length; i++) {
+notams.push(this.parseOneNotamXml(items[i]));
+}
+} catch (e) {
+console.log(e);
+} finally {}
+return notams;
+},
+requestNotam: function(callback) {
+const url = this.mountUrl();
+if (url) {
+this.get(url, callback);
+} else {
+this.myState.notams = {
+erro: "Notam inválido!"
+};
+}
+},
+formatNotam: function(notamObject) {
+let template1 = "";
+let template2 = "";
+if (!notamObject) {
+return "";
+}
+let id = notamObject['id'];
+let nof = notamObject['nof'];
+let aero = notamObject['aero'];
+let cidade = notamObject['cidade'];
+let uf = notamObject['uf'];
+let n = notamObject['n'];
+let tp = notamObject['tp'].split("NOTAM")[1];
+let ref = notamObject['ref'];
+let ref_id = notamObject['ref_id'];
+let loc = notamObject['loc'];
+let state = notamObject['state'];
+let dt_year = notamObject['dt'].substr(0, 4);
+let dt_month = notamObject['dt'].substr(5, 2);
+let dt_day = notamObject['dt'].substr(8, 2);
+let dt_hour = notamObject['dt'].substr(11, 2);
+let dt_minute = notamObject['dt'].substr(14, 2);
+let dt = `${dt_day}/${dt_month}/${dt_year} ${dt_hour}:${dt_minute}`;
+let fir = notamObject['fir'];
+let cod = notamObject['cod'];
+let traffic = notamObject['traffic'];
+let purpose = notamObject['purpose'];
+let scope = notamObject['scope'];
+let lower = notamObject['lower'];
+let upper = notamObject['upper'];
+let geo = notamObject['geo'];
+let e = notamObject['e'];
+let origem = notamObject['origem'];
+let f = notamObject['f'];
+let g = notamObject['g'];
+let b = '';
+if (notamObject['b']) {
+let b_year = notamObject['b'].substr(0, 2);
+let b_month = notamObject['b'].substr(2, 2);
+let b_day = notamObject['b'].substr(4, 2);
+let b_hour = notamObject['b'].substr(6, 2);
+let b_minute = notamObject['b'].substr(8, 2);
+b = `${b_day}/${b_month}/${b_year} ${b_hour}:${b_minute}`;
+}
+let c = '';
+if (notamObject['c'] == 'PERM') {
+c = 'PERM';
+} else {
+let c_year = notamObject['c'].substr(0, 2);
+let c_month = notamObject['c'].substr(2, 2);
+let c_minute = notamObject['c'].substr(8, 2);
+let c_day = notamObject['c'].substr(4, 2);
+let c_hour = notamObject['c'].substr(6, 2);
+c = `${c_day}/${c_month}/${c_year} ${c_hour}:${c_minute}`;
+}
+let d = notamObject['d'];
+let link = `<a href="https://aisweb.decea.mil.br/?i=notam&view=single&notam_id=${id}"></a>`;
+template1 += `<div class="notam">`;
+template1 += `<h5>`;
+template1 += `<a href="https://aisweb.decea.mil.br/?i=notam&view=single&notam_id=${id}">`;
+template1 += `<span title="NOTAM" class="badge badge-${tp=='N'?'success':'info'}">${n}</span>`;
+template1 += `</a>`;
+template1 += ` <span title="${this.getTranslated('type')}" class="badge badge-${tp=='N'?'success':'info'}">${tp}</span> `;
+template1 += `<a href="https://aisweb.decea.mil.br/?i=notam&view=single&notam_id=${ref_id}" style="border:none;${ref?'':'display:none;'}">`;
+template1 += `<span title="${this.getTranslated('reference')}" class="badge badge-dark" >${ref}</span>`;
+template1 += `</a>`;
+template1 += ` <span class="badge badge-light" title="${this.getTranslated('creation')}" style="font: normal 14px courier;">${dt}</span><br/>`;
+template1 += `</h5>`;
+template1 += `<div class="msg" style="max-width: 530px; font-family: courier; color: black !important">`;
+template1 += `Q) <span title="${this.getTranslated('q_fir')}">${fir}</span>/`;
+template1 += `<span title="${this.getTranslated('q_code')}">${cod}</span>/`;
+template1 += `<span title="${this.getTranslated('q_traffic')}">${traffic}</span>/`;
+template1 += `<span title="${this.getTranslated('q_purpose')}">${purpose}</span>/`;
+template1 += `<span title="${this.getTranslated('q_scope')}">${scope}</span>/`;
+template1 += `<span title="${this.getTranslated('q_lower')}">${lower}</span>/`;
+template1 += `<span title="${this.getTranslated('q_upper')}">${upper}</span>/`;
+template1 += `<span title="${this.getTranslated('q_coords_radius')}">${geo}</span><br/>`;
+template1 += `<span title="${this.getTranslated('e_datails')}">${e}</span><br/>`;
+if (origem) {
+template1 += `<span>${this.getTranslated('source_document')}:</span> <span title="${this.getTranslated('source_document')}">${origem}</span><br/>`;
+}
+template1 += `</div>`;
+template1 += `<p class="mt-1 metadata">`;
+if (f) {
+template1 += `<i class="fa fa-sort-amount-down"></i> <span title="${this.getTranslated('f_lower')}">${f}</span> `;
+}
+if (g) {
+template1 += `<i class="fa fa-sort-amount-up"></i> <span title="${this.getTranslated('g_upper')}">${g}</span><br/>`;
+}
+if (notamObject['b'] || notamObject['c']) {
+template1 += `<i class="fa fa-calendar"></i> `;
+}
+if (notamObject['b']) {
+template1 += `<span title="${this.getTranslated('b_from')}">${b}</span>`;
+}
+if (notamObject['b'] && !notamObject['c']) {
+template1 += ` UTC<br/>`;
+}
+if (notamObject['b'] && notamObject['c']) {
+template1 += ` a `;
+}
+if (notamObject['c']) {
+template1 += ` <span title="${this.getTranslated('c_to')}">${c}</span>`;
+}
+if (notamObject['c'] != 'PERM') {
+template1 += ` UTC<br/>`;
+}
+if (notamObject['d']) {
+template1 += ` <i class="fa fa-clock"></i> <span title="${this.getTranslated('d_schedule')}">${d}</span>`;
+}
+template1 += `</p>`;
+template1 += `</div>`;
+let div = document.createElement("div");
+div.innerHTML = template1;
+return div;
+},
+searchNotam: function(notam) {
+return;
+},
+init: function() {
+this.myState.request_params.dist = language;
+this.requestNotam(handleOnReadyGetNotam);
+},
+};
+const handleOnReadyGetNotam = function() {
+if (this.readyState == 4 && this.status == 200) {
+var notamCount = new Map();
+consultaNotam.myState.notams = consultaNotam.parseXml(this.responseText);
+consultaNotam.myState.notams.forEach((item, i) => {
+let hr = document.createElement('hr');
+hr.classList.add('dashed');
+document.getElementById('notam_list').appendChild(consultaNotam.formatNotam(item));
+notamCount.set(item['id'], 1);
+});
+document.getElementById('notam_number_display').innerHTML = `NOTAM (${notamCount.size})`
+}
+};
+consultaNotam.init(language);
+</script>
+</section>
+<hr class="dashed">
+</div>
+<div class="col-lg-4 order-sm-12">
+<div class="container-fluid">
+<h5 class="text-center heading-primary">Nascer/Por do Sol</h5>
+<div class="row">
+<div class="col-6 text-right"></div>
+<div class="col-6 text-left"></div>
+</div>
+<div class="row">
+<div class="col">
+<p class="text-center">
+<a href="?i=aerodromos&p=sol&id=SBGL" class="btn btn-xs btn-default">
+Ver Tabela
+</a>
+</p>
+</div>
+</div>
+<div class="row"><div class="col" id="nao-disp"></div></div>
+</div>
+<script type="text/javascript">
+const parseXml = function (text, tagName) {
+const parser = new DOMParser();
+const xmlDoc = parser.parseFromString(text, "text/xml");
+const items = xmlDoc.getElementsByTagName("day");
+let result	= [];
+try {
+for(let key in items) {
+let item = items[key];
+if(!isNaN(key)){
+result.push(item); 
+} 
+}
+} catch (e) {
+result = [];
+} finally {
+}
+return result;
+}
+const buscaSOL = function(){
+let localidade_id = "SBGL",
+url = `https://aisweb.decea.mil.br/api/?apiKey=1587263166&apiPass=3199249e-755b-1033-a49b-72567f175e3a&area=sol&icaoCode=${localidade_id}`;
+const xhr = new XMLHttpRequest();
+xhr.open("GET", url, true);
+xhr.responseType = "text";
+xhr.onload = () => {
+if (xhr.readyState === xhr.DONE) {
+if (xhr.status === 200) {
+let resp = xhr.responseText,
+list = parseXml(resp, "day"),
+collright= document.getElementsByClassName("text-right"),
+collleft = document.getElementsByClassName("text-left");
+list.forEach(function(item){
+let sunrise= item.getElementsByTagName("sunrise")[0].childNodes[0].nodeValue,
+sunset = item.getElementsByTagName("sunset")[0].childNodes[0].nodeValue;
+for (let i = 0; i < collright.length; i++) {collright[i].innerHTML=`<h2 class='mb-0'><i class='fas fa-arrow-up'></i> <i class='fas fa-sun'></i></h2><h4 class='mt-0'>${sunrise}</h4>`;}
+for (let i = 0; i < collleft.length; i++) {collleft[i].innerHTML=`<h2 class='mb-0'><i class='far fa-sun'></i> <i class='fas fa-arrow-down'></i></h2><h4 class='mt-0'>${sunset}</h4>`;}
+});
+}
+else{
+let nao_disp = document.getElementById("nao-disp");
+nao_disp.innerHTML="<p class='text-center'><span class='badge badge-danger'>Não disponível</span></p>";
+}
+}
+};
+xhr.send(null);
+}
+buscaSOL();
+</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.0.3/dist/leaflet.css" integrity="sha512-07I2e+7D8p6he1SIM+1twR5TIrhUQn9+I6yjqD53JQjFiMf8EtC93ty0/5vJTZGF8aAocvHYNEDJajGdNx1IsQ==" crossorigin=""/>
+<style>
+#location-map{
+background: #fff;
+margin-top: 40px;
+border: none;
+height: 290px;
+width: 100%;
+box-sizing: border-box;
+-webkit-box-sizing: border-box;
+-moz-box-sizing: border-box;
+}
+</style>
+<div class="mt-0" id="location-map"></div>
+<script src="https://unpkg.com/leaflet@1.0.3/dist/leaflet.js" integrity="sha512-A7vV8IFfih/D732iSSKi20u/ooOfj/AGehOKq0f4vLT1Zr2Y+RX7C+w8A1gaSasGtRUZpF/NZgzSAu4/Gc41Lg==" crossorigin=""></script>
+<script type="text/javascript">
+var map = L.map('location-map').setView([	-22.81 , -43.250555555556], 14);
+mapLink = '<a href="https://openstreetmap.org">OpenStreetMap</a>';
+L.tileLayer(
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+attribution: 'Map data &copy; ' + mapLink,
+maxZoom: 20,
+}).addTo(map);
+var marker = L.marker([-22.81 , -43.250555555556]).addTo(map);
+</script>
+<div class="rcr">
+<hr class="mt-0 mb-2">
+<h5 class="heading-primary">RCR <small>Reporte de Condição de Pista <a target="_blank" href="https://ajuda.decea.gov.br/base-de-conhecimento/o-que-e-e-para-que-serve-o-reporte-de-condicao-de-pista-rcc-rcr-ou-rwycc/">( O que é isso? )</a></small></h5>
+<table>
+<tr>
+<td colspan="4">SBGL 10122155 10 6/6/6 NR/NR/NR NR/NR/NR DRY/DRY/DRY</td>
+</tr>
+<style>
+div.rcr { padding: 10px 20px; }
+div.rcr h5 { text-align: left; margin-bottom: 8px; padding-left: 4px; }
+div.rcr h5 small a { color: #5DAFD6; font-weight: bold; }
+div.rcr table th { font-size: 11px; padding-bottom: 1px; vertical-align: top; }
+div.rcr table th, div.rcr table td { vertical-align: top; }
+div.rcr table th.rba, div.rcr table td.rba { }
+div.rcr table td.rwycc { padding-top: 0; }
+div.rcr table th.rwycc { }
+div.rcr table td.rba { font-size: 12px; line-height: 14px; }
+/**/
+span.rwy { float: left; display: block; margin-right: 8px; }
+span.rwycc { display: block; float: left; padding: 1px 5px; margin-right: 2px; font-weight: bold; }
+.rGREEN { background-color: #27AE60; color: #FFF; }
+.rORANGE { background-color: #D35400; color: #FFF; }
+.rRED { background-color: #C0392B; color: #FFF; }
+.rDARK_GRAY { background-color: #A6ACAF; color: #FFF; }
+.rLIGHT_GRAY { background-color: #BDC3C7; color: #FFF; }
+.rDARK_GREEN { background-color: rgba(67,112,41,0.8); color: #FFF; }
+.rLIGHT_GREEN { background-color: rgba(107,179,65,0.75); color: #FFF; }
+.rDARK_RED { background-color: #b30000; color: #FFF; }
+.rLIGHT_RED { background-color: #ff1a1a; color: #FFF; }
+.rYELLOW { background-color: #FFFF01; color: #FFF; }
+.rBLACK { background-color: #000000; color: #FFF; }
+.rBLUE { background-color: #105A8C; color: #FFF; }
+.rPURPLE { background-color: #9224E7; color: #FFF; }
+div.rba { text-align: center; font-weight: bold; padding: 1px 5px; width: 70%; }
+.c6 { background-color: #6BB341; color: #FFF; }
+.c5 { background-color: #27AE60; color: #FFF; }
+.c4 { background-color: #7030A0; color: #FFF; }
+.c3 { background-color: #FFFF01; color: #666; }
+.c2 { background-color: #ED7D31; color: #FFF; }
+.c1 { background-color: #FE0000; color: #FFF; }
+.c0 { background-color: #000000; color: #FFF; }
+</style>
+<tr>
+<th title="Código de Condição da Pista" class="rwycc">RwyCC</th>
+<td class="rwycc">
+<div style="width: 110px; height: 50px;">
+<span class="rwycc rDARK_GREEN">6</span>
+<span class="rwycc rDARK_GREEN">6</span>
+<span class="rwycc rDARK_GREEN">6</span>
+</div>
+</td>
+<th title="Condição de Frenagem da Pista" class="rba">RBA</th>
+<td title="A desaceleração de frenagem é normal para o esforço de frenagem aplicado pelas rodas E o controle direcional é normal." class="rba"><div class="rba c5">BOA</div></td>
+</tr>
+</table>
+</div>
+<div class="rcr">
+<hr class="mt-0 mb-2">
+<h5 class="heading-primary">RCR <small>Reporte de Condição de Pista <a target="_blank" href="https://ajuda.decea.gov.br/base-de-conhecimento/o-que-e-e-para-que-serve-o-reporte-de-condicao-de-pista-rcc-rcr-ou-rwycc/">( O que é isso? )</a></small></h5>
+<table>
+<tr>
+<td colspan="4">SBGL 10122155 15 6/6/6 NR/NR/NR NR/NR/NR DRY/DRY/DRY</td>
+</tr>
+<style>
+div.rcr { padding: 10px 20px; }
+div.rcr h5 { text-align: left; margin-bottom: 8px; padding-left: 4px; }
+div.rcr h5 small a { color: #5DAFD6; font-weight: bold; }
+div.rcr table th { font-size: 11px; padding-bottom: 1px; vertical-align: top; }
+div.rcr table th, div.rcr table td { vertical-align: top; }
+div.rcr table th.rba, div.rcr table td.rba { }
+div.rcr table td.rwycc { padding-top: 0; }
+div.rcr table th.rwycc { }
+div.rcr table td.rba { font-size: 12px; line-height: 14px; }
+/**/
+span.rwy { float: left; display: block; margin-right: 8px; }
+span.rwycc { display: block; float: left; padding: 1px 5px; margin-right: 2px; font-weight: bold; }
+.rGREEN { background-color: #27AE60; color: #FFF; }
+.rORANGE { background-color: #D35400; color: #FFF; }
+.rRED { background-color: #C0392B; color: #FFF; }
+.rDARK_GRAY { background-color: #A6ACAF; color: #FFF; }
+.rLIGHT_GRAY { background-color: #BDC3C7; color: #FFF; }
+.rDARK_GREEN { background-color: rgba(67,112,41,0.8); color: #FFF; }
+.rLIGHT_GREEN { background-color: rgba(107,179,65,0.75); color: #FFF; }
+.rDARK_RED { background-color: #b30000; color: #FFF; }
+.rLIGHT_RED { background-color: #ff1a1a; color: #FFF; }
+.rYELLOW { background-color: #FFFF01; color: #FFF; }
+.rBLACK { background-color: #000000; color: #FFF; }
+.rBLUE { background-color: #105A8C; color: #FFF; }
+.rPURPLE { background-color: #9224E7; color: #FFF; }
+div.rba { text-align: center; font-weight: bold; padding: 1px 5px; width: 70%; }
+.c6 { background-color: #6BB341; color: #FFF; }
+.c5 { background-color: #27AE60; color: #FFF; }
+.c4 { background-color: #7030A0; color: #FFF; }
+.c3 { background-color: #FFFF01; color: #666; }
+.c2 { background-color: #ED7D31; color: #FFF; }
+.c1 { background-color: #FE0000; color: #FFF; }
+.c0 { background-color: #000000; color: #FFF; }
+</style>
+<tr>
+<th title="Código de Condição da Pista" class="rwycc">RwyCC</th>
+<td class="rwycc">
+<div style="width: 110px; height: 50px;">
+<span class="rwycc rDARK_GREEN">6</span>
+<span class="rwycc rDARK_GREEN">6</span>
+<span class="rwycc rDARK_GREEN">6</span>
+</div>
+</td>
+<th title="Condição de Frenagem da Pista" class="rba">RBA</th>
+<td title="A desaceleração de frenagem é normal para o esforço de frenagem aplicado pelas rodas E o controle direcional é normal." class="rba"><div class="rba c5">BOA</div></td>
+</tr>
+</table>
+</div>
+<hr id="met" class="mt-0">
+<p class="text-center mt-0"><img class="img-fluid" src="https://aisweb.decea.mil.br/assets/templates/portal/img/logos/bt_redemet.png" alt=""></p>
+<h5 class="mb-0 heading-primary">METAR</h5>
+<p>METAR SBGL 131400Z 25010KT 9999 FEW027 BKN032 BKN040 29/21 Q1013=</p>
+<h5 class="mb-0 heading-primary">TAF</h5>
+<p>TAF SBGL 130820Z 1312/1418 26010KT 8000 SCT020 TX27/1316Z TN24/1409Z BECMG 1314/1316 12007KT BECMG 1316/1318 23005KT FEW025 FEW040TCU BECMG 1402/1404 29005KT SCT020 BECMG 1407/1409 16005KT SCT009 BECMG 1410/1412 26010KT SCT020 BECMG 1414/1416 13005KT FEW010 RMK PGY=</p>
+<hr id="opea_obstaculos">
+<h4 id="rotas" class="heading-primary">OPEA/Obstáculos</h4>
+<div class="container">
+<div class="row">
+<div class="col-md-12">
+<a href="https://geoaisweb.decea.mil.br/geoserver/ICA/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ICA:opea&outputFormat=excel2007&cql_filter=ads_impactados like '%25SBGL%25'" class="btn btn-success mb-1">Download XLS</a>
+<a href="https://geoaisweb.decea.mil.br/geoserver/ICA/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ICA:opea&outputFormat=kml&cql_filter=ads_impactados like '%25SBGL%25'" class="btn btn-success mb-1">Download KML</a>
+<a href="https://geoaisweb.decea.mil.br/geoserver/ICA/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=ICA:opea&outputFormat=csv&cql_filter=ads_impactados like '%25SBGL%25'" class="btn btn-success mb-1">Download CSV</a>
+</div>
+</div>
+<div class="row">
+<div class="col-md-12">
+<p class="text-center text-muted">Última atualização: 08/10/2026</p>
+</div>
+</div>
+</div>
+<hr id="cartas">
+<h4 class="heading-primary">Cartas (47)</h4>
+<h4>ADC</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=c31a3960-531c-4b3c-ad95c267c860ce12&amp;apikey=1587263166">ADC SBGL</a></li>
+</ul>
+<hr class="dashed">
+<h4>AOC</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=12064075-9958-45da-a384ee972c229609&amp;apikey=1587263166">AD 2 SBGL A</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=27e9425d-95b8-49bd-b2b480147b3c653b&amp;apikey=1587263166">AD 2 SBGL C</a></li>
+</ul>
+<hr class="dashed">
+<h4>IAC</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=15a97519-9c0e-4c88-90e89fafe6d162e3&amp;apikey=1587263166">ILS R OR LOC R RWY 15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=4d904ff1-797f-4f31-96adc966ce3d49d3&amp;apikey=1587263166">ILS T OR LOC T RWY 10</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=5d88e5b7-ffdd-4fc4-8d691b3a89813807&amp;apikey=1587263166">ILS U (CONVERGING) RWY 28</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=39452811-1057-4111-bb61f8413c35bdc8&amp;apikey=1587263166">ILS U CAT II RWY 10</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=c7ca8ed6-98ff-4acb-83b2c77b57cb94f1&amp;apikey=1587263166">ILS V OR LOC V RWY 28</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=86046eb6-037b-4504-af12d4c728460f5d&amp;apikey=1587263166">ILS W RWY 28</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=af944d23-b2ee-4e8f-a9acb8ecde9976e6&amp;apikey=1587263166">ILS X OR LOC X RWY 10</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=28930773-9358-4467-b28be711abfb7dbf&amp;apikey=1587263166">ILS Z RWY 15</a></li>
+<li><i title="Uso Exclusivo" class="fas fa-cloud-download-alt text-danger border-danger"></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Exclusivo" href="https://aisweb.decea.gov.br/download/?arquivo=7852f917-86c1-4631-ab1c8f64ac842bfb&amp;apikey=1587263166">NAV APV RWY 10</a></li>
+<li><i title="Uso Exclusivo" class="fas fa-cloud-download-alt text-danger border-danger"></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Exclusivo" href="https://aisweb.decea.gov.br/download/?arquivo=acdf84c1-2e06-4b37-9a1fc49af30e220c&amp;apikey=1587263166">NAV APV RWY 15</a></li>
+<li><i title="Uso Exclusivo" class="fas fa-cloud-download-alt text-danger border-danger"></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Exclusivo" href="https://aisweb.decea.gov.br/download/?arquivo=9bfca9de-4e4c-43df-9f397e8cca91691e&amp;apikey=1587263166">NAV APV RWY 28</a></li>
+<li><i title="Uso Exclusivo" class="fas fa-cloud-download-alt text-danger border-danger"></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Exclusivo" href="https://aisweb.decea.gov.br/download/?arquivo=eaf2d5f8-40f8-4f9e-9c522e9d999902c6&amp;apikey=1587263166">NAV APV RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=a00dc93f-fa63-4a64-b1e529a9a7a749eb&amp;apikey=1587263166">RNP A RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=35777e12-dc4a-43ee-b1f18ce4588848b7&amp;apikey=1587263166">RNP W RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=e5998974-6bc0-4e18-9a0ab9852ba1b934&amp;apikey=1587263166">RNP Y RWY 10</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=e0d1c9f2-6564-4465-8f57eb1708fa53f1&amp;apikey=1587263166">RNP Y RWY 28</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=ab930e17-cae8-4e2e-a037f617aa1f4a83&amp;apikey=1587263166">RNP Z (CONVERGING) RWY 28</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=46ca5ae5-2306-4212-9d1ba858422fd6d4&amp;apikey=1587263166">RNP Z RWY 15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=8e424e61-9311-4490-bad1eb2871600fce&amp;apikey=1587263166">RNP Z RWY 33 (AR)</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=27c6f09b-01f7-44ff-b9865a51de2c1f21&amp;apikey=1587263166">VOR RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=1358a2c9-6fe5-4374-b08cf41fd4e0df2a&amp;apikey=1587263166">VOR Y RWY 15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=f3062d91-0edc-4d73-9ddf1eedd3af68b5&amp;apikey=1587263166">VOR Z RWY 28</a></li>
+</ul>
+<hr class="dashed">
+<h4>PDC</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=b6ae7de7-1803-4b75-8403f10b3e486f1b&amp;apikey=1587263166">PDC 1</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=03d3cf68-57b3-499a-9f4d4133d3b0c5b9&amp;apikey=1587263166">PDC 2</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=1135cbf9-ac26-482c-94950fc165fdc700&amp;apikey=1587263166">PDC 3</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=2041811e-45a0-412a-84712e15fba62d64&amp;apikey=1587263166">PDC 4</a></li>
+</ul>
+<hr class="dashed">
+<h4>SID</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=da10bb83-fa36-4597-b8b95ee46f0aecb7&amp;apikey=1587263166">OMNI RWY 10/15/28/33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=4e65fdf2-62fb-4885-b6c3eec67842f1e7&amp;apikey=1587263166">RNAV ALMOS 2A, 2B RWY 28/33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=1c8033f5-9aa5-4933-9d14ff4c52d29b34&amp;apikey=1587263166">RNAV EVRAD 2A RWY 10/15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=74b89da1-06d9-444b-9949662fc0dfbe2c&amp;apikey=1587263166">RNAV ORIRI 1A RWY 28/33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=673aa617-daf9-404c-8100625fb39a33be&amp;apikey=1587263166">RNAV TIVRO 1A,1B RWY 10/15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=d43e6a7b-a4c7-4efe-ad78e5165b6cdcfa&amp;apikey=1587263166">RNAV UGROK 1A RWY 10/15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=199a7ab4-f619-4282-a94b877a58df0a6d&amp;apikey=1587263166">RNAV UTMIP 1A RWY 10/15</a></li>
+</ul>
+<hr class="dashed">
+<h4>STAR</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=23bd1235-de3e-4e03-a9027cc1765b6ada&amp;apikey=1587263166">RNAV DIVRO 1A RWY 28/33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=4c16f345-3fe1-4d3f-a9b288aaebc3a58e&amp;apikey=1587263166">RNAV DIVRO 1B RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=4b5c212e-fbf8-48e4-a7a08cf5dc30544a&amp;apikey=1587263166">RNAV IVTAL 2A RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=a1fe6f8e-3c96-4af7-89148890f82114e1&amp;apikey=1587263166">RNAV MEBGA 1A - UTBOM 2A RWY 10/15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=b2ecc453-585c-4b06-8dbca066c813c179&amp;apikey=1587263166">RNAV PABEB 1A RWY 10</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=6a249c6f-e40d-4c90-98068f1e43473edb&amp;apikey=1587263166">RNAV PABEB 1B RWY 15</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=289550ff-a184-4b38-a500b6434ddfcc99&amp;apikey=1587263166">RNAV PABEB 1D RWY 28/33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=d776f238-aa7e-4605-a07dde36618070cf&amp;apikey=1587263166">RNAV PABEB 3C RWY 33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=fa59f741-78a1-4db2-bccba9e60a89b19b&amp;apikey=1587263166">RNAV VAKUB 2A RWY 28/33</a></li>
+</ul>
+<hr class="dashed">
+<h4>VAC</h4>
+<ul class="list list-icons list-primary list-icons-style-2">
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=34fe95f8-90fd-4097-9d2e0c806206632a&amp;apikey=1587263166">RWY 10/28 - 15/33</a></li>
+<li><i title="Uso Ostensivo" class="fas fa-cloud-download-alt "></i> <a target="_blank" onclick="javascript:pageTracker._trackPageview('/cartas/aerodromos');" title="Uso Ostensivo" href="https://aisweb.decea.gov.br/download/?arquivo=dd423d50-a640-4f75-8f7fc51152b4ceb3&amp;apikey=1587263166">RWY 10/28 - 15/33 - BIRD CONCENTRATION</a></li>
+</ul>
+<hr class="dashed">
+<hr id="rotas">
+<h4 id="rotas" class="heading-primary">Rotas Preferenciais (0)</h4>
+<ul>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<footer class="short" id="footer" style="margin-top:0;" >
+<div class="container">
+<div class="row">
+<div class="col-lg-7">
+<h4 class="mt-0 mb-0"><img src="https://aisweb.decea.mil.br/assets/templates/portal/img/logos/aisweb.png" alt="AISWEB"></h4>
+<p>O AISWEB é um conjunto de serviços desenvolvidos pelo Departamento de Controle do Espaço Aéreo (DECEA) que tem objetivo a divulgação de Informações Aeronáuticas produzidas pelo Instituto de Cartografia Aeronáutica (ICA), sendo assim a fonte oficial para obtenção desse tipo de informações no Brasil.</p>
+<hr class="light">
+</div>
+<div class="col-lg-5">
+<h5 class="mb-2">FALE CONOSCO</h5>
+<span class="phone">SAC-DECEA</span>
+<p class="mb-0">
+<a href="https://ajuda.decea.gov.br/artigo-categoria/aisweb/" target="_blank" class="btn btn-3d btn-info mb-2">Central de Ajuda</a>
+<a href="https://servicos.decea.mil.br/sac/?a=aisweb&motivo=erro" class="btn btn-3d btn-danger mb-2 popup-external">Abrir Chamado</a>
+</p>
+</div>
+</div>
+<div class="row">
+<div class="col-lg-2">
+<a href="https://www.decea.gov.br/?i=unidades&p=ica" class="logo">
+<img alt="ICA" class="img-fluid" src="https://aisweb.decea.mil.br/assets/templates/portal/img/logos/ica.png">
+</a>
+</div>
+<div class="col-lg-2">
+<a href="http://www.decea.mil.br" class="logo">
+<img alt="DECEA" class="img-fluid" src="https://aisweb.decea.mil.br/assets/templates/portal/img/logos/decea.png">
+</a>
+</div>
+<div class="col-lg-2">
+<a href="https://www.fab.mil.br" class="logo">
+<img alt="FAB" class="img-fluid" src="https://aisweb.decea.mil.br/assets/templates/portal/img/logos/fab.png">
+</a>
+</div>
+<div class="col-lg-2">
+</div>
+<div class="col-lg-4">
+<p><a class="ml-3" target="_blank" href="http://ajuda.decea.gov.br/app/uploads/2019/04/Pol%C3%ADtica-de-Uso-POR.pdf">Política de Uso</a> <a class="ml-4" rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Licença Creative Commons" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a> </p>
+</div>
+</div>
+</div>
+</footer>
+</div>
+<!-- Vendor -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/jquery/jquery.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/jquery.appear/jquery.appear.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/jquery.easing/jquery.easing.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/jquery-cookie/jquery-cookie.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/popper/umd/popper.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/common/common.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/jquery.validation/jquery.validation.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/jquery.lazyload/jquery.lazyload.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/isotope/jquery.isotope.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/owl.carousel/owl.carousel.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/magnific-popup/jquery.magnific-popup.min.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/vide/vide.min.js"></script>
+<!-- Theme Base, Components and Settings -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/js/theme.js"></script>
+<!-- Current Page Vendor and Views -->
+<!-- Theme Custom -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/js/custom.js"></script>
+<!-- Theme Initialization Files -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/js/theme.init.js"></script>
+<link rel="stylesheet" type="text/css" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/datatables.min.css"/>
+<script type="text/javascript" src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/datatables.min.js"></script>
+<link type="text/css" href="https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/dataTables.checkboxes.css" rel="stylesheet" />
+<script type="text/javascript" src="https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/dataTables.checkboxes.min.js"></script>
+<script type="text/javascript">
+//$(document).ready(function() {
+//	$(".clonador").click(function() {
+///	alert('fsdfsd');
+///	$(".box_pesquisa")
+//	.last()
+//	.clone()
+//	.appendTo($("box_pesquisa"));
+//
+//	return false;
+//	});
+//});
+function getElementByXpath(path) {
+return document.evaluate(path, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+}
+function criarObjPesquisa(qtd,tipo,nof,n1,n2,ano,status){
+for(let i = 1; i <= tipo.length-1; i++) {
+var box = $('.box_pesquisa:first')
+.clone(true)
+.append($('<div id="btnRemove" class="form-group col-sm-2 active"><input type="button" class="button tiny success btn_remove" value="Remover" style="margin: 2.375rem 0 0 0.5625rem;"/></div>'))
+.appendTo($('#clonedItem'));
+var pesquisas = document.getElementsByClassName('box_pesquisa');
+var field_tipo = pesquisas[i].children[0];
+var field_nof = pesquisas[i].children[1];
+var field_numeracao = pesquisas[i].children[2];
+var field_ano = pesquisas[i].children[3];
+var field_status = pesquisas[i].children[4];
+var opcoes_tipo = field_tipo.children[1].children;
+for (k=0; k < opcoes_tipo.length; k++){
+if(opcoes_tipo[k].value==tipo[i]){
+opcoes_tipo[k].selected=true;
+}
+}
+var opcoes_nof = field_nof.children[1].children;
+for (n=0; n < opcoes_nof.length; n++){
+if(n > 0){
+var opcNof= opcoes_nof[n].children;
+for (k=0; k < opcNof.length; k++){
+if(opcNof[k].value==nof[i]){
+opcNof[k].selected=true;
+}
+}
+}
+}
+var opcoes_numeracao = field_numeracao.children[1].children;
+opcoes_numeracao[0].value = n1[i];
+opcoes_numeracao[1].value = n2[i];
+var opcoes_ano = field_ano.children[1];
+opcoes_ano.value = ano[i];
+var opcoes_status = field_status.children[1].children;
+for (k=0; k < opcoes_status.length; k++){
+if(opcoes_status[k].value==status[i]){
+opcoes_status[k].selected=true;
+}
+}
+}
+}
+$(document).ready(function() {
+$('.clonador').click(function(e){
+e.preventDefault();
+var box = $('.box_pesquisa:first')
+.clone(true)
+.append($('<div id="btnRemove" class="form-group col-sm-2 active"><input type="button" class="button tiny success btn_remove" value="Remover" style="margin: 2.375rem 0 0 0.5625rem;"/></div>'))
+.appendTo($('#clonedItem'));
+var pesquisas = document.getElementsByClassName('box_pesquisa');
+var field_tipo = box[0].children[0];
+var field_nof = box[0].children[1];
+var field_numeracao = box[0].children[2];
+var field_ano = box[0].children[3];
+var field_status = box[0].children[4];
+var opcoes_tipo = field_tipo.children[1].children;
+opcoes_tipo[0].selected=true;
+var opcoes_nof = field_nof.children[1].children;
+opcoes_nof[0].selected=true;
+var opcoes_numeracao = field_numeracao.children[1].children;
+opcoes_numeracao[0].value = '0';
+opcoes_numeracao[1].value = '0';
+var opcoes_ano = field_ano.children[1];
+opcoes_ano.value = '0000';
+var opcoes_status = field_status.children[1].children;
+opcoes_status[0].selected=true;
+});
+$('form').on('click', '.btn_remove', function(e){
+e.preventDefault();
+if ($('.box_pesquisa').length > 1)
+$(this).parents('.box_pesquisa').remove();
+});
+});
+$(document).ready(function() {
+$('#datatable').DataTable(
+{
+"language": {
+"url": "https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/Portuguese-Brasil.json"
+},
+"iDisplayLength": 100
+,
+"columnDefs": [
+{ "width": "40%", "targets": 5 }
+],
+'order': [[1, 'desc']]
+}
+);
+} );
+$(document).ready(function() {
+$('#datatable_ajax').DataTable(
+{
+"serverSide": true,
+"ajax": {
+"url": 'inc/espaco-aereo/get_fixos.cfm',
+"type": 'POST'
+},
+"language": {
+"url": "https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/Portuguese-Brasil.json"
+},
+"iDisplayLength": 50
+}
+);
+} );
+$(document).ready( function () {
+$('#myTable').DataTable({
+"iDisplayLength": 10,
+'columnDefs': [
+{
+'targets': 0,
+'searchable': false,
+'orderable': false,
+'className': 'dt-body-center',
+'render': function (data, type, full, meta){
+return '<input type="checkbox" name="id" value="' + $('<div/>').text(data).html() + '">';
+}
+},
+{
+'targets': 7,
+'searchable': false,
+'orderable': false
+}
+],
+// 'select': {
+// 'style': 'multi'
+// },
+'order': [[6, 'desc']],
+"language": {
+"url": "https://aisweb.decea.mil.br/assets/templates/portal/vendor/datatables/Portuguese-Brasil.json"
+}
+});
+var oTable = $('#myTable').DataTable();
+// Handle click on "Select all" control
+$('#select-all').on('click', function(){
+// Get all rows with search applied
+var rows = oTable.rows({ 'search': 'applied' }).nodes();
+// Check/uncheck checkboxes for all rows in the table
+$('input[type="checkbox"]', rows).prop('checked', this.checked);
+});
+// Handle click on checkbox to set state of "Select all" control
+$('#myTable tbody').on('change', 'input[type="checkbox"]', function(){
+// If checkbox is not checked
+if(!this.checked){
+var el = $('#select-all').get(0);
+// If "Select all" control is checked and has 'indeterminate' property
+if(el && el.checked && ('indeterminate' in el)){
+// Set visual state of "Select all" control
+// as 'indeterminate'
+el.indeterminate = true;
+}
+}
+});
+// Handle form submission event
+$('#print').on('submit', function(e){
+var form = this;
+// Iterate over all checkboxes in the table
+oTable.$('input[type="checkbox"]').each(function(){
+// If checkbox doesn't exist in DOM
+if(!$.contains(document, this)){
+// If checkbox is checked
+if(this.checked){
+// Create a hidden element
+$(form).append(
+$('<input>')
+.attr('type', 'hidden')
+.attr('name', this.name)
+.val(this.value)
+);
+}
+}
+});
+});
+} );
+$(document).ready(function() {
+$('.popup-external').magnificPopup({
+disableOn: 700,
+type: 'iframe',
+mainClass: 'mfp-fade',
+removalDelay: 160,
+preloader: false,
+fixedContentPos: false
+});
+});
+</script>
+<!-- Admin Extension Specific Page Vendor -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+<script>
+// Bootstrap Datepicker No Conflict
+if (typeof($.fn.datepicker) != 'undefined') {
+$.fn.bootstrapDP = $.fn.datepicker.noConflict();
+}
+</script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/jquery-placeholder/jquery-placeholder.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/jquery-ui/jquery-ui.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/jqueryui-touch-punch/jqueryui-touch-punch.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/select2/js/select2.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/jquery-maskedinput/jquery.maskedinput.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-tagsinput/bootstrap-tagsinput.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-timepicker/bootstrap-timepicker.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/fuelux/js/spinner.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/bootstrap-maxlength/bootstrap-maxlength.js"></script>
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/vendor/ios7-switch/ios7-switch.js"></script>
+<!-- Admin Extension -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/js/theme.admin.extension.js"></script>
+<!-- Admin Extension Examples -->
+<script src="https://aisweb.decea.mil.br/assets/templates/portal/admin/js/examples/examples.advanced.form.js"></script>
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-4596976-7', 'auto');
+ga('send', 'pageview');
+</script>
+</body>
+</html>
+<script id="f5_cspm">(function(){var f5_cspm={f5_p:'GNOEDBEGJHFGLMNFGGNBAOJEAPNMBLDHEPLPMPHGJNAOCPNNFMDLNGMMMAAJMDDNILCBMIGOAAGDPCIGEBCAPHMPAACECLLHDCEDKMNBICPKBMKEOACNPFAJAGBMKFJF',setCharAt:function(str,index,chr){if(index>str.length-1)return str;return str.substr(0,index)+chr+str.substr(index+1);},get_byte:function(str,i){var s=(i/16)|0;i=(i&15);s=s*32;return((str.charCodeAt(i+16+s)-65)<<4)|(str.charCodeAt(i+s)-65);},set_byte:function(str,i,b){var s=(i/16)|0;i=(i&15);s=s*32;str=f5_cspm.setCharAt(str,(i+16+s),String.fromCharCode((b>>4)+65));str=f5_cspm.setCharAt(str,(i+s),String.fromCharCode((b&15)+65));return str;},set_latency:function(str,latency){latency=latency&0xffff;str=f5_cspm.set_byte(str,40,(latency>>8));str=f5_cspm.set_byte(str,41,(latency&0xff));str=f5_cspm.set_byte(str,35,2);return str;},wait_perf_data:function(){try{var wp=window.performance.timing;if(wp.loadEventEnd>0){var res=wp.loadEventEnd-wp.navigationStart;if(res<60001){var cookie_val=f5_cspm.set_latency(f5_cspm.f5_p,res);window.document.cookie='f5avr1448327740aaaaaaaaaaaaaaaa_cspm_='+encodeURIComponent(cookie_val)+';path=/;'+'';}
+return;}}
+catch(err){return;}
+setTimeout(f5_cspm.wait_perf_data,100);return;},go:function(){var chunk=window.document.cookie.split(/\s*;\s*/);for(var i=0;i<chunk.length;++i){var pair=chunk[i].split(/\s*=\s*/);if(pair[0]=='f5_cspm'&&pair[1]=='1234')
+{var d=new Date();d.setTime(d.getTime()-1000);window.document.cookie='f5_cspm=;expires='+d.toUTCString()+';path=/;'+';';setTimeout(f5_cspm.wait_perf_data,100);}}}}
+f5_cspm.go();}());</script>
