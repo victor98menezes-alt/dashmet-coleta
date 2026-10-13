@@ -63,19 +63,25 @@ jobs:
           ICAO: ${{ inputs.icao }}
           INMET_TOKEN: ${{ secrets.INMET_TOKEN }}
           REDEMET_API_KEY: ${{ secrets.REDEMET_API_KEY }}
-        run: python coleta.py
+        run: |
+          mkdir -p "saida/$RUN_ID"
+          set -o pipefail
+          python coleta.py 2>&1 | tee "saida/$RUN_ID/log.txt"
 
       - name: Converter para o formato do dashboard
+        if: always()
         env:
           RUN_ID: ${{ inputs.run_id }}
         run: node transforma.js "saida/$RUN_ID"
 
       - name: Manter apenas as 30 coletas mais recentes
+        if: always()
         run: |
           rm -f de421.bsp
           ls -1dt saida/m*/ saida/teste*/ 2>/dev/null | tail -n +31 | xargs -r rm -rf
 
       - name: Gravar no repositório
+        if: always()
         env:
           RUN_ID: ${{ inputs.run_id }}
         run: |

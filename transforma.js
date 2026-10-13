@@ -7,6 +7,7 @@ const MET = require('./core.js');
 
 const dir = process.argv[2];
 if (!dir || !fs.existsSync(dir)) { console.error('Pasta de saída inexistente:', dir); process.exit(1); }
+if (!fs.existsSync(path.join(dir, 'meta.json'))) { console.error('meta.json ausente — a coleta falhou antes de gravar'); process.exit(0); }
 const meta = JSON.parse(fs.readFileSync(path.join(dir, 'meta.json'), 'utf8'));
 meta.transformacao = {};
 
