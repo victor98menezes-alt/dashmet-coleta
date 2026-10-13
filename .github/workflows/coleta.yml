@@ -45,6 +45,9 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Instalar decodificador GRIB2 (ecCodes)
+        run: pip install --quiet eccodes eccodeslib
+
       - name: Coletar Open-Meteo e sondagem NOAA
         env:
           LAT: ${{ inputs.lat }}

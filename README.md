@@ -3,7 +3,7 @@
 Este repositório busca, sob demanda, os dados de modelo que o dashboard não consegue buscar sozinho:
 
 - **Open-Meteo**: GFS (NOAA/NCEP), ECMWF IFS 0,25° e ICON (DWD), em superfície e de 1000 a 300 hPa, de D-1 a D+1, com vento em nós.
-- **Sondagem NOAA** (rucsoundings.noaa.gov): GFS em formato GSD, no horário H arredondado para baixo a múltiplo de 3 h UTC. Se não houver dados para esse horário, a coleta usa a sondagem mais recente.
+- **Sondagem NOAA**: GFS 0,25° do servidor oficial NOMADS (ciclo mais recente que cubra H, níveis de 1000 a 250 hPa, ponto de grade mais próximo). Alternativa: rucsoundings.noaa.gov.
 
 ## Fluxo
 

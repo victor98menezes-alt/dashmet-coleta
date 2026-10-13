@@ -53,15 +53,16 @@ def entradas():
     return lat, lon, data, int(hora), fuso, run_id
 
 
-def baixar(url, tentativas=3):
+def baixar(url, tentativas=3, timeout=60, binario=False):
     erro = None
     for i in range(tentativas):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": UA})
-            with urllib.request.urlopen(req, timeout=60) as r:
-                return r.status, r.read().decode("utf-8", "replace")
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                dados = r.read()
+                return r.status, (dados if binario else dados.decode("utf-8", "replace"))
         except urllib.error.HTTPError as e:
-            corpo = e.read().decode("utf-8", "replace")[:500]
+            corpo = e.read()[:500].decode("utf-8", "replace")
             erro = f"HTTP {e.code}: {corpo}"
             if e.code < 500:
                 break
@@ -93,6 +94,72 @@ def url_sondagem(lat, lon, quando_utc=None):
     return "https://rucsoundings.noaa.gov/get_soundings.cgi?" + urllib.parse.urlencode(q)
 
 
+NIVEIS_SONDAGEM = [1000, 975, 950, 925, 900, 850, 800, 750, 700, 650, 600, 550, 500, 450, 400, 350, 300, 250]
+
+
+def ciclos_gfs(h_utc):
+    """Ciclos GFS candidatos (mais recente primeiro) que cobrem h_utc com prazo <= 120 h, publicados há pelo menos 4 h."""
+    agora = dt.datetime.now(dt.timezone.utc)
+    c = agora.replace(minute=0, second=0, microsecond=0)
+    c = c.replace(hour=c.hour - c.hour % 6)
+    out = []
+    for _ in range(6):
+        if c <= agora - dt.timedelta(hours=4):
+            f = int((h_utc - c).total_seconds() // 3600)
+            if 0 <= f <= 120:
+                out.append((c, f))
+        c -= dt.timedelta(hours=6)
+    return out
+
+
+def url_nomads(ciclo, f, lat, lon):
+    q = [("dir", f"/gfs.{ciclo:%Y%m%d}/{ciclo:%H}/atmos"), ("file", f"gfs.t{ciclo:%H}z.pgrb2.0p25.f{f:03d}")]
+    q += [(f"var_{v}", "on") for v in ("HGT", "TMP", "RH", "UGRD", "VGRD")]
+    q += [(f"lev_{p}_mb", "on") for p in NIVEIS_SONDAGEM]
+    lon360 = lon % 360
+    q += [("subregion", ""), ("toplat", f"{lat + 0.5:.2f}"), ("bottomlat", f"{lat - 0.5:.2f}"),
+          ("leftlon", f"{lon360 - 0.5:.2f}"), ("rightlon", f"{lon360 + 0.5:.2f}")]
+    return "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25.pl?" + urllib.parse.urlencode(q)
+
+
+def grib_para_gsd(caminho, lat, lon, ciclo, f):
+    """Lê o GRIB2 recortado e gera texto no formato GSD (o mesmo da página rucsoundings)."""
+    import math
+    import eccodes
+    dados = {}
+    ponto = None
+    with open(caminho, "rb") as fh:
+        while True:
+            g = eccodes.codes_grib_new_from_file(fh)
+            if g is None:
+                break
+            try:
+                sn = eccodes.codes_get(g, "shortName")
+                lev = eccodes.codes_get(g, "level")
+                nn = eccodes.codes_grib_find_nearest(g, lat, lon % 360)[0]
+                ponto = ponto or (nn["lat"], nn["lon"], nn["distance"])
+                dados.setdefault(lev, {})[sn] = nn["value"]
+            finally:
+                eccodes.codes_release(g)
+    linhas = [f"GFS 0.25 NOMADS ciclo {ciclo:%Y-%m-%d %H}Z prazo f{f:03d} valido {ciclo + dt.timedelta(hours=f):%Y-%m-%d %H}Z",
+              f"ponto de grade {ponto[0]:.2f},{(ponto[1] + 180) % 360 - 180:.2f} ({ponto[2]:.1f} km)" if ponto else "",
+              "      3           GFS                  12     kt"]
+    for p in sorted(dados, reverse=True):
+        d = dados[p]
+        if not all(k in d for k in ("gh", "t", "u", "v")):
+            continue
+        tc = d["t"] - 273.15
+        rh = max(1.0, min(100.0, d.get("r", 50.0)))
+        a, b = 17.625, 243.04
+        gm = math.log(rh / 100) + a * tc / (b + tc)
+        td = b * gm / (a - gm)
+        u, v = d["u"], d["v"]
+        kt = math.hypot(u, v) * 1.943844
+        di = (math.degrees(math.atan2(-u, -v)) + 360) % 360
+        linhas.append(f"      4 {round(p * 10):6d} {round(d['gh']):6d} {round(tc * 10):6d} {round(td * 10):6d} {round(di) % 360 or 360:6d} {round(kt):6d}")
+    return "\n".join(linhas) + "\n"
+
+
 def tem_niveis(txt):
     return bool(txt) and len(re.findall(r"^\s*[4-9]\s+-?\d+\s+-?\d+", txt, re.M)) >= 3
 
@@ -116,15 +183,41 @@ def main():
     h_utc = h_local.astimezone(dt.timezone.utc)
     h_utc = h_utc.replace(hour=h_utc.hour - h_utc.hour % 3, minute=0, second=0, microsecond=0)
     tentativas = []
-    for quando in (h_utc, None):
-        u2 = url_sondagem(lat, lon, quando)
-        st2, corpo2 = baixar(u2)
-        ok = bool(st2) and tem_niveis(corpo2)
-        tentativas.append({"url": u2, "status": st2, "valido_para_utc": quando.isoformat() if quando else "latest", "niveis": ok,
-                           "erro": None if st2 else corpo2})
+    # 1) NOAA NOMADS — GFS 0,25° em níveis de pressão, prazo que cobre H
+    h_exato = h_local.astimezone(dt.timezone.utc)
+    for ciclo, f in ciclos_gfs(h_exato)[:3]:
+        u2 = url_nomads(ciclo, f, lat, lon)
+        st2, corpo2 = baixar(u2, tentativas=2, timeout=90, binario=True)
+        ok, erro = False, None
+        if st2 and corpo2[:4] == b"GRIB":
+            caminho = os.path.join(pasta, "gfs_nomads.grib2")
+            open(caminho, "wb").write(corpo2)
+            try:
+                txt = grib_para_gsd(caminho, lat, lon, ciclo, f)
+                ok = tem_niveis(txt)
+                if ok:
+                    open(os.path.join(pasta, "sondagem.txt"), "w", encoding="utf-8").write(txt)
+            except Exception as e:
+                erro = "decodificação: " + repr(e)
+            finally:
+                os.remove(caminho)
+        else:
+            erro = corpo2 if not st2 else "resposta não é GRIB (arquivo ainda não publicado?)"
+        tentativas.append({"fonte": "NOAA NOMADS GFS 0.25", "url": u2, "status": st2, "ciclo_utc": ciclo.isoformat(), "prazo_h": f,
+                           "valido_para_utc": h_exato.replace(minute=0).isoformat(), "niveis": ok, "erro": erro})
         if ok:
-            open(os.path.join(pasta, "sondagem.txt"), "w", encoding="utf-8").write(corpo2)
             break
+    # 2) NOAA rucsoundings (alternativa)
+    if not any(t["niveis"] for t in tentativas):
+        for quando in (h_utc, None):
+            u2 = url_sondagem(lat, lon, quando)
+            st2, corpo2 = baixar(u2, tentativas=1, timeout=45)
+            ok = bool(st2) and tem_niveis(corpo2)
+            tentativas.append({"fonte": "NOAA rucsoundings", "url": u2, "status": st2, "valido_para_utc": quando.isoformat() if quando else "latest",
+                               "niveis": ok, "erro": None if st2 else corpo2})
+            if ok:
+                open(os.path.join(pasta, "sondagem.txt"), "w", encoding="utf-8").write(corpo2)
+                break
     meta["fontes"]["sondagem_noaa"] = tentativas
 
     json.dump(meta, open(os.path.join(pasta, "meta.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=2)

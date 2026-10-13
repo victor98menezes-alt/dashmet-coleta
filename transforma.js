@@ -27,7 +27,7 @@ if (fs.existsSync(sd)) {
   try {
     const p = MET.parseGSD(fs.readFileSync(sd, 'utf8'));
     const tent = (meta.fontes.sondagem_noaa || []).find(t => t.niveis) || {};
-    const doc = Object.assign(p, { fetchedAt: meta.coletado_em_utc, source: 'NOAA rucsoundings (GSD) via coleta automática', url: tent.url, validoPara: tent.valido_para_utc, runId: meta.run_id });
+    const doc = Object.assign(p, { fetchedAt: meta.coletado_em_utc, source: (tent.fonte || 'NOAA') + ' via coleta automática', url: tent.url, validoPara: tent.valido_para_utc, ciclo: tent.ciclo_utc || null, prazo: tent.prazo_h ?? null, runId: meta.run_id });
     fs.writeFileSync(path.join(dir, 'sondagem.json'), JSON.stringify(doc));
     meta.transformacao.sondagem = { ok: true, niveis: p.levels.length, validoPara: tent.valido_para_utc };
   } catch (e) { meta.transformacao.sondagem = { ok: false, erro: e.message }; }
