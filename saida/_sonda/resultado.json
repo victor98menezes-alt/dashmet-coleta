@@ -1,0 +1,55 @@
+{
+  "inmet_estacoes_automaticas": {
+    "url": "https://apitempo.inmet.gov.br/estacoes/T",
+    "status": 200,
+    "tipo": "application/json; charset=utf-8",
+    "bytes": 262134,
+    "inicio": "[{\"CD_OSCAR\":null,\"DC_NOME\":\"ACAJUTIBA\",\"FL_CAPITAL\":\"N\",\"DT_FIM_OPERACAO\":null,\"CD_SITUACAO\":\"Operante\",\"TP_ESTACAO\":\"Automatica\",\"VL_LATITUDE\":\"-11.65444444\",\"CD_WSI\":\"0-76-0-2900306000000688\",\"CD_DISTRITO\":\" 04\",\"VL_ALTITUDE\":\"182\",\"SG_ESTADO\":\"BA\",\"SG_ENTIDADE\":\"INMET\",\"CD_ESTACAO\":\"A472\",\"VL_LONGITUDE\":\"-38.01583333\",\"DT_INICIO_OPERACAO\":\"2026-05-08T21:00:00.000-03:00\"},{\"CD_OSCAR\":\"0-2000-0-81755\",\"DC_NOME\":\"ACARAU\",\"FL_CAPITAL\":\"N\",\"DT_FIM_OPERACAO\":null,\"CD_SITUACAO\":\"Pane\",\"TP_ESTACAO\":\"Automatica\",\"VL_LATITUDE\":\"-3.1211111\",\"CD_WSI\":\"0-76-0-2300200000000446\",\"CD_DISTRITO\":\" 03\",\"VL_ALTITUDE\":\"67.15\",\"SG_ESTADO\":\"CE\",\"SG_ENTIDADE\":\"INMET\",\"CD_ESTACAO\":\"A360\",\"VL_LONGITUDE\":\"-40.08722221\",\"DT_INICIO_OPERACAO\":\"2009-04-21T21:00:00.000-03:00\"},{\"CD_OSCAR\":null,\"DC_NOME\":\"ACEGUA\",\"FL_CAPITAL\":\"N\",\"DT_FIM_OPERACAO\":null,\"CD_SITUACAO\":\"Pane\",\"TP_ESTACAO\":\"Automatica\",\"VL_LATITUDE\":\"-31.87472221\",\"CD_WSI\":\"0-76-0-4300034000000625\",\"CD_DISTRITO\":\" 08\",\"VL_ALTITUDE\":\"271\",\"SG_ESTADO\":\"RS\",\"SG_ENTIDADE\":\"INMET\",\"CD_ESTACAO\":\"B828\",\"VL_LONGITUDE\":\"-54.11972221\",\"DT_INICIO_OPERACAO\":\"2025-09-16T21:00:00.000-03:00\"},{\"CD_OSCAR\":\"0-2000-0-86827\",\"DC_NOME\":\"AFONSO CLAUDIO\",\"FL_CAPITAL\":null,\"DT_FIM_OPERACAO\":null,\"CD_SITUACAO\":\"Operante\",\"TP_ESTACAO\":\"Automatica\",\"VL_LATITUDE\":\"-20.10416666\",\"CD_WSI\":\"0-76-0-3200102000000478\",\"CD_DISTRITO\":\" 06\",\"VL_ALTITUDE\":\"507.48\",\"SG_ESTADO\":\"ES\",\"SG_ENTIDADE\":\"INMET\",\"CD_ESTACAO\":\"A657\",\"VL_LONGITUDE\":\"-41.10694444\",\"DT_INICIO_OPERACAO\":\"2011"
+  },
+  "inmet_dados_dia": {
+    "url": "https://apitempo.inmet.gov.br/estacao/dados/2026-10-13",
+    "status": 404,
+    "inicio": "{\"message\":\"E_ROUTE_NOT_FOUND: Route not found GET /estacao/dados/2026-10-13\",\"name\":\"HttpException\",\"code\":\"E_ROUTE_NOT_FOUND\",\"status\":404}"
+  },
+  "inmet_estacao_A652": {
+    "url": "https://apitempo.inmet.gov.br/estacao/2026-10-13/2026-10-13/A652",
+    "status": 204,
+    "tipo": null,
+    "bytes": 0,
+    "inicio": ""
+  },
+  "inmet_portal_manual": {
+    "url": "https://portal.inmet.gov.br/manual/manual-de-uso-da-api-esta%C3%A7%C3%B5es",
+    "status": 404,
+    "inicio": "{\"name\":\"Not Found\",\"message\":\"Template not found: manual/manual-de-uso-da-api-estações\",\"code\":0,\"error\":\"Template not found: manual/manual-de-uso-da-api-estações\",\"status\":404}"
+  },
+  "redemet_api_sem_chave": {
+    "url": "https://api-redemet.decea.mil.br/mensagens/metar/SBGL",
+    "status": 401,
+    "inicio": "{\n  \"message\":\"No API key found in request\",\n  \"request_id\":\"f212cc681c8fcd79477e290b46d8d601\"\n}"
+  },
+  "redemet_api_chave_invalida": {
+    "url": "https://api-redemet.decea.mil.br/mensagens/metar/SBGL?api_key=TESTE",
+    "status": 401,
+    "inicio": "{\n  \"message\":\"Invalid authentication credentials\",\n  \"request_id\":\"998e785f17eb727a637ad04989591607\"\n}"
+  },
+  "redemet_portal": {
+    "url": "https://redemet.decea.mil.br/",
+    "status": 200,
+    "tipo": "text/html",
+    "bytes": 4297,
+    "inicio": "<!doctype html><html lang=\"pt-br\"><head><meta http-equiv=\"Pragma\" content=\"no-cache\"/><meta http-equiv=\"Expires\" content=\"0\"/><meta charset=\"utf-8\"/><link rel=\"icon\" href=\"https://redemet.decea.mil.br/favicon.ico\"/><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"/><meta name=\"theme-color\" content=\"#000000\"/><meta name=\"description\" content=\"Rede de Meteorologia do Comando da Aeronáutica\"/><meta name=\"msapplication-TileImage\" content=\"https://redemet.decea.mil.br/icon_Redemet_192px-8.png\"/><meta property=\"og:image\" content=\"https://redemet.decea.mil.br/favicon.ico\"/><meta property=\"og:site_name\" content=\"Redemet 5\"/><meta http-equiv=\"Cache-Control\" content=\"max-age=86400\"/><meta property=\"og:description\" name=\"description\" content=\"Rede de Meteorologia do Comando da Aeronáutica\"/><meta property=\"og:title\" content=\"REDEMET - Rede de Meteorologia do Comando da Aeronáutica\"/><meta property=\"og:type\" content=\"Website\"/><meta property=\"og:url\" content=\"https://redemet.decea.mil.br/\"/><meta name=\"keywords\" content=\"Redemet meteorologia\"/><link rel=\"apple-touch-icon\" href=\"https://redemet.decea.mil.br/icon_Redemet_192px-8.png\"/><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap\"/><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css?family=Nunito:300,400,500,700&display=swap\"/><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/icon?family=Material+Icons\"/><link rel=\"manifest\" href=\"https://redem"
+  },
+  "usno_rstt": {
+    "url": "https://aa.usno.navy.mil/api/rstt/oneday?date=2026-10-14&coords=-22.875,-43.384&tz=-3",
+    "status": 200,
+    "tipo": "application/json",
+    "bytes": 1270,
+    "inicio": "{\n  \"apiversion\": \"4.0.1\", \n  \"geometry\": {\n    \"coordinates\": [\n      -43.384, \n      -22.875\n    ], \n    \"type\": \"Point\"\n  }, \n  \"properties\": {\n    \"data\": {\n      \"closestphase\": {\n        \"day\": 10, \n        \"month\": 10, \n        \"phase\": \"New Moon\", \n        \"time\": \"12:50\", \n        \"year\": 2026\n      }, \n      \"curphase\": \"Waxing Crescent\", \n      \"day\": 14, \n      \"day_of_week\": \"Wednesday\", \n      \"fracillum\": \"15%\", \n      \"isdst\": false, \n      \"label\": null, \n      \"month\": 10, \n      \"moondata\": [\n        {\n          \"phen\": \"Rise\", \n          \"time\": \"07:42\"\n        }, \n        {\n          \"phen\": \"Upper Transit\", \n          \"time\": \"14:44\"\n        }, \n        {\n          \"phen\": \"Set\", \n          \"time\": \"21:48\"\n        }\n      ], \n      \"sundata\": [\n        {\n          \"phen\": \"Begin Civil Twilight\", \n          \"time\": \"04:59\"\n        }, \n        {\n          \"phen\": \"Rise\", \n          \"time\": \"05:22\"\n        }, \n        {\n          \"phen\": \"Upper Transit\", \n          \"time\": \"11:40\"\n        }, \n        {\n          \"phen\": \"Set\", \n          \"time\": \"17:57\"\n        }, \n        {\n          \"phen\": \"End Civil Twilight\", \n          \"time\": \"18:20\"\n        }\n      ], \n      \"tz\": -3.0, \n      \"year\": 2026\n    }\n  }, \n  \"type\": \"Feature\"\n}\n"
+  },
+  "timeanddate_sun": {
+    "url": "https://www.timeanddate.com/sun/@-22.875,-43.384?month=10&year=2026",
+    "status": 403,
+    "inicio": "<!DOCTYPE html><html lang=en><head><meta http-equiv=Content-Type content=\"text/html; charset=utf-8\"><title>Just a moment&hellip;</title><style>p{line-height:1.6}.j{font-weight:700}.a{background-color:#5b9ec9;font-family:'Roboto',Helvetica,\"Ubuntu Light\",Arial,Sans-Serif;color:#fff;letter-spacing:.5px}.b{max-width:650px;margin:200px auto}.c{opacity:.7;display:inline-block}.c:hover{opacity:1}.d{margin:10px 0 0;font-size:82px;font-weight:900;color:#fff}.e{font-size:12px;font-weight:400;color:#bed8e9}.f{font-size:32px;font-weight:100;padding-top:8px}.g{margin:50px 0}.h{background:#fff;color:#5b9ec9;font-size:12px;font-weight:700;border:2px solid #fff;border-radius:25px;padding:18px 24px;text-decoration:none;margin-right:15px}.i{color:#fff;background:0 0}.h:hover{background:#333;border-color:#333;color:#fff}</style><meta http-equiv=\"refresh\" content=\"360\"></head><body class=a><div class=b><a href=/ class=c><img src=\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABBCAMAAAAQXfHjAAAAMFBMVEUAAAD///////////////////////////////////////////////////////////87TQQwAAAAEHRSTlMAbsy+KRr/qDqTSw2BBuRdWtYOegAAAsJJREFUeNrtlouS2yAMRS8PIR4C/v9vi2DdZr2p43WaTmeaM07ACOli4RHGmzf3MVZxHi+EwoLxQvxb5JCY8kORkqTgOjWNgPmRiAuhxevJsWHQ6FhEgiJXUxUW7lAkPrdNLnxgDkRK22Zdy5gJO/97IrzNaeXJR2llL/J1IRnXoBZ2QSks0k5UN/4qOWx0LIxTmDCpdrPbisuksEGH5uZxhf1S8+Gm9RcWq9i2LXqOHhSD+9B8FlvwJDyCHGRci4rHs1RjKg6I4vGPYp5aWuniz1WsJvGiAqt3xSNsmLQUb5ULHkLdnS1jFJS9TmHCIcVMhQWfrO/7NZHzZ55/0erJ8r6vrXF/jH+6rWFxMl9h8fW0y+2Tq/iDtZnvpKt9tvSbG"
+  }
+}
