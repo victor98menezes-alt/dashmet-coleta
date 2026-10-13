@@ -7,7 +7,14 @@ import urllib.request
 
 UA = "DashboardMeteorologicoSalto/1.0 (uso institucional nao comercial)"
 HOJE = dt.date.today().isoformat()
+ONTEM = (dt.date.today() - dt.timedelta(days=1)).isoformat()
 TESTES = {
+    "inmet_A621_ontem_hoje": f"https://apitempo.inmet.gov.br/estacao/{ONTEM}/{HOJE}/A621",
+    "inmet_A652_ontem": f"https://apitempo.inmet.gov.br/estacao/{ONTEM}/{ONTEM}/A652",
+    "inmet_dados_horarios_dia": f"https://apitempo.inmet.gov.br/estacao/dados/{ONTEM}/1200",
+    "inmet_token_invalido": f"https://apitempo.inmet.gov.br/token/estacao/{ONTEM}/{HOJE}/A621/TESTE",
+    "inmet_portal_api": "https://portal.inmet.gov.br/manual",
+
     "inmet_estacoes_automaticas": "https://apitempo.inmet.gov.br/estacoes/T",
     "inmet_dados_dia": f"https://apitempo.inmet.gov.br/estacao/dados/{HOJE}",
     "inmet_estacao_A652": f"https://apitempo.inmet.gov.br/estacao/{HOJE}/{HOJE}/A652",
