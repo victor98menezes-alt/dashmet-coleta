@@ -9,6 +9,9 @@ UA = "DashboardMeteorologicoSalto/1.0 (uso institucional nao comercial)"
 HOJE = dt.date.today().isoformat()
 ONTEM = (dt.date.today() - dt.timedelta(days=1)).isoformat()
 TESTES = {
+    "aisweb_SBAF": "https://aisweb.decea.mil.br/?i=aerodromos&codigo=SBAF",
+    "aisweb_SBGL": "https://aisweb.decea.mil.br/?i=aerodromos&codigo=SBGL",
+    "aisweb_api_sem_chave": "https://api.decea.mil.br/aisweb/?area=rotaer&icaoCode=SBAF",
     "inmet_A621_ontem_hoje": f"https://apitempo.inmet.gov.br/estacao/{ONTEM}/{HOJE}/A621",
     "inmet_A652_ontem": f"https://apitempo.inmet.gov.br/estacao/{ONTEM}/{ONTEM}/A652",
     "inmet_dados_horarios_dia": f"https://apitempo.inmet.gov.br/estacao/dados/{ONTEM}/1200",
@@ -31,6 +34,9 @@ for nome, url in TESTES.items():
         req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json,text/html,*/*"})
         with urllib.request.urlopen(req, timeout=45) as r:
             corpo = r.read()
+            if nome.startswith("aisweb_SB"):
+                os.makedirs("saida/_sonda", exist_ok=True)
+                open(f"saida/_sonda/{nome}.html", "wb").write(corpo)
             res[nome] = {"url": url, "status": r.status, "tipo": r.headers.get("Content-Type"), "bytes": len(corpo),
                          "inicio": corpo[:1500].decode("utf-8", "replace")}
     except urllib.error.HTTPError as e:
