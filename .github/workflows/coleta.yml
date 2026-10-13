@@ -1,0 +1,75 @@
+name: Coleta meteorológica
+
+on:
+  workflow_dispatch:
+    inputs:
+      lat:
+        description: "Latitude (graus decimais)"
+        required: true
+      lon:
+        description: "Longitude (graus decimais)"
+        required: true
+      data:
+        description: "Data D (AAAA-MM-DD)"
+        required: true
+      hora:
+        description: "Horário H local (0-23)"
+        required: true
+      fuso:
+        description: "Fuso IANA"
+        required: true
+        default: "America/Sao_Paulo"
+      run_id:
+        description: "Identificador da coleta"
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: coleta
+  cancel-in-progress: false
+
+jobs:
+  coleta:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Coletar Open-Meteo e sondagem NOAA
+        env:
+          LAT: ${{ inputs.lat }}
+          LON: ${{ inputs.lon }}
+          DATA: ${{ inputs.data }}
+          HORA: ${{ inputs.hora }}
+          FUSO: ${{ inputs.fuso }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: python coleta.py
+
+      - name: Converter para o formato do dashboard
+        env:
+          RUN_ID: ${{ inputs.run_id }}
+        run: node transforma.js "saida/$RUN_ID"
+
+      - name: Manter apenas as 30 coletas mais recentes
+        run: |
+          ls -1dt saida/*/ 2>/dev/null | tail -n +31 | xargs -r rm -rf
+
+      - name: Gravar no repositório
+        env:
+          RUN_ID: ${{ inputs.run_id }}
+        run: |
+          git config user.name "coleta-meteorologica"
+          git config user.email "coleta-meteorologica@users.noreply.github.com"
+          git add -A saida
+          git commit -m "Coleta $RUN_ID" || echo "Nada a gravar"
+          for i in 1 2 3; do git pull --rebase && git push && break; sleep 5; done
