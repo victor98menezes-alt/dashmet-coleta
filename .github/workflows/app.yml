@@ -53,7 +53,7 @@ jobs:
         shell: pwsh
         run: |
           $env:LOCALAPPDATA = "$env:RUNNER_TEMP\teste"
-          Start-Process -FilePath dist\DashMetPrecursores.exe -ArgumentList "--diagnostico" -Wait
+          Start-Process -FilePath dist\DashMetPrecursores.exe -ArgumentList "--diagnostico","--teste-coleta" -Wait
           Get-Content "$env:RUNNER_TEMP\teste\DashMetPrecursores\diagnostico.json"
           New-Item -ItemType Directory -Force -Path app_saida | Out-Null
           Copy-Item "$env:RUNNER_TEMP\teste\DashMetPrecursores\diagnostico.json" app_saida\diagnostico.json

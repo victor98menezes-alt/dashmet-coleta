@@ -336,6 +336,13 @@ def main():
             diag["pagina_bytes"] = len(urllib.request.urlopen(url, timeout=10).read())
         except Exception as e:
             diag["servidor"] = repr(e)[:200]
+        if "--teste-coleta" in sys.argv:
+            amanha = (dt.date.today() + dt.timedelta(days=1)).isoformat()
+            gravar("mission", {"name": "TESTE", "lat": -22.875, "lon": -43.384, "date": amanha, "hour": 10, "tz": "America/Sao_Paulo",
+                               "icao": "SBAF", "aerodromos": "SBAF,SBGL", "zlElevFt": 112})
+            _rodar()
+            diag["coleta"] = STATUS["etapas"]
+            diag["docs"] = {n: os.path.getsize(os.path.join(DOCS, n + ".json")) for n in NOMES if os.path.exists(os.path.join(DOCS, n + ".json"))}
         with open(os.path.join(DADOS, "diagnostico.json"), "w", encoding="utf-8") as fh:
             json.dump(diag, fh, ensure_ascii=False, indent=1)
         srv.shutdown()
