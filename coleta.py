@@ -24,7 +24,7 @@ SUPERFICIE = ["temperature_2m", "dew_point_2m", "precipitation_probability", "pr
               "wind_speed_80m", "wind_direction_80m", "wind_speed_120m", "wind_direction_120m", "wind_speed_180m", "wind_direction_180m",
               "freezing_level_height", "lifted_index"]
 NIVEIS = [1000, 975, 950, 925, 900, 850, 800, 700, 600, 500, 400, 300]
-VARS_NIVEL = ["wind_speed", "wind_direction", "geopotential_height", "temperature"]
+VARS_NIVEL = ["wind_speed", "wind_direction", "geopotential_height", "temperature", "relative_humidity"]
 MESES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
 
