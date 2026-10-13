@@ -305,7 +305,16 @@ def main():
     url = f"http://127.0.0.1:{porta}/"
     if "--diagnostico" in sys.argv:  # verificação do executável
         diag = {"versao": VERSAO, "web": os.path.exists(os.path.join(WEB, "index.html")), "efemeride": os.path.exists(os.path.join(EFEM, "de421.bsp"))}
-        for mod in ("webview", "skyfield", "eccodes"):
+        try:
+            diag["fuso"] = str(ZoneInfo("America/Sao_Paulo"))
+        except Exception as e:
+            diag["fuso"] = repr(e)[:200]
+        try:
+            import webview
+            diag["webview_versao"] = getattr(webview, "__version__", "?")
+        except Exception as e:
+            diag["webview_versao"] = repr(e)[:200]
+        for mod in ("webview", "skyfield", "eccodes", "tzdata"):
             try:
                 __import__(mod)
                 diag[mod] = True
