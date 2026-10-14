@@ -166,6 +166,24 @@ details.tad .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .cl{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .cl b{font:600 .9rem var(--f-data);padding:1px 6px;border-radius:6px;background:var(--sunk)}
 .cl b.cov-BKN,.cl b.cov-OVC{background:var(--warn-bg);color:var(--warn)}
+.cl b.cov-none{font:600 .78rem var(--f-body);background:var(--ok-bg);color:var(--ok)}
+small.cld{display:block;font:400 .64rem var(--f-body);color:var(--muted);white-space:nowrap}
+.cape{font:600 .74rem var(--f-body);display:inline-block;padding:2px 8px;border-radius:999px}
+.cape.k0{background:var(--ok-bg);color:var(--ok)} .cape.k1{background:var(--warn-bg);color:var(--warn)} .cape.k2,.cape.k3{background:var(--bad-bg);color:var(--bad)} .cape.k3{outline:1px solid var(--bad)}
+details.howto{margin-top:12px;border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--sunk)}
+details.howto summary{cursor:pointer;font:600 .8rem var(--f-body);color:var(--accent)}
+details.howto dl{display:grid;grid-template-columns:minmax(150px,max-content) 1fr;gap:8px 16px;margin:10px 0 0;font-size:.78rem;line-height:1.5}
+details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
+@media (max-width:640px){details.howto dl{grid-template-columns:1fr} details.howto dd{margin-bottom:6px}}
+/* Astronomia — análise da noite */
+.an-night{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin:10px 0}
+.an-night>div{padding:12px 14px;border-radius:12px}
+.an-night .dk{background:linear-gradient(135deg,#0a121b,#15283c);color:#e6ecf2}
+.an-night .mn{background:linear-gradient(135deg,#3b2c00,#6b5210);color:#fff3cf}
+.an-night b{display:block;font:700 1.05rem var(--f-disp);letter-spacing:.06em}
+.an-night span{font:500 .86rem var(--f-data)} .an-night span.small{color:inherit;opacity:.8}
+.an-txt{font-size:.86rem;line-height:1.55;margin:8px 0;max-width:115ch}
+.tad-h{font:600 .7rem var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg);margin:12px 0 0}
 .sw{display:flex;flex-direction:column;gap:3px;align-items:center}
 .sw small{display:inline;font-size:.6rem;opacity:.8}
 
@@ -339,7 +357,7 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
         </div>
       </div>
 
-      <section class="panel" aria-labelledby="h-astro"><header><h2 id="h-astro">Produtos astronômicos — Sol × Lua</h2><span class="small">ICMN · FCVN · FCVC · luar · visibilidade nula</span></header><div id="astro"></div></section>
+      <section class="panel" aria-labelledby="h-astro"><header><h2 id="h-astro">Produtos astronômicos — Sol × Lua</h2><span class="small">Time and Date (inserção manual) · luar · visibilidade nula</span></header><div id="astro"></div></section>
 
       <section class="panel" aria-labelledby="h-zl"><header><h2 id="h-zl">Vento na zona de lançamento</h2><span class="small">ZL + 750 ft · 1ª camada · lançamento</span></header><div id="zl"></div></section>
 
@@ -640,7 +658,7 @@ const MET = (() => {
     { key: 'ecmwf_ifs025', id: 'ECMWF', label: 'ECMWF IFS 0,25°' },
     { key: 'icon_seamless', id: 'ICON', label: 'ICON (DWD)' },
   ];
-  const SURF = ['temperature_2m', 'dew_point_2m', 'precipitation_probability', 'precipitation', 'showers', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'pressure_msl', 'visibility', 'wind_speed_80m', 'wind_direction_80m', 'wind_speed_120m', 'wind_direction_120m', 'wind_speed_180m', 'wind_direction_180m', 'freezing_level_height', 'lifted_index', 'weather_code'];
+  const SURF = ['temperature_2m', 'apparent_temperature', 'dew_point_2m', 'precipitation_probability', 'precipitation', 'showers', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'pressure_msl', 'visibility', 'wind_speed_80m', 'wind_direction_80m', 'wind_speed_120m', 'wind_direction_120m', 'wind_speed_180m', 'wind_direction_180m', 'freezing_level_height', 'lifted_index', 'weather_code'];
   const LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600, 500, 400, 300];
   const LVARS = ['wind_speed', 'wind_direction', 'geopotential_height', 'temperature', 'relative_humidity', 'cloud_cover'];
   function openMeteoUrl(m) {
@@ -966,7 +984,7 @@ const MET = (() => {
       const idx = S.models.time.indexOf(key);
       modelIds().forEach(id => {
         const o = S.models.models[id], g = v => (idx >= 0 && o[v] ? o[v][idx] : null);
-        const x = { wind: g('wind_speed_10m'), dir: g('wind_direction_10m'), gust: g('wind_gusts_10m'), temp: g('temperature_2m'), td: g('dew_point_2m'), pp: g('precipitation_probability'), pr: g('precipitation'), sh: g('showers'), cc: g('cloud_cover'), ccl: g('cloud_cover_low'), ccm: g('cloud_cover_mid'), cch: g('cloud_cover_high'), cape: g('cape'), vis: g('visibility'), pmsl: g('pressure_msl'), fzl: g('freezing_level_height'), wcode: g('weather_code') };
+        const x = { wind: g('wind_speed_10m'), dir: g('wind_direction_10m'), gust: g('wind_gusts_10m'), temp: g('temperature_2m'), at: g('apparent_temperature'), td: g('dew_point_2m'), pp: g('precipitation_probability'), pr: g('precipitation'), sh: g('showers'), cc: g('cloud_cover'), ccl: g('cloud_cover_low'), ccm: g('cloud_cover_mid'), cch: g('cloud_cover_high'), cape: g('cape'), vis: g('visibility'), pmsl: g('pressure_msl'), fzl: g('freezing_level_height'), wcode: g('weather_code') };
         x.base = x.ccl != null && x.ccl >= 6 ? M.lclFt(x.temp, x.td) : null;
         x.w = W[id] == null ? 1 : +W[id];
         if ([x.wind, x.temp, x.pr].some(v => v != null)) { r.per[id] = x; r.n++; }
@@ -976,7 +994,7 @@ const MET = (() => {
     const vals = v => list(v).filter(x => x.v != null);
     const med = v => M.weightedMedian(vals(v));
     const c = r.c = {};
-    ['wind', 'gust', 'temp', 'td', 'pp', 'pr', 'sh', 'cc', 'ccl', 'ccm', 'cch', 'cape', 'base', 'vis', 'pmsl', 'fzl'].forEach(v => { c[v] = med(v); });
+    ['wind', 'gust', 'temp', 'at', 'td', 'pp', 'pr', 'sh', 'cc', 'ccl', 'ccm', 'cch', 'cape', 'base', 'vis', 'pmsl', 'fzl'].forEach(v => { c[v] = med(v); });
     r.layers = cloudLayers(r, idxFor(r.key));
     const L = r.layers ? r.layers.cons : [];
     c.lowest = L[0] || null;
@@ -1043,16 +1061,13 @@ const MET = (() => {
     if (r.tafc) { const tw = [...(r.tafc.prev.wx || []), ...r.tafc.vari.flatMap(v => (v.wx || []).map(x => v.tipo + ' ' + x))]; if (tw.length) restr.push('TAF: ' + tw.join(', ')); }
     if (conf.wind === 'BAIXA' || conf.gust === 'BAIXA') restr.push('Divergência alta entre modelos no vento');
     if (r.n === 1) restr.push('Apenas uma fonte de modelo');
-    // teto e visibilidade previstos (modelo e TAF da estação) contra os mínimos informados
+    // teto previsto: somente modelos (GFS/ECMWF/ICON); visibilidade: modelo, TAF e METAR
     const st = stationTaf();
     r.tafc = st ? M.tafCond(st, utc) : null;
     const cmin = numOrNull(S.mission.ceilMin), vmin = numOrNull(S.mission.visMin);
     r.minima = { ceil: [], vis: [] };
     if (cmin != null) {
       if (c.ceilModel != null && c.ceilModel < cmin) r.minima.ceil.push(`modelo ${fmt(c.ceilModel)} ft`);
-      if (r.tafc && r.tafc.prev.ceil != null && r.tafc.prev.ceil < cmin) r.minima.ceil.push(`TAF ${fmt(r.tafc.prev.ceil)} ft`);
-      if (r.tafc) r.tafc.vari.forEach(v => { if (v.ceil != null && v.ceil < cmin) r.minima.ceil.push(`${v.tipo} ${fmt(v.ceil)} ft`); });
-      if (r.metar) { const cm = M.ceilingFt(r.metar); if (cm != null && cm < cmin) r.minima.ceil.push(`METAR ${fmt(cm)} ft`); }
     }
     if (vmin != null) {
       if (c.vis != null && c.vis < vmin) r.minima.vis.push(`modelo ${fmt(c.vis)} m`);
@@ -1242,137 +1257,135 @@ const MET = (() => {
     $$('#verdicts .vcell').forEach(b => b.addEventListener('click', () => { S.selHour = +b.dataset.k; renderAll(); }));
   }
 
-  /* ---------------- Render: astronomia ---------------- */
-  function astroOk() {
-    const A = S.astro, m = S.mission;
-    return A && A.lat != null && A.skyfield && A.skyfield.dias && A.skyfield.dias[m.date] && A.skyfield.dias[m.date].fcvc !== undefined
-      && Math.abs(A.lat - m.lat) < 0.05 && Math.abs(A.lon - m.lon) < 0.05 && A.fuso === m.tz;
-  }
-  const isoMs = (s, tz) => { if (!s) return null; const [d, h] = s.split('T'); const [y, mo, dd] = d.split('-').map(Number); const [hh, mi] = h.split(':').map(Number); return M.zonedToUtc(y, mo, dd, hh, mi, tz); };
+  /* ---------------- Render: astronomia (valores do Time and Date inseridos pelo usuário) ---------------- */
   const hmMs = (dateStr, hm, tz) => { if (!hm || !/^\d{1,2}:\d{2}$/.test(hm)) return null; const [y, mo, d] = dateStr.split('-').map(Number); const [h, mi] = hm.split(':').map(Number); return M.zonedToUtc(y, mo, d, h, mi, tz); };
-  const dmin = (a, b) => (a == null || b == null) ? '—' : (Math.round((a - b) / 60000) === 0 ? '0' : (a > b ? '+' : '−') + Math.abs(Math.round((a - b) / 60000)));
   const durTxt = ms => { const mm = Math.round(ms / 60000); return `${Math.floor(mm / 60)}h${String(mm % 60).padStart(2, '0')}`; };
   const PHASES = ['Lua Nova', 'Lua Crescente', 'Quarto Crescente', 'Crescente Gibosa', 'Lua Cheia', 'Minguante Gibosa', 'Quarto Minguante', 'Lua Minguante'];
-
-  /** Eventos do Sol e da Lua para o dia D, por fonte: Time and Date (manual) > JPL > cálculo da página. */
-  function astroData() {
-    const m = S.mission, tz = m.tz;
-    const page = M.astronomy(m.date, m.lat, m.lon, tz);
-    const jpl = astroOk() ? S.astro.skyfield : null, dj = jpl ? jpl.dias[m.date] : null;
-    const us = jpl && S.astro.usno && !S.astro.usno.erro && S.astro.usno.data === m.date ? S.astro.usno : null;
-    const tad = m.tad && m.tad.date === m.date ? m.tad : null;
-    const T = k => tad ? hmMs(m.date, tad[k], tz) : null;
-    const J = k => dj ? (Array.isArray(dj[k]) ? isoMs(dj[k][0], tz) : isoMs(dj[k], tz)) : null;
-    const P = { icmn: page.icmn, icmc: page.icmc, fcvc: page.fcvc, fcvn: page.fcvn, lua_nasce: page.moonrise, lua_poe: page.moonset };
-    const tadKey = { icmn: 'icmn', icmc: 'icmc', fcvc: 'fcvc', fcvn: 'fcvn', lua_nasce: 'nasce', lua_poe: 'poe' };
-    const ev = {};
-    Object.keys(P).forEach(k => {
-      const t = T(tadKey[k]), j = J(k), p = P[k];
-      ev[k] = t != null ? { v: t, src: 'TAD' } : j != null ? { v: j, src: 'JPL' } : { v: p, src: 'PÁG' };
-      ev[k].tad = t; ev[k].jpl = j; ev[k].page = p;
-    });
-    ev.usNasce = us && us.lua && us.lua.Rise ? hmMs(m.date, us.lua.Rise, tz) : null;
-    ev.usPoe = us && us.lua && us.lua.Set ? hmMs(m.date, us.lua.Set, tz) : null;
-    ev.usIcmc = us && us.sol && us.sol['Begin Civil Twilight'] ? hmMs(m.date, us.sol['Begin Civil Twilight'], tz) : null;
-    ev.usFcvc = us && us.sol && us.sol['End Civil Twilight'] ? hmMs(m.date, us.sol['End Civil Twilight'], tz) : null;
-    const ilum = tad && tad.ilum !== '' && tad.ilum != null ? { v: +tad.ilum, src: 'TAD' } : dj ? { v: dj.iluminacao_meio_dia, src: 'JPL' } : { v: page.illum.fraction * 100, src: 'PÁG' };
-    const fase = tad && tad.fase ? { v: tad.fase, src: 'TAD' } : dj && dj.fase_graus != null ? { v: M.phaseNameDeg(dj.fase_graus), src: 'JPL' } : { v: M.phaseName(page.illum.phase), src: 'PÁG' };
-    // noites (FCVC → ICMC): JPL ou página, com os horários do Time and Date aplicados aos eventos do dia D
-    const nights = [];
-    const raw = jpl ? jpl.noites.map(n => ({ start: isoMs(n.de, tz), end: isoMs(n.ate, tz), fcvn: isoMs(n.fcvn, tz), icmn: isoMs(n.icmn, tz), segs: n.intervalos.map(s => ({ from: isoMs(s.de, tz), to: isoMs(s.ate, tz), moon: s.lua })), illum: n.iluminacao, alt: n.alt_max_lua, altT: isoMs(n.hora_alt_max, tz), src: 'JPL' }))
-      : [page.nightBefore, page.nightAfter].filter(n => n && n.intervals).map(n => ({ start: n.t0, end: n.t1, fcvn: n.fcvn, icmn: n.icmn, segs: n.intervals.map(s => ({ from: s.from, to: s.to, moon: s.moon })), illum: n.illum.fraction * 100, alt: n.maxAlt, altT: n.maxT, src: 'PÁG' }));
-    raw.forEach(n => {
-      const dStart = M.localParts(n.start, tz), startDate = M.isoDate(dStart.y, dStart.mo, dStart.d);
-      if (startDate !== M.shiftDate(m.date, -1) && startDate !== m.date) return;
-      // fronteiras lua: transições entre segmentos
-      let moonEv = [];
-      n.segs.forEach((s, i) => { if (i > 0) moonEv.push({ t: s.from, type: s.moon ? 'nasce' : 'poe' }); });
-      const init = n.segs.length ? n.segs[0].moon : false;
-      let start = n.start, end = n.end, fcvn = n.fcvn, icmn = n.icmn;
-      if (tad) {
-        const sameDay = t => { const p = M.localParts(t, tz); return M.isoDate(p.y, p.mo, p.d) === m.date; };
-        if (startDate === m.date && T('fcvc') != null) start = T('fcvc');
-        if (startDate === m.date && T('fcvn') != null) fcvn = T('fcvn');
-        if (startDate !== m.date && T('icmc') != null) end = T('icmc');
-        if (startDate !== m.date && T('icmn') != null) icmn = T('icmn');
-        moonEv = moonEv.map(e => { if (!sameDay(e.t)) return e; const tv = T(e.type === 'nasce' ? 'nasce' : 'poe'); return tv != null && Math.abs(tv - e.t) < 3600e3 ? { t: tv, type: e.type, tad: true } : e; });
-      }
-      moonEv = moonEv.filter(e => e.t > start && e.t < end).sort((x, y) => x.t - y.t);
-      const segs = []; let cur = start, up = init;
-      moonEv.forEach(e => { segs.push({ from: cur, to: e.t, moon: up }); cur = e.t; up = e.type === 'nasce'; });
-      segs.push({ from: cur, to: end, moon: up });
-      nights.push({ label: startDate === m.date ? 'Noite D → D+1' : 'Noite D-1 → D', start, end, fcvn, icmn, segs: segs.filter(s => s.to - s.from > 30000), moonEv, illum: n.illum, alt: n.alt, altT: n.altT, src: tad ? n.src + ' + TAD' : n.src });
-    });
-    return { ev, ilum, fase, nights, jpl, us, tad, page };
+  const dBr = d => d.split('-').reverse().slice(0, 2).join('/');
+  /** Noite analisada: a que começa no FCVC do dia E e termina no ICMN de E+1. Padrão: H antes de 12h → noite D-1 → D; senão D → D+1. */
+  function nightEve() {
+    const m = S.mission;
+    const sel = m.astroNight || (+String(m.hour).split(':')[0] < 12 ? 'D-1' : 'D');
+    return { sel, eve: sel === 'D-1' ? M.shiftDate(m.date, -1) : m.date };
+  }
+  /** Monta a noite FCVC(E) → ICMN(E+1) com os segmentos de luar e de visibilidade nula. */
+  function nightAnalysis(v, eve, tz) {
+    const nxt = M.shiftDate(eve, 1);
+    const start = hmMs(eve, v.fcvc, tz), end = hmMs(nxt, v.icmn1, tz), fcvn = hmMs(eve, v.fcvn, tz);
+    const miss = [];
+    if (start == null) miss.push(`FCVC de ${dBr(eve)}`);
+    if (end == null) miss.push(`ICMN de ${dBr(nxt)}`);
+    const ev = [[eve, v.nasceE, 'nasce'], [eve, v.poeE, 'poe'], [nxt, v.nasce1, 'nasce'], [nxt, v.poe1, 'poe']]
+      .map(([d, hm, type]) => ({ t: hmMs(d, hm, tz), type })).filter(e => e.t != null).sort((a, b) => a.t - b.t);
+    if (!ev.length) miss.push('ao menos um nascer ou ocaso da Lua');
+    if (miss.length) return { miss };
+    if (end <= start) return { err: 'O ICMN do dia seguinte deve ser posterior ao FCVC.' };
+    const before = ev.filter(e => e.t <= start).pop(), after = ev.find(e => e.t > start);
+    const up0 = before ? before.type === 'nasce' : after.type === 'poe';
+    const inside = ev.filter(e => e.t > start && e.t < end);
+    const segs = []; let cur = start, up = up0;
+    inside.forEach(e => { if (e.t > cur) segs.push({ from: cur, to: e.t, moon: up }); cur = e.t; up = e.type === 'nasce'; });
+    segs.push({ from: cur, to: end, moon: up });
+    const tot = k => segs.filter(s => s.moon === k).reduce((a, s) => a + s.to - s.from, 0);
+    return { start, end, fcvn, segs, moonEv: inside, up0, dark: tot(false), lit: tot(true), basis: before ? 'evento anterior ao FCVC' : 'primeiro evento após o FCVC' };
   }
 
   function timelineSvg(n, tz) {
     const W = 640, Hh = 150, L = 16, R = 16, y0 = 70, bh = 24, span = n.end - n.start;
     const x = t => L + (W - L - R) * (t - n.start) / span;
-    let s = `<svg viewBox="0 0 ${W} ${Hh}" class="tl" role="img" aria-label="${esc(n.label)}: períodos de luar e de visibilidade nula">`;
+    let s = `<svg viewBox="0 0 ${W} ${Hh}" class="tl" role="img" aria-label="Noite: períodos de luar e de visibilidade nula">`;
     n.segs.forEach(g => { s += `<rect x="${x(g.from)}" y="${y0}" width="${Math.max(1, x(g.to) - x(g.from))}" height="${bh}" class="${g.moon ? 'tl-moon' : 'tl-dark'}"/>`;
       if (x(g.to) - x(g.from) > 70) s += `<text x="${(x(g.from) + x(g.to)) / 2}" y="${y0 + 15}" text-anchor="middle" class="${g.moon ? 'tl-tm' : 'tl-td'}">${g.moon ? 'LUAR' : 'VIS. NULA'} · ${durTxt(g.to - g.from)}</text>`; });
-    // marcos do Sol (acima)
-    const sun = [[n.start, 'FCVC'], [n.fcvn, 'FCVN'], [n.icmn, 'ICMN'], [n.end, 'ICMC']].filter(e => e[0] != null && e[0] >= n.start && e[0] <= n.end);
+    const sun = [[n.start, 'FCVC'], [n.fcvn, 'FCVN'], [n.end, 'ICMN']].filter(e => e[0] != null && e[0] >= n.start && e[0] <= n.end);
     sun.forEach(([t, l], i) => { const xx = x(t), anc = i === 0 ? 'start' : i === sun.length - 1 ? 'end' : 'middle';
       const dy = i % 2 ? 0 : 28; s += `<line x1="${xx}" x2="${xx}" y1="${y0 - 10 - dy}" y2="${y0 + bh}" class="tl-sun"/><text x="${xx}" y="${y0 - 26 - dy}" text-anchor="${anc}" class="tl-l">☉ ${l}</text><text x="${xx}" y="${y0 - 14 - dy}" text-anchor="${anc}" class="tl-t">${M.hhmm(t, tz)}</text>`; });
-    // marcos da Lua (abaixo)
     n.moonEv.forEach(e => { const xx = x(e.t); s += `<line x1="${xx}" x2="${xx}" y1="${y0}" y2="${y0 + bh + 10}" class="tl-mo"/><text x="${xx}" y="${y0 + bh + 24}" text-anchor="middle" class="tl-l">☾ ${e.type === 'nasce' ? 'Nascer' : 'Ocaso'}</text><text x="${xx}" y="${y0 + bh + 36}" text-anchor="middle" class="tl-t">${M.hhmm(e.t, tz)}</text>`; });
     return s + '</svg>';
   }
 
-  function renderAstro() {
+  function renderAstro(H) {
     const el = $('#astro');
     if (!hasPos()) { el.innerHTML = `<p class="muted">Aguardando coordenada e data.</p>`; return; }
-    const m = S.mission, tz = m.tz;
-    let A;
-    try { A = astroData(); } catch (e) { el.innerHTML = `<p class="err">Falha no cálculo: ${esc(e.message)}</p>`; return; }
-    const { ev, ilum, fase, nights, us, tad } = A;
-    const tag = s => `<span class="st ${s === 'TAD' ? 'st-obs' : s === 'JPL' ? 'st-prev' : 'st-est'}" title="${s === 'TAD' ? 'Time and Date' : s === 'JPL' ? 'JPL/NASA (Skyfield)' : 'cálculo da página'}">${s === 'TAD' ? 'T&amp;D' : s === 'JPL' ? 'JPL' : 'PÁG'}</span>`;
-    const k = (lbl, e, sub) => `<div><span class="lbl">${lbl} ${tag(e.src)}</span><span class="big">${M.hhmm(e.v, tz)}</span><span class="small">${sub}</span></div>`;
-    const nightHtml = nights.map(n => `<div class="night"><h4>${esc(n.label)} <span class="small">· ${esc(n.src)}</span></h4>${timelineSvg(n, tz)}
-      <ul>${n.segs.map(g => `<li class="${g.moon ? 'moon' : 'dark'}"><b>${g.moon ? 'NOITE COM LUAR' : 'VISIBILIDADE NULA'}</b> <span>${M.ddmm(g.from, tz)} ${M.hhmm(g.from, tz)} até ${M.ddmm(g.to, tz)} ${M.hhmm(g.to, tz)} · ${durTxt(g.to - g.from)}</span></li>`).join('')}</ul>
-      <p class="small">Disco iluminado no meio da noite: <b>${fmt(n.illum)}%</b> · altura máx. da Lua ${fmt(n.alt)}°${n.altT && n.alt > 0 ? ' às ' + M.hhmm(n.altT, tz) : ''}</p></div>`).join('');
-    const ref = k2 => tad ? ev[k2].tad : ev[k2].jpl;
-    const row = (n, k2, usv) => `<tr><th scope="row">${n}</th><td>${ev[k2].tad != null ? M.hhmm(ev[k2].tad, tz) : '—'}</td><td>${ev[k2].jpl != null ? M.hhmm(ev[k2].jpl, tz) : '—'}</td><td>${usv != null ? M.hhmm(usv, tz) : '—'}</td><td>${M.hhmm(ev[k2].page, tz)}</td><td>${tad ? dmin(ev[k2].jpl, ev[k2].tad) : '—'}</td><td>${dmin(usv, ref(k2))}</td><td>${dmin(ev[k2].page, ref(k2))}</td></tr>`;
-    const tl = `https://www.timeanddate.com/sun/@${m.lat.toFixed(4)},${m.lon.toFixed(4)}?month=${+m.date.slice(5, 7)}&year=${m.date.slice(0, 4)}`;
-    const tm = `https://www.timeanddate.com/moon/@${m.lat.toFixed(4)},${m.lon.toFixed(4)}?month=${+m.date.slice(5, 7)}&year=${m.date.slice(0, 4)}`;
-    const v = x => esc(tad && tad[x] != null ? tad[x] : '');
-    el.innerHTML = `
-      <div class="astro-k">
-        ${k('ICMN', ev.icmn, 'início crep. matutino náutico')}${k('FCVN', ev.fcvn, 'fim crep. vespertino náutico')}
-        ${k('FCVC', ev.fcvc, 'fim crep. vespertino civil')}${k('ICMC', ev.icmc, 'início crep. matutino civil')}
-        ${k('Nascer da Lua', ev.lua_nasce, M.ddmm(ev.lua_nasce.v || hourUtc(0), tz))}${k('Ocaso da Lua', ev.lua_poe, M.ddmm(ev.lua_poe.v || hourUtc(0), tz))}
-        <div><span class="lbl">Fase ${tag(fase.src)}</span><span class="mid">${esc(fase.v)}</span><span class="small">dia D</span></div>
-        <div><span class="lbl">Disco iluminado ${tag(ilum.src)}</span><span class="big">${fmt(ilum.v)}%</span><span class="small">dia D</span></div>
-      </div>
-      <div class="nights">${nightHtml}</div>
-      <h4 class="sub">Conferência entre fontes (dia D)</h4><div class="tbl-wrap"><table class="mini"><thead><tr><th></th><th>Time and Date</th><th>JPL</th><th>USNO</th><th>Página</th><th>Δ JPL</th><th>Δ USNO</th><th>Δ Pág.</th></tr></thead><tbody>
-        ${row('ICMN', 'icmn', null)}${row('ICMC', 'icmc', ev.usIcmc)}${row('FCVC', 'fcvc', ev.usFcvc)}${row('FCVN', 'fcvn', null)}${row('Nascer da Lua', 'lua_nasce', ev.usNasce)}${row('Ocaso da Lua', 'lua_poe', ev.usPoe)}
-      </tbody></table></div><p class="note">Δ em minutos em relação ao ${tad ? 'Time and Date' : 'JPL (Time and Date não informado)'}.</p>
-      <details class="tad noexport" ${tad ? '' : 'open'}><summary>Valores do Time and Date — dia D (${esc(m.date.split('-').reverse().join('/'))})</summary>
-        <p class="small">O Time and Date bloqueia consulta automática. Abra <a href="${tl}" target="_blank" rel="noopener">Sol</a> e <a href="${tm}" target="_blank" rel="noopener">Lua</a> para a coordenada, copie os horários (hora local) e salve. Eles passam a ser a referência do painel; JPL e USNO ficam como conferência.</p>
-        <div class="tad-g">
-          <label>ICMN<input type="time" id="t-icmn" value="${v('icmn')}"></label><label>ICMC<input type="time" id="t-icmc" value="${v('icmc')}"></label>
-          <label>FCVC<input type="time" id="t-fcvc" value="${v('fcvc')}"></label><label>FCVN<input type="time" id="t-fcvn" value="${v('fcvn')}"></label>
-          <label>Nascer da Lua<input type="time" id="t-nasce" value="${v('nasce')}"></label><label>Ocaso da Lua<input type="time" id="t-poe" value="${v('poe')}"></label>
-          <label>Fase<select id="t-fase"><option value="">—</option>${PHASES.map(p => `<option ${tad && tad.fase === p ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
-          <label>Disco iluminado (%)<input type="number" min="0" max="100" step="0.1" id="t-ilum" value="${v('ilum')}"></label>
+    const m = S.mission, tz = m.tz, { sel, eve } = nightEve(), nxt = M.shiftDate(eve, 1);
+    const v = (m.tadN && m.tadN[eve]) || {};
+    const val = k => esc(v[k] != null ? v[k] : '');
+    const tl = `https://www.timeanddate.com/sun/@${m.lat.toFixed(4)},${m.lon.toFixed(4)}?month=${+eve.slice(5, 7)}&year=${eve.slice(0, 4)}`;
+    const tm = `https://www.timeanddate.com/moon/@${m.lat.toFixed(4)},${m.lon.toFixed(4)}?month=${+eve.slice(5, 7)}&year=${eve.slice(0, 4)}`;
+    const N = nightAnalysis(v, eve, tz);
+    const card = (lbl, hm, sub) => `<div><span class="lbl">${lbl}</span><span class="big">${hm ? esc(hm) : '—'}</span><span class="small">${sub}</span></div>`;
+    let out = `<div class="astro-k">
+        ${card('ICMN', v.icmn0, `${dBr(eve)} · início crep. matutino náutico`)}${card('FCVC', v.fcvc, `${dBr(eve)} · fim crep. vespertino civil`)}${card('FCVN', v.fcvn, `${dBr(eve)} · fim crep. vespertino náutico`)}${card('ICMN', v.icmn1, `${dBr(nxt)} · fim da noite analisada`)}
+        <div><span class="lbl">Lua — ${dBr(eve)}</span><span class="mid">Nascer ${v.nasceE ? esc(v.nasceE) : '—'}</span><span class="mid">Ocaso ${v.poeE ? esc(v.poeE) : '—'}</span></div>
+        <div><span class="lbl">Lua — ${dBr(nxt)}</span><span class="mid">Nascer ${v.nasce1 ? esc(v.nasce1) : '—'}</span><span class="mid">Ocaso ${v.poe1 ? esc(v.poe1) : '—'}</span></div>
+        <div><span class="lbl">Fase</span><span class="mid">${v.fase ? esc(v.fase) : '—'}</span><span class="small">Time and Date</span></div>
+        <div><span class="lbl">Disco iluminado</span><span class="big">${v.ilum !== undefined && v.ilum !== '' ? fmt(+v.ilum) + '%' : '—'}</span><span class="small">Time and Date</span></div>
+      </div>`;
+    if (N.miss) out += `<p class="muted">Para a análise da noite ${dBr(eve)} → ${dBr(nxt)}, informe abaixo: ${N.miss.map(esc).join(', ')}.</p>`;
+    else if (N.err) out += `<p class="err">${esc(N.err)}</p>`;
+    else {
+      const darkS = N.segs.filter(s => !s.moon), litS = N.segs.filter(s => s.moon);
+      const span = s => s.map(g => `${M.hhmm(g.from, tz)} até ${M.hhmm(g.to, tz)}${M.ddmm(g.to, tz) !== M.ddmm(g.from, tz) ? ' (' + M.ddmm(g.to, tz) + ')' : ''}`).join(' · ');
+      const il = v.ilum !== undefined && v.ilum !== '' ? +v.ilum : null;
+      // texto de análise
+      const txt = [];
+      txt.push(`Noite de ${dBr(eve)} para ${dBr(nxt)}: do FCVC (${esc(v.fcvc)}) ao ICMN (${esc(v.icmn1)}), ${durTxt(N.end - N.start)} no total. No FCVC a Lua está ${N.up0 ? '<b>acima</b>' : '<b>abaixo</b>'} do horizonte.`);
+      N.segs.forEach(g => txt.push(g.moon
+        ? `<b>Noite com luar</b> de ${M.hhmm(g.from, tz)} a ${M.hhmm(g.to, tz)} (${durTxt(g.to - g.from)})${g.from === N.start ? ' — a Lua já está no céu ao fim do crepúsculo civil' : ' — a partir do nascer da Lua'}${g.to < N.end ? ', até o ocaso da Lua' : ', até o ICMN'}.`
+        : `<b>Visibilidade nula</b> de ${M.hhmm(g.from, tz)} a ${M.hhmm(g.to, tz)} (${durTxt(g.to - g.from)})${g.from === N.start ? ' — do FCVC' : ' — do ocaso da Lua'}${g.to < N.end ? ' até o nascer da Lua' : ' até o ICMN'}.`));
+      if (litS.length) txt.push(`Iluminação: ${v.fase ? esc(v.fase) : 'fase não informada'}${il != null ? `, ${fmt(il)}% do disco iluminado` : ''}. ${il != null && il < 25 ? 'Disco pouco iluminado: mesmo com a Lua no céu, a luminosidade tende a ser baixa.' : il != null && il >= 75 ? 'Disco muito iluminado: luminosidade relevante quando a Lua estiver alta e sem nuvens.' : ''} Logo após o nascer (e antes do ocaso) a Lua está baixa no horizonte e ilumina pouco; a luminosidade cresce à medida que ela sobe.`);
+      // horários da missão
+      const hrs = (H || []).map(h => {
+        const t = h.utc; let st, cls;
+        if (t < N.start || t >= N.end) { st = t < N.start && t > N.start - 14 * 3600e3 ? 'Dia / crepúsculo civil' : t >= N.end && t < N.end + 14 * 3600e3 ? 'Crepúsculo / dia' : 'Fora da noite analisada'; cls = 'na'; }
+        else { const g = N.segs.find(s => t >= s.from && t < s.to); st = g.moon ? 'Noite com luar' : 'Visibilidade nula'; cls = g.moon ? 'warn' : 'bad'; }
+        const cc = h.c && h.c.cc != null ? h.c.cc : null;
+        const nub = st === 'Noite com luar' && cc != null && cc >= 70 ? `<small>nebulosidade total ${fmt(cc)}% (modelos) tende a reduzir o luar</small>` : '';
+        return `<td><span class="pill ${cls}">${st}</span>${nub}</td>`;
+      });
+      out += `<div class="an-night">
+          <div class="dk"><b>VISIBILIDADE NULA</b><span>${darkS.length ? span(darkS) : 'não ocorre nesta noite'}</span><br><span class="small">total ${durTxt(N.dark)}</span></div>
+          <div class="mn"><b>NOITE COM LUAR</b><span>${litS.length ? span(litS) : 'não ocorre nesta noite'}</span><br><span class="small">total ${durTxt(N.lit)}${il != null ? ` · disco ${fmt(il)}%` : ''}</span></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="t-save">Salvar valores do Time and Date</button>${tad ? '<button type="button" class="btn ghost" id="t-clear">Remover</button>' : ''}<span class="small" id="t-msg" role="status"></span></div>
+        ${timelineSvg(N, tz)}
+        ${H && H.length ? `<div class="tbl-wrap"><table class="mini hlum"><thead><tr><th></th>${H.map(h => `<th>${h.label}<small>${M.hhmm(h.utc, tz)}</small></th>`).join('')}</tr></thead><tbody><tr><th scope="row">Luminosidade natural</th>${hrs.join('')}</tr></tbody></table></div>` : ''}
+        <div class="an-txt">${txt.map(x => `<p>${x}</p>`).join('')}</div>`;
+    }
+    out += `<details class="tad noexport" ${N.miss ? 'open' : ''}><summary>Inserir valores do Time and Date</summary>
+        <p class="small">Abra <a href="${tl}" target="_blank" rel="noopener">Sol (Time and Date)</a> e <a href="${tm}" target="_blank" rel="noopener">Lua (Time and Date)</a> para a coordenada da missão e copie os horários locais das linhas dos dias indicados. Deixe em branco o evento que não ocorre no dia (“–” no site).</p>
+        <div class="row"><label class="small">Noite analisada <select id="t-night"><option value="D-1" ${sel === 'D-1' ? 'selected' : ''}>D-1 → D (${dBr(M.shiftDate(m.date, -1))} → ${dBr(m.date)})</option><option value="D" ${sel === 'D' ? 'selected' : ''}>D → D+1 (${dBr(m.date)} → ${dBr(M.shiftDate(m.date, 1))})</option></select></label></div>
+        <p class="tad-h">Dia ${dBr(eve)} (tarde/noite)</p>
+        <div class="tad-g">
+          <label>ICMN<input type="time" id="t-icmn0" value="${val('icmn0')}"></label><label>FCVC<input type="time" id="t-fcvc" value="${val('fcvc')}"></label><label>FCVN<input type="time" id="t-fcvn" value="${val('fcvn')}"></label>
+          <label>Nascer da Lua<input type="time" id="t-nasceE" value="${val('nasceE')}"></label><label>Ocaso da Lua<input type="time" id="t-poeE" value="${val('poeE')}"></label>
+        </div>
+        <p class="tad-h">Dia ${dBr(nxt)} (madrugada/manhã)</p>
+        <div class="tad-g">
+          <label>ICMN<input type="time" id="t-icmn1" value="${val('icmn1')}"></label>
+          <label>Nascer da Lua<input type="time" id="t-nasce1" value="${val('nasce1')}"></label><label>Ocaso da Lua<input type="time" id="t-poe1" value="${val('poe1')}"></label>
+        </div>
+        <p class="tad-h">Lua na noite</p>
+        <div class="tad-g">
+          <label>Fase<select id="t-fase"><option value="">—</option>${PHASES.map(p => `<option ${v.fase === p ? 'selected' : ''}>${p}</option>`).join('')}</select></label>
+          <label>Disco iluminado (%)<input type="number" min="0" max="100" step="0.1" id="t-ilum" value="${val('ilum')}"></label>
+        </div>
+        <div class="row"><button type="button" class="btn" id="t-save">Salvar e analisar</button>${Object.keys(v).length ? '<button type="button" class="btn ghost" id="t-clear">Limpar</button>' : ''}<span class="small" id="t-msg" role="status"></span></div>
       </details>
-      <p class="note">Definições: <b>visibilidade nula</b> = noite (FCVC até ICMC) com a Lua abaixo do horizonte, por exemplo do FCVC até o nascer da Lua; <b>noite com luar</b> = noite com a Lua acima do horizonte, a partir do nascer da Lua até o ocaso ou o ICMC. Crepúsculo civil: Sol a −6°; náutico: −12°. Percentual do disco iluminado não equivale à iluminância no solo. Fontes: ${tad ? 'Time and Date (inserido pelo usuário), ' : ''}${A.jpl ? `JPL DE421/Skyfield (coleta ${esc(whenStr(S.astro.coletado_em_utc))})${us ? ', USNO' : ''}` : 'cálculo da página (baixa precisão); execute a atualização para obter JPL/USNO'}.</p>`;
+      <p class="note"><span class="st st-obs">TIME AND DATE</span> horários inseridos pelo usuário (hora local, fuso ${esc(tz)}); a análise é calculada a partir deles. <b>Visibilidade nula</b>: período da noite (FCVC até ICMN do dia seguinte) com a Lua abaixo do horizonte — ex.: do FCVC até o nascer da Lua. <b>Noite com luar</b>: período da noite com a Lua acima do horizonte — do nascer da Lua até o ocaso ou o ICMN. Classificação astronômica: nebulosidade, iluminação artificial e relevo alteram a luminosidade real; o percentual do disco iluminado não equivale à iluminância no solo. Crepúsculo civil: Sol a −6°; náutico: −12°.</p>`;
+    el.innerHTML = out;
+    const ns = $('#t-night');
+    if (ns) ns.addEventListener('change', async () => { S.mission = Object.assign({}, S.mission, { astroNight: ns.value }); await save('mission', S.mission); renderAll(); });
     const sv = $('#t-save');
     if (sv) sv.addEventListener('click', async () => {
       const g = id => $('#' + id).value.trim();
-      const tadNew = { date: m.date, icmn: g('t-icmn'), icmc: g('t-icmc'), fcvc: g('t-fcvc'), fcvn: g('t-fcvn'), nasce: g('t-nasce'), poe: g('t-poe'), fase: g('t-fase'), ilum: g('t-ilum') };
-      if (!Object.entries(tadNew).some(([kk, vv]) => kk !== 'date' && vv)) { $('#t-msg').textContent = 'Preencha ao menos um horário.'; return; }
-      S.mission = Object.assign({}, S.mission, { tad: tadNew, updatedAt: nowIso() });
-      if (await save('mission', S.mission)) { flash('Valores do Time and Date salvos.'); logHist('Astronomia: valores do Time and Date inseridos para ' + m.date); }
+      const nv = { icmn0: g('t-icmn0'), fcvc: g('t-fcvc'), fcvn: g('t-fcvn'), nasceE: g('t-nasceE'), poeE: g('t-poeE'), icmn1: g('t-icmn1'), nasce1: g('t-nasce1'), poe1: g('t-poe1'), fase: g('t-fase'), ilum: g('t-ilum') };
+      if (!Object.values(nv).some(Boolean)) { $('#t-msg').textContent = 'Preencha ao menos um campo.'; return; }
+      const tadN = Object.assign({}, S.mission.tadN || {}, { [eve]: nv });
+      S.mission = Object.assign({}, S.mission, { tadN, astroNight: sel, updatedAt: nowIso() });
+      if (await save('mission', S.mission)) { flash('Valores do Time and Date salvos.'); logHist(`Astronomia: valores do Time and Date inseridos para a noite ${eve} → ${nxt}`); }
       renderAll();
     });
     const cl = $('#t-clear');
-    if (cl) cl.addEventListener('click', async () => { const mm = Object.assign({}, S.mission); delete mm.tad; S.mission = mm; await save('mission', S.mission); renderAll(); });
+    if (cl) cl.addEventListener('click', async () => { const tadN = Object.assign({}, S.mission.tadN || {}); delete tadN[eve]; S.mission = Object.assign({}, S.mission, { tadN }); await save('mission', S.mission); renderAll(); });
   }
 
   /* ---------------- INMET ---------------- */
@@ -1397,6 +1410,21 @@ const MET = (() => {
   }
 
   /* ---------------- Render: tabela consolidada ---------------- */
+  const COVSHORT = { FEW: 'Poucas nuvens (1–2/8)', SCT: 'Esparsas (3–4/8)', BKN: 'Fragmentadas (5–7/8)', OVC: 'Encoberto (8/8)' };
+  /** Classe qualitativa do CAPE pelos limiares da missão (padrão 1.000 / 2.500 J/kg). */
+  function capeClass(v) {
+    if (v == null) return null;
+    const cm = +S.mission.capeMod || 1000, cs = +S.mission.capeStrong || 2500;
+    if (v < cm / 2) return { txt: 'Baixo', cls: 'k0' };
+    if (v < cm) return { txt: 'Moderado', cls: 'k1' };
+    if (v < cs) return { txt: 'Alto', cls: 'k2' };
+    return { txt: 'Muito alto', cls: 'k3' };
+  }
+  /** Efeito da altitude-densidade: densidade relativa à atmosfera padrão ao nível do mar e aumento de velocidade de descida/deslocamento (v ∝ 1/√ρ). */
+  function daEffect(da) {
+    const sigma = Math.pow(1 - 6.8756e-6 * da, 4.2559);
+    return { sigma, dens: (1 - sigma) * 100, vel: (1 / Math.sqrt(sigma) - 1) * 100 };
+  }
   function trendArrow(a, b, eps) { if (a == null || b == null) return ''; const d = b - a; if (Math.abs(d) <= eps) return '<i class="tr">→</i>'; return d > 0 ? '<i class="tr up">↑</i>' : '<i class="tr dn">↓</i>'; }
   function sigWx(h) {
     const items = [];
@@ -1419,23 +1447,30 @@ const MET = (() => {
       row('Direção do vento', '° verdadeiro', H.map(h => cell(h, h => `${dir3(h.c.dir)}° <small>${M.cardinal(h.c.dir)}</small>`))),
       row('Vento médio', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.wind > lim ? 'tbad' : h.c.wind >= 0.8 * lim ? 'twarn' : ''}">${fmt(h.c.wind)}</span>${i ? trendArrow(H[i - 1].c.wind, h.c.wind, 1) : ''}`))),
       row('Rajadas', 'kt', H.map((h, i) => cell(h, h => `<span class="${h.c.gust > lim ? 'tbad' : ''}">${fmt(h.c.gust)}</span>${i ? trendArrow(H[i - 1].c.gust, h.c.gust, 1) : ''}`))),
-      row('Temperatura', '°C · 2 m', H.map((h, i) => cell(h, h => `${fmt(h.c.temp)}${i ? trendArrow(H[i - 1].c.temp, h.c.temp, 0.5) : ''}`))),
+      row('Temperatura', '°C · 2 m · sensação térmica', H.map((h, i) => cell(h, h => `${fmt(h.c.temp)}${i ? trendArrow(H[i - 1].c.temp, h.c.temp, 0.5) : ''}<small>sensação ${h.c.at != null ? fmt(h.c.at) + ' °C' : 'n/d'}</small>`))),
       row('Prob. precipitação', '%', H.map(h => cell(h, h => `<span class="${h.c.pp >= 50 ? 'twarn' : ''}">${fmt(h.c.pp)}</span>`))),
       row('Precipitação', 'mm/h', H.map(h => cell(h, h => `${fmt(h.c.pr, 1)}${h.c.sh > 0 ? ' <small>conv.</small>' : ''}`))),
-      row('Nebulosidade', 'camadas · ft AGL (centenas)', H.map(h => cell(h, h => { const L = h.layers ? h.layers.cons : [];
-        const tf = h.tafc ? (h.tafc.prev.clouds || []).join(' ') : '';
-        return `${L.length ? `<span class="cl">${L.map(x => `<b class="cov-${x.cov}" title="${esc(M.COVDESC[x.cov])} a ${fmt(x.baseFt)} ft">${x.code}</b>`).join(' ')}</span>` : '<span class="cl"><b>NSC</b></span>'}${tf ? `<small>TAF: ${esc(tf)}</small>` : ''}`; }))),
-      row('CAPE', 'J/kg', H.map(h => cell(h, h => fmt(h.c.cape)))),
+      row('Nebulosidade', 'camadas · base em ft sobre a ZL', H.map(h => cell(h, h => { const L = h.layers ? h.layers.cons : [];
+        return L.length ? `<span class="cl">${L.map(x => `<b class="cov-${x.cov}">${x.code}</b>`).join(' ')}</span>${L.map(x => `<small class="cld">${esc(COVSHORT[x.cov])} a ${fmt(x.baseFt)} ft</small>`).join('')}` : '<span class="cl"><b class="cov-none">Sem nuvens</b></span><small class="cld">nenhuma camada significativa</small>'; }))),
+      row('Potencial de tempestade', 'energia para nuvens de trovoada (CAPE)', H.map(h => cell(h, h => { const q = capeClass(h.c.cape); return q ? `<span class="cape ${q.cls}">${q.txt}</span><small>${fmt(h.c.cape)} J/kg</small>` : '<span class="na">—</span>'; }))),
       row('Visibilidade', 'modelo · km', H.map(h => cell(h, h => h.c.vis == null ? '<small>n/d no modelo</small>' : `<span class="${numOrNull(S.mission.visMin) != null && h.c.vis < +S.mission.visMin ? 'tbad' : ''}">${h.c.vis >= 10000 ? '≥10' : fmt(h.c.vis / 1000, 1)}</span>`))),
-      row('Teto previsto', 'ft · modelo / TAF', H.map(h => { const mo = h.c.ceilModel, tf = h.tafc; const tv = tf ? (tf.prev.ceil != null ? fmt(tf.prev.ceil) : 'sem teto') + (tf.vari.filter(v => v.ceil != null).length ? `<small>${tf.vari.filter(v => v.ceil != null).map(v => esc(v.tipo) + ' ' + fmt(v.ceil)).join(' · ')}</small>` : '') : '<small>sem TAF válido</small>';
-        return `<span class="${h.minima && h.minima.ceil.length ? 'tbad' : ''}">${mo != null ? fmt(mo) : (h.n ? 'sem teto' : '—')}</span> / ${tv}`; })),
-      row('Altitude-densidade ZL', 'ft · modelo', H.map(h => h.daZl == null ? '<span class="na">—</span>' : fmt(h.daZl))),
+      row('Teto previsto', 'ft sobre a ZL · modelos GFS/ECMWF/ICON', H.map(h => cell(h, h => { const mo = h.c.ceilModel;
+        return mo != null ? `<span class="${h.minima && h.minima.ceil.length ? 'tbad' : ''}">${fmt(mo)} ft</span><small>1ª camada BKN/OVC</small>` : '<span>Sem teto</span><small>nenhuma camada BKN/OVC</small>'; }))),
+      row('Altitude-densidade na ZL', 'ar mais rarefeito = velame mais rápido', H.map(h => { if (h.daZl == null) return '<span class="na">—</span>'; const e = daEffect(h.daZl);
+        return `<span class="${e.vel >= 5 ? 'twarn' : ''}">${fmt(h.daZl)} ft</span>${e.dens >= 0 ? `<small>ar ${fmt(e.dens, 1)}% menos denso</small><small>velame ≈ ${fmt(e.vel, 1)}% mais rápido</small>` : `<small>ar ${fmt(-e.dens, 1)}% mais denso</small><small>velame ≈ ${fmt(-e.vel, 1)}% mais lento</small>`}`; })),
       row('Nuvens significativas e tempo presente', 'CB · TCU · precipitação · trovoada', H.map(h => sigWx(h))),
       row('METAR próximo', 'observado', H.map(h => h.metar ? `<span class="obs" title="${esc(h.metar.raw)}">${h.metar.wind ? (h.metar.wind.vrb ? 'VRB' : dir3(h.metar.wind.dir)) + '/' + h.metar.wind.kt + (h.metar.wind.gust ? 'G' + h.metar.wind.gust : '') + ' kt' : '—'}<small>${h.metar.clouds.map(c => c.cov + (c.base != null ? M.pad(c.base / 100, 3).padStart(3, '0') : '') + c.type).join(' ') || (h.metar.cavok ? 'CAVOK' : '')}</small></span>` : `<span class="na">—</span>`)),
       row('Confiança', 'por horário', H.map(h => h.overall ? `<span class="pill ${cClass(h.overall)}">${h.overall}</span>` : `<span class="na">—</span>`)),
     ].join('');
     el.innerHTML = `<div class="tbl-wrap"><table class="hourly"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-      <p class="note">${tag(mod, S.models ? 'prev' : 'ind')} valores de modelo consolidados por mediana ponderada (direção: valor que minimiza a diferença angular entre modelos). Fontes: ${esc(modelIds().join(', ') || 'nenhuma')}. ${tag('ESTIMADO', 'est')} <b>Nebulosidade</b> no formato METAR: FEW = poucas nuvens (1–2/8), SCT = nuvens esparsas (3–4/8), BKN = nuvens fragmentadas (5–7/8), OVC = céu encoberto (8/8); o número é a base em centenas de pés sobre a ZL (ex.: BKN010 = 1.000 ft). Obtida da cobertura de nuvens por nível de pressão dos modelos (mediana entre GFS, ECMWF e ICON), com a base convectiva refinada pelo nível de condensação; resolução vertical limitada a ~700 ft nos níveis baixos. TAF da estação mostrado abaixo para comparação. ${tag('OBSERVADO', 'obs')} METAR a até 45 min do horário. Vento em superfície (10 m) não representa a coluna — ver “Vento em altitude”.</p>`;
+      <p class="note">${tag(mod, S.models ? 'prev' : 'ind')} valores de modelo consolidados por mediana ponderada (direção: valor que minimiza a diferença angular entre modelos). Fontes: ${esc(modelIds().join(', ') || 'nenhuma')}. ${tag('OBSERVADO', 'obs')} METAR a até 45 min do horário. Vento em superfície (10 m) não representa a coluna — ver “Vento em altitude”.</p>
+      <details class="howto" open><summary>Como ler esta tabela</summary><dl>
+        <dt>Sensação térmica</dt><dd>Temperatura percebida pelo corpo, combinando temperatura, umidade, vento e radiação solar (variável <i>apparent temperature</i> dos modelos). Útil para esforço físico, hidratação e equipamento da tropa; não altera o desempenho do paraquedas.</dd>
+        <dt>Nebulosidade</dt><dd>Formato METAR: cobertura do céu em oitavos + base em centenas de pés sobre a ZL. Ex.: <b>BKN030</b> = nuvens fragmentadas (5–7/8) com base a 3.000 ft. <b>FEW</b> poucas (1–2/8) · <b>SCT</b> esparsas (3–4/8) · <b>BKN</b> fragmentadas (5–7/8) · <b>OVC</b> encoberto (8/8). “Sem nuvens” = nenhuma camada identificada pelos modelos. ${tag('ESTIMADO', 'est')} obtida da cobertura por nível de pressão (mediana GFS/ECMWF/ICON), base convectiva refinada pelo nível de condensação; resolução vertical ~700 ft nos níveis baixos.</dd>
+        <dt>Teto previsto</dt><dd>Altura da base da 1ª camada que cobre mais da metade do céu (BKN ou OVC). Abaixo do teto o lançamento e a navegação visual ficam limitados. Calculado somente pelos modelos; METAR e TAF não entram nesta linha (o TAF segue no painel “Aeródromos”).</dd>
+        <dt>Potencial de tempestade (CAPE)</dt><dd>CAPE = energia disponível para correntes ascendentes. Quanto maior, mais forte pode ser o desenvolvimento de <b>TCU</b> e <b>CB</b>, com trovoadas, rajadas, turbulência e pancadas. Só se concretiza se houver umidade e mecanismo de disparo (aquecimento, frente, relevo) — por isso é cruzado com as pancadas previstas e com o TAF/METAR na linha “Nuvens significativas”. Faixas pelos limiares da missão: Baixo &lt; ${fmt((+S.mission.capeMod || 1000) / 2)} · Moderado &lt; ${fmt(+S.mission.capeMod || 1000)} · Alto &lt; ${fmt(+S.mission.capeStrong || 2500)} · Muito alto ≥ ${fmt(+S.mission.capeStrong || 2500)} J/kg.</dd>
+        <dt>Altitude-densidade na ZL</dt><dd>Altitude da atmosfera padrão que tem a mesma densidade do ar da ZL. Calor, pressão baixa e ZL elevada aumentam o valor: ar mais rarefeito. Para o salto: o paraquedas (enganchado ou velame de SLOp) desce e se desloca mais rápido, o pouso fica mais forte e o flare rende menos. Para a aeronave: mais pista na decolagem, menor razão de subida e menor rendimento do motor. ${tag('ESTIMADO', 'est')} % de velocidade pela relação física v ∝ 1/√densidade, em relação ao nível do mar padrão; não substitui os dados do fabricante do paraquedas ou da aeronave.</dd>
+      </dl></details>`;
     renderWindChart(H);
   }
 
@@ -1881,7 +1916,11 @@ const MET = (() => {
       if (err.length) { $('#form-err').textContent = err.join(' '); return; }
       $('#form-err').textContent = '';
       const changedPlace = S.mission.lat !== m.lat || S.mission.lon !== m.lon || S.mission.date !== m.date || S.mission.tz !== m.tz;
-      S.mission = Object.assign(DEFAULT_MISSION(), m);
+      const samePos = S.mission.lat === m.lat && S.mission.lon === m.lon && S.mission.tz === m.tz;
+      const keep = {};
+      if (samePos && S.mission.tadN) keep.tadN = S.mission.tadN; // valores do Time and Date só valem para a mesma coordenada
+      if (samePos && S.mission.date === m.date && S.mission.astroNight) keep.astroNight = S.mission.astroNight;
+      S.mission = Object.assign(DEFAULT_MISSION(), m, keep);
       if (await save('mission', S.mission)) { flash(changedPlace && (S.models || S.sounding) ? 'Missão salva. Coordenada, data ou fuso mudaram: recarregue modelos e sondagem.' : 'Missão salva.'); logHist('Missão atualizada: ' + (m.name || 'sem nome')); }
       $('#mission').open = false;
       renderAll();
@@ -1944,7 +1983,7 @@ const MET = (() => {
 
   function renderAll() {
     const H = hasPos() ? hours() : [];
-    renderHeader(); renderVerdicts(H); renderAstro(); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrace(H); renderSources();
+    renderHeader(); renderVerdicts(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrace(H); renderSources();
     $('#sec-main').hidden = !hasPos();
   }
 

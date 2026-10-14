@@ -18,7 +18,7 @@ from zoneinfo import ZoneInfo
 
 UA = "DashboardMeteorologicoSalto/1.0 (uso institucional nao comercial)"
 MODELOS = ["gfs_seamless", "ecmwf_ifs025", "icon_seamless"]
-SUPERFICIE = ["temperature_2m", "dew_point_2m", "precipitation_probability", "precipitation", "showers",
+SUPERFICIE = ["temperature_2m", "apparent_temperature", "dew_point_2m", "precipitation_probability", "precipitation", "showers",
               "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
               "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "cape", "pressure_msl", "visibility",
               "wind_speed_80m", "wind_direction_80m", "wind_speed_120m", "wind_direction_120m", "wind_speed_180m", "wind_direction_180m",
