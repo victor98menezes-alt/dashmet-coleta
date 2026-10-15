@@ -185,6 +185,16 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 .an-txt{font-size:.86rem;line-height:1.55;margin:8px 0;max-width:115ch}
 .tad-h{font:600 .7rem var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg);margin:12px 0 0}
 .sw{display:flex;flex-direction:column;gap:3px;align-items:center}
+/* METAR/TAF inseridos */
+.opm-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:14px;margin-bottom:10px}
+.opm-c{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-radius:12px;background:var(--sunk)}
+.opm-c label{display:flex;flex-direction:column;gap:4px;font:600 .66rem var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.opm-c input,.opm-c textarea{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:500 .8rem/1.45 var(--f-data);color:var(--fg);text-transform:uppercase;letter-spacing:0;resize:vertical;min-width:0}
+.opm-c input{max-width:110px}
+ul.opm-st{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:.76rem}
+ul.opm-st li::before{content:"• ";color:var(--muted)} ul.opm-st li.ok::before{content:"✓ ";color:var(--ok)} ul.opm-st li.warn::before{content:"! ";color:var(--warn)} ul.opm-st li.bad::before{content:"✕ ";color:var(--bad)}
+.opm-v{margin-top:14px} .opm-v h4{margin:0 0 6px;font:600 .82rem var(--f-body)}
+small.tvar{color:var(--warn)!important}
 .cl-v{flex-direction:column;gap:3px;align-items:center} .cl b em{font-style:normal;font-weight:700;opacity:.85}
 /* Projeção de impeditivos */
 .proj-sum{font:600 .95rem var(--f-body);margin:0 0 10px}
@@ -357,6 +367,8 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
     </section>
 
     <section class="panel" aria-labelledby="h-proj"><header><h2 id="h-proj">Projeção de impeditivos — H a H+5</h2><span class="small">vento · teto · nuvens · tempo presente · TCU/CB</span></header><div id="proj"></div></section>
+
+    <section class="panel" aria-labelledby="h-opm"><header><h2 id="h-opm">METAR / TAF — aeródromos mais próximos</h2><span class="small">inserção manual · cruzamento com os modelos</span></header><div id="opm"></div></section>
 
     <div id="sec-main" class="wrap" style="gap:20px">
       <div class="grid2">
@@ -990,9 +1002,10 @@ const MET = (() => {
     return null;
   }
 
-  function computeHour(k) {
-    const utc = hourUtc(k), key = M.localKey(utc, S.mission.tz);
-    const r = { k, utc, key, label: k === 0 ? 'H' : 'H+' + k, per: {}, n: 0 };
+  /** k = índice H+k; utcOv = instante arbitrário (verificação contra METAR, sem TAF). */
+  function computeHour(k, utcOv) {
+    const utc = utcOv != null ? utcOv : hourUtc(k), key = M.localKey(utc, S.mission.tz);
+    const r = { k, utc, key, label: k == null ? '' : k === 0 ? 'H' : 'H+' + k, per: {}, n: 0, tafU: [] };
     const W = S.mission.weights || {};
     if (S.models) {
       const idx = S.models.time.indexOf(key);
@@ -1040,6 +1053,13 @@ const MET = (() => {
     }
     if (tsIds.length >= 2) { conv.level = 3; conv.text = 'CB com trovoada provável'; conv.src.push(`trovoada (TS) em ${tsIds.length}/${r.n} modelos: ${tsIds.join(', ')}`); }
     else if (tsIds.length === 1 && conv.level < 2) { conv.level = 2; conv.text = 'TCU/CB possível'; conv.src.push(`trovoada (TS) em 1/${r.n} modelo: ${tsIds[0]}`); }
+    // TAF inserido pelo usuário (dois aeródromos mais próximos)
+    if (utcOv == null) r.tafU = userOpmet().map(ad => { const x = tafAtAd(ad, utc); return x ? Object.assign({ icao: ad.icao, dist: ad.dist }, x) : null; }).filter(Boolean);
+    r.tafU.forEach(x => {
+      const tag = `TAF ${x.icao}`, temp = x.at && x.at.groups.some(g => /^(TEMPO|PROB)/.test(g));
+      if (x.at && (x.at.cb || x.at.ts)) { if (conv.level < 3) { conv.level = 3; conv.text = `${x.at.ts ? 'TS/CB' : 'CB'} previsto (${tag})`; } conv.src.push(`${tag}: ${x.at.groups.filter(g => /TS|CB/.test(g)).join(' | ')}`); }
+      else if (x.at && x.at.tcu) { if (conv.level < 2) { conv.level = 2; conv.text = `TCU previsto (${tag})`; } conv.src.push(`${tag}: TCU`); }
+    });
     // vento na ZL (ZL + 750 ft), 1ª camada acima e altura de lançamento
     r.zl = zlWinds(r);
     const useZl = S.mission.windRef === 'ZL750' && r.zl && r.zl.c750;
@@ -1077,6 +1097,17 @@ const MET = (() => {
     if (vmin != null) {
       if (c.vis != null && c.vis < vmin) r.minima.vis.push(`modelo ${fmt(c.vis)} m`);
     }
+    r.tafU.forEach(x => {
+      const tag = `TAF ${x.icao}`, P = x.cond.prev, W = x.wind && x.wind.prev;
+      if (bmin && P.ceil != null && P.ceil < bmin) restr.push(`${tag}: teto ${fmt(P.ceil)} ft abaixo de ${fmt(bmin)} ft`);
+      x.cond.vari.forEach(v => { if (bmin && v.ceil != null && v.ceil < bmin) restr.push(`${tag} ${v.tipo}: teto ${fmt(v.ceil)} ft`); });
+      if (W && (W.kt > lim || (W.gust || 0) > lim)) restr.push(`${tag}: vento 10 m ${windTxt(W)} acima do limite`);
+      (x.wind ? x.wind.vari : []).forEach(v => { if (v.kt > lim || (v.gust || 0) > lim) restr.push(`${tag} ${v.tipo}: vento ${windTxt(v)}`); });
+      const wx = [...(P.wx || []), ...x.cond.vari.flatMap(v => (v.wx || []).map(w => v.tipo + ' ' + w))].filter(w => !/TS|NSW/.test(w));
+      if (wx.length) restr.push(`${tag}: ${wx.join(', ')}`);
+      if (cmin != null) { if (P.ceil != null && P.ceil < cmin) r.minima.ceil.push(`${tag} ${fmt(P.ceil)} ft`); x.cond.vari.forEach(v => { if (v.ceil != null && v.ceil < cmin) r.minima.ceil.push(`${tag} ${v.tipo} ${fmt(v.ceil)} ft`); }); }
+      if (vmin != null) { if (P.vis != null && P.vis < vmin) r.minima.vis.push(`${tag} ${fmt(P.vis)} m`); x.cond.vari.forEach(v => { if (v.vis != null && v.vis < vmin) r.minima.vis.push(`${tag} ${v.tipo} ${fmt(v.vis)} m`); }); }
+    });
     if (r.minima.ceil.length) restr.push(`Teto abaixo do mínimo de ${fmt(cmin)} ft (${r.minima.ceil.join(', ')})`);
     if (r.minima.vis.length) restr.push(`Visibilidade abaixo do mínimo de ${fmt(vmin)} m (${r.minima.vis.join(', ')})`);
     // altitude-densidade na ZL (modelo)
@@ -1193,6 +1224,113 @@ const MET = (() => {
     return out;
   }
 
+  /* ---------------- METAR/TAF inseridos pelo usuário (dois aeródromos mais próximos) ---------------- */
+  let _opmMemo = { key: null, val: [] };
+  /** Interpreta as mensagens coladas pelo usuário; mês/ano de referência = momento em que foram salvas. */
+  function userOpmet() {
+    const L = (S.mission.opmetUser || []).filter(a => a && (a.icao || a.txt));
+    const key = JSON.stringify([L, S.aer && S.aer.coletado_em_utc, S.mission.lat, S.mission.lon]);
+    if (_opmMemo.key === key) return _opmMemo.val;
+    const val = L.map(a => {
+      const ref = a.savedAt ? Date.parse(a.savedAt) : Date.now(), rp = new Date(ref), Y = rp.getUTCFullYear(), MO = rp.getUTCMonth();
+      let icao = (a.icao || '').toUpperCase().trim();
+      const metars = M.splitMessages(a.txt || '', 'METAR').map(raw => {
+        const m = M.parseMetar(raw); if (!m.time) return null;
+        let t = Date.UTC(Y, MO, m.time.d, m.time.h, m.time.mi);
+        if (t > ref + 3 * 3600e3) t = Date.UTC(Y, MO - 1, m.time.d, m.time.h, m.time.mi);
+        return Object.assign(m, { utc: t });
+      }).filter(Boolean).filter(m => !icao || !m.station || m.station === icao).sort((x, y) => y.utc - x.utc);
+      const tafs = M.splitMessages(a.txt || '', 'TAF').map(raw => {
+        try {
+          let t = M.parseTaf(raw, { y: Y, mo: MO + 1 });
+          if (t.validFrom != null && t.validFrom > ref + 3 * 86400e3) { const d = new Date(Date.UTC(Y, MO - 1, 1)); t = M.parseTaf(raw, { y: d.getUTCFullYear(), mo: d.getUTCMonth() + 1 }); }
+          return t.validFrom != null ? t : null;
+        } catch (e) { return null; }
+      }).filter(Boolean).filter(t => !icao || !t.station || t.station === icao).sort((x, y) => y.validFrom - x.validFrom);
+      if (!icao) icao = (metars[0] && metars[0].station) || (tafs[0] && tafs[0].station) || '';
+      const ad = S.aer && S.aer.aerodromos && S.aer.aerodromos[icao];
+      const dist = ad && ad.lat != null && hasPos() ? haversine(S.mission.lat, S.mission.lon, ad.lat, ad.lon) : null;
+      return { icao, metars, tafs, dist, elev: ad ? ad.elev_ft : null, nome: ad ? ad.nome : null, savedAt: a.savedAt, txt: a.txt || '' };
+    }).filter(a => a.icao || a.metars.length || a.tafs.length);
+    _opmMemo = { key, val };
+    return val;
+  }
+  /** Condições do TAF (mais recente válido) de um aeródromo num instante. */
+  function tafAtAd(ad, utc) {
+    for (const t of ad.tafs) { const c = M.tafCond(t, utc); if (c) return { taf: t, cond: c, wind: M.tafWind(t, utc), at: M.tafAt(t, utc) }; }
+    return null;
+  }
+  /** Verificação: METAR observado × modelos consolidados na mesma hora (coordenada da missão). */
+  function verifyAd(ad) {
+    const rows = ad.metars.slice(0, 8).map(m => {
+      const h = computeHour(null, Math.round(m.utc / 3600e3) * 3600e3);
+      if (!h.n) return { m, h: null };
+      const ow = m.wind ? m.wind.kt : null, oc = M.ceilingFt(m);
+      return { m, h, dw: ow != null && h.c.wind != null ? h.c.wind - ow : null, dt: m.t != null && h.c.temp != null ? h.c.temp - m.t : null, oc, mc: h.c.ceilModel,
+        ceilAgree: (oc == null) === (h.c.ceilModel == null) || (oc != null && h.c.ceilModel != null && Math.abs(oc - h.c.ceilModel) <= 1000) };
+    });
+    const ok = rows.filter(r => r.h), mean = a => a.length ? a.reduce((s, x) => s + x, 0) / a.length : null;
+    const dws = ok.map(r => r.dw).filter(x => x != null), dts = ok.map(r => r.dt).filter(x => x != null);
+    return { rows, n: ok.length, biasW: mean(dws), nW: dws.length, biasT: mean(dts), nT: dts.length, ceilAgree: ok.filter(r => r.ceilAgree).length, last: ad.metars[0] ? ad.metars[0].utc : null };
+  }
+  /** Viés de vento a 10 m combinado (todos os METAR verificáveis dos aeródromos inseridos). */
+  function windBias() {
+    const V = userOpmet().map(ad => ({ ad, v: verifyAd(ad) })).filter(x => x.v.nW);
+    const n = V.reduce((s, x) => s + x.v.nW, 0);
+    if (n < 2) return null;
+    const b = V.reduce((s, x) => s + x.v.biasW * x.v.nW, 0) / n, last = Math.max(...V.map(x => x.v.last));
+    return { b, n, last, src: V.map(x => x.ad.icao).join(', ') };
+  }
+  const windTxt = w => w ? `${w.vrb ? 'VRB' : dir3(w.dir)}/${M.pad(w.kt)}${w.gust ? 'G' + w.gust : ''} kt` : '—';
+  const visTxt = v => v == null ? '' : v >= 9999 ? '≥10 km' : fmt(v) + ' m';
+  function renderOpm(H) {
+    const el = $('#opm');
+    if (!hasPos()) { el.innerHTML = ''; return; }
+    const m = S.mission, tz = m.tz, saved = m.opmetUser || [];
+    const sug = [...new Set([...(m.aerodromos || '').split(','), m.icao || ''].map(x => x.trim().toUpperCase()).filter(Boolean))];
+    const U = userOpmet();
+    const card = i => {
+      const s = saved[i] || {}, icao = s.icao || sug[i] || '', u = U.find(a => a.icao === (icao || '').toUpperCase());
+      let st = '<span class="small muted">Nenhuma mensagem salva.</span>';
+      if (u && (u.metars.length || u.tafs.length)) {
+        const cov = H.filter(h => tafAtAd(u, h.utc)).length;
+        st = `<ul class="opm-st">${u.metars.length ? `<li class="ok">${u.metars.length} METAR/SPECI · último ${M.ddmm(u.metars[0].utc, tz)} ${M.hhmm(u.metars[0].utc, tz)} (${M.hhmm(u.metars[0].utc, 'UTC')}Z)</li>` : '<li class="warn">Nenhum METAR reconhecido</li>'}
+          ${u.tafs.length ? `<li class="${cov === H.length ? 'ok' : cov ? 'warn' : 'bad'}">TAF válido ${M.ddmm(u.tafs[0].validFrom, 'UTC')} ${M.hhmm(u.tafs[0].validFrom, 'UTC')}Z a ${M.ddmm(u.tafs[0].validTo, 'UTC')} ${M.hhmm(u.tafs[0].validTo, 'UTC')}Z · cobre ${cov}/${H.length} horários da janela</li>` : '<li class="warn">Nenhum TAF reconhecido</li>'}
+          <li>${u.dist != null ? `${fmt(u.dist, 1)} km da ZL${u.elev != null ? ' · elev. ' + fmt(u.elev) + ' ft' : ''}` : 'distância n/d (inclua o código em Missão → Aeródromos para obter do AISWEB)'}</li></ul>`;
+      }
+      return `<div class="opm-c"><label>Aeródromo ${i + 1} (OACI)<input id="opm-icao-${i}" maxlength="4" value="${esc(icao)}" placeholder="SBxx" autocomplete="off"></label>
+        <label>METAR / SPECI / TAF<textarea id="opm-txt-${i}" rows="6" spellcheck="false" placeholder="Cole aqui os METAR/SPECI das últimas horas e o TAF vigente, como publicados na REDEMET ou no AISWEB. Uma mensagem por linha.">${esc(s.txt || '')}</textarea></label>${st}</div>`;
+    };
+    // verificação
+    const ver = U.filter(a => a.metars.length).map(ad => {
+      const v = verifyAd(ad);
+      if (!v.n) return `<div class="opm-v"><h4>${esc(ad.icao)} — METAR × modelos</h4><p class="small muted">Os horários dos METAR estão fora do período coberto pelos modelos carregados (D-1 a D+1). Atualize os modelos.</p></div>`;
+      const tr = v.rows.filter(r => r.h).map(r => `<tr><th scope="row">${M.ddmm(r.m.utc, tz)} ${M.hhmm(r.m.utc, tz)}</th><td>${windTxt(r.m.wind)}</td><td>${dir3(r.h.c.dir)}/${M.pad(Math.round(r.h.c.wind))} kt</td><td class="${r.dw != null && Math.abs(r.dw) >= 5 ? 'tbad' : r.dw != null && Math.abs(r.dw) >= 3 ? 'twarn' : ''}">${r.dw != null ? (r.dw > 0 ? '+' : '') + fmt(r.dw) : '—'}</td><td>${fmt(r.m.t)} / ${fmt(r.h.c.temp)}</td><td>${r.oc != null ? fmt(r.oc) : 'sem teto'} / ${r.mc != null ? fmt(r.mc) : 'sem teto'}</td><td class="l small">${esc(r.m.clouds.map(c => c.cov + (c.base != null ? String(c.base / 100).padStart(3, '0') : '') + c.type).join(' ') || (r.m.cavok ? 'CAVOK' : ''))}${r.m.wx.length ? ' · ' + esc(r.m.wx.join(' ')) : ''}</td></tr>`).join('');
+      const bw = v.biasW, txt = bw == null ? '' : Math.abs(bw) < 2 ? `Vento: modelos coerentes com o observado (viés médio ${bw > 0 ? '+' : ''}${fmt(bw, 1)} kt, ${v.nW} METAR).` : `Vento: os modelos ${bw > 0 ? '<b>superestimam</b>' : '<b>subestimam</b>'} o vento a 10 m em ${fmt(Math.abs(bw), 1)} kt em média (${v.nW} METAR).`;
+      return `<div class="opm-v"><h4>${esc(ad.icao)} — METAR observado × modelos (mesmo horário)</h4>
+        <div class="tbl-wrap"><table class="mini"><thead><tr><th>Hora local</th><th>Vento obs.</th><th>Vento mod.</th><th>Δ kt</th><th>T obs./mod. °C</th><th>Teto obs./mod. ft</th><th class="l">Nuvens e tempo obs.</th></tr></thead><tbody>${tr}</tbody></table></div>
+        <p class="small">${txt} ${v.biasT != null ? `Temperatura: viés ${v.biasT > 0 ? '+' : ''}${fmt(v.biasT, 1)} °C. ` : ''}Teto: modelo coerente com o observado em ${v.ceilAgree}/${v.n} horários (mesma condição ou diferença ≤ 1.000 ft).</p></div>`;
+    }).join('');
+    const wb = windBias();
+    el.innerHTML = `<div class="opm-g">${card(0)}${card(1)}</div>
+      <div class="row"><button type="button" class="btn" id="opm-save">Salvar e cruzar com os modelos</button>${saved.length ? '<button type="button" class="btn ghost" id="opm-clear">Limpar</button>' : ''}<span class="small" id="opm-msg" role="status"></span></div>
+      ${ver}
+      ${wb ? `<p class="small"><b>Viés usado no ajuste do vento (${esc(wb.src)}, ${wb.n} METAR):</b> ${wb.b > 0 ? '+' : ''}${fmt(wb.b, 1)} kt. A linha “Vento 10 m ajustado” da tabela horária e a projeção aplicam esse viés; a validade diminui com a distância do último METAR (${M.ddmm(wb.last, tz)} ${M.hhmm(wb.last, tz)}).</p>` : ''}
+      <p class="note"><span class="st st-obs">INSERIDO PELO USUÁRIO</span> mensagens coladas por você; o horário é lido do próprio METAR/TAF (UTC) e convertido para ${esc(tz)}. Cruzamento: (1) <b>METAR × modelos</b> — compara o observado com a previsão dos modelos para o mesmo horário e mede o viés; (2) <b>TAF</b> — entra hora a hora na tabela, na projeção de impeditivos e no parecer (CB/TS no TAF torna o horário desfavorável; teto, vento ou tempo presente fora dos limites geram restrição). Os modelos são da coordenada da ZL; o aeródromo pode ter condições locais diferentes — considere a distância.</p>`;
+    $('#opm-save').addEventListener('click', async () => {
+      const now = nowIso(), L = [0, 1].map(i => ({ icao: $('#opm-icao-' + i).value.trim().toUpperCase(), txt: $('#opm-txt-' + i).value.trim() }))
+        .map((a, i) => Object.assign(a, { savedAt: saved[i] && saved[i].txt === a.txt && saved[i].icao === a.icao ? saved[i].savedAt : now }));
+      if (L.some(a => a.icao && !/^[A-Z0-9]{4}$/.test(a.icao))) { $('#opm-msg').textContent = 'Código OACI deve ter 4 caracteres.'; return; }
+      const nMsg = L.reduce((s, a) => s + M.splitMessages(a.txt, 'METAR').length + M.splitMessages(a.txt, 'TAF').length, 0);
+      if (L.some(a => a.txt) && !nMsg) { $('#opm-msg').textContent = 'Nenhuma mensagem reconhecida: cada uma deve começar por METAR, SPECI ou TAF.'; return; }
+      S.mission = Object.assign({}, S.mission, { opmetUser: L, updatedAt: now });
+      if (await save('mission', S.mission)) { flash(`METAR/TAF salvos (${nMsg} mensagens).`); logHist(`METAR/TAF inseridos: ${L.map(a => a.icao).filter(Boolean).join(', ')}`); }
+      renderAll();
+    });
+    const cl = $('#opm-clear');
+    if (cl) cl.addEventListener('click', async () => { S.mission = Object.assign({}, S.mission, { opmetUser: [] }); await save('mission', S.mission); renderAll(); });
+  }
+
   /* ---------------- Projeção de impeditivos (H a H+5) ---------------- */
   /** Agrupa horários consecutivos que satisfazem pred em janelas. */
   function windows(H, pred) {
@@ -1247,6 +1385,21 @@ const MET = (() => {
     windows(H, h => (h.c.pp != null && h.c.pp >= 50) || (h.c.pr != null && h.c.pr >= 1)).forEach(w => add('warn', 'Precipitação', w, `Probabilidade ${rng(w.hs.map(h => h.c.pp))}%, ${rng(w.hs.map(h => h.c.pr), 1)} mm/h${w.hs.some(h => h.c.sh > 0) ? ', convectiva (pancadas)' : ''}`));
     const vmin = numOrNull(m.visMin);
     if (vmin != null) windows(H, h => h.c.vis != null && h.c.vis < vmin).forEach(w => add('bad', 'Visibilidade', w, `Visibilidade abaixo de ${fmt(vmin)} m: ${rng(w.hs.map(h => h.c.vis))} m`));
+    // TAF inserido e verificação METAR × modelos
+    userOpmet().filter(ad => ad.tafs.length).forEach(ad => {
+      const X = h => (h.tafU || []).find(t => t.icao === ad.icao), tag = `TAF ${ad.icao}`;
+      windows(H, h => { const x = X(h); return x && x.at && x.at.tcu && !x.at.cb && !x.at.ts; }).forEach(w => add('warn', tag, w, 'TCU previsto'));
+      if (bmin != null) {
+        windows(H, h => { const x = X(h); return x && x.cond.prev.ceil != null && x.cond.prev.ceil < bmin; }).forEach(w => add('bad', tag, w, `Teto predominante abaixo de ${fmt(bmin)} ft: ${rng(w.hs.map(h => X(h).cond.prev.ceil))} ft`));
+        windows(H, h => { const x = X(h); return x && x.cond.vari.some(v => v.ceil != null && v.ceil < bmin); }).forEach(w => add('warn', tag, w, `Teto temporário abaixo de ${fmt(bmin)} ft: ${[...new Set(w.hs.flatMap(h => X(h).cond.vari.filter(v => v.ceil != null && v.ceil < bmin).map(v => v.tipo + ' ' + fmt(v.ceil) + ' ft')))].join(', ')}`));
+        windows(H, h => { const x = X(h); return x && h.n && ((h.c.ceilModel != null && h.c.ceilModel < bmin) !== (x.cond.prev.ceil != null && x.cond.prev.ceil < bmin)); }).forEach(w => add('warn', 'Modelos × TAF', w, `Divergência no teto em relação a ${fmt(bmin)} ft — modelos ${w.hs.map(h => h.c.ceilModel != null ? fmt(h.c.ceilModel) : 'sem teto').join('/')} · ${tag} ${w.hs.map(h => X(h).cond.prev.ceil != null ? fmt(X(h).cond.prev.ceil) : 'sem teto').join('/')}`));
+      }
+      windows(H, h => { const x = X(h), W = x && x.wind && x.wind.prev; return W && (W.kt > lim || (W.gust || 0) > lim); }).forEach(w => add('warn', tag, w, `Vento a 10 m no aeródromo acima de ${lim} kt: ${[...new Set(w.hs.map(h => windTxt(X(h).wind.prev)))].join(', ')}`));
+      windows(H, h => { const x = X(h); return x && [...(x.cond.prev.wx || []), ...x.cond.vari.flatMap(v => v.wx || [])].some(wx => wx !== 'NSW' && !/TS/.test(wx)); }).forEach(w => add('warn', tag, w, `Tempo presente: ${[...new Set(w.hs.flatMap(h => { const x = X(h); return [...(x.cond.prev.wx || []).filter(q => q !== 'NSW'), ...x.cond.vari.flatMap(v => (v.wx || []).map(q => v.tipo + ' ' + q))]; }))].join(', ')}`));
+    });
+    const wb = windBias();
+    if (wb && Math.abs(wb.b) >= 2) add(Math.abs(wb.b) >= 5 ? 'warn' : 'info', 'METAR × modelos', { hs: V }, `Modelos ${wb.b > 0 ? 'superestimam' : 'subestimam'} o vento a 10 m em ${fmt(Math.abs(wb.b), 1)} kt (${wb.n} METAR de ${wb.src}); vento 10 m ajustado ${rng(V.map(h => Math.max(0, h.c.wind - wb.b)))} kt`);
+    else if (wb) add('info', 'METAR × modelos', { hs: V }, `Vento dos modelos coerente com os METAR de ${wb.src} (viés ${wb.b > 0 ? '+' : ''}${fmt(wb.b, 1)} kt, ${wb.n} METAR)`);
     // janelas de parecer
     const fav = windows(H, h => h.verdict === 'FAVORÁVEL'), des = windows(H, h => h.verdict === 'DESFAVORÁVEL');
     const summary = [];
@@ -1265,6 +1418,11 @@ const MET = (() => {
       ['Tempo presente', h => { const k = Object.keys(h.wx || {}); return { s: !k.length ? 'ok' : k.some(c => /TS|\+/.test(c) && h.wx[c].length >= 2) ? 'bad' : 'warn', t: k.length ? k.join(' ') : 'nada' }; }],
       ['TCU / CB', h => ({ s: h.conv.level >= 3 ? 'bad' : h.conv.level >= 1 ? 'warn' : 'ok', t: h.conv.level ? h.conv.text : 'não indicado' })],
       ['Precipitação', h => ({ s: (h.c.pp >= 50 || h.c.pr >= 1) ? 'warn' : 'ok', t: `${fmt(h.c.pp)}% · ${fmt(h.c.pr, 1)} mm` })],
+      ...userOpmet().filter(ad => ad.tafs.length).map(ad => [`TAF ${ad.icao}`, h => { const x = (h.tafU || []).find(t => t.icao === ad.icao); if (!x) return { s: 'na', t: 'fora da validade' };
+        const P = x.cond.prev, W = x.wind && x.wind.prev;
+        const bad = (x.at && (x.at.ts || x.at.cb)) || (bmin != null && P.ceil != null && P.ceil < bmin);
+        const warn = (W && (W.kt > lim || (W.gust || 0) > lim)) || x.cond.vari.length || (P.wx || []).some(w => w !== 'NSW');
+        return { s: bad ? 'bad' : warn ? 'warn' : 'ok', t: [P.ceil != null ? 'teto ' + fmt(P.ceil) : 'sem teto', x.cond.vari.length ? x.cond.vari.map(v => v.tipo).join('/') : ''].filter(Boolean).join(' · ') }; }]),
     ].map(([n, f]) => ({ n, cells: H.map(h => cell(h, f)) }));
     return { items, matrix, summary };
   }
@@ -1279,7 +1437,7 @@ const MET = (() => {
       <div class="tbl-wrap"><table class="pmx"><thead><tr><th></th>${H.map(h => `<th>${h.label}<small>${M.hhmm(h.utc, tz)}</small></th>`).join('')}</tr></thead>
       <tbody>${P.matrix.map(r => `<tr><th scope="row">${r.n}</th>${r.cells.map(c => `<td class="pm-${c.s}">${esc(c.t)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
       <ul class="proj">${P.items.map(i => `<li class="${i.sev}"><span class="pi" aria-hidden="true">${icon[i.sev]}</span><b>${esc(i.cat)}</b><span class="pw">${i.w ? esc(winTxt(i.w)) : 'toda a janela'}</span><span class="pt">${esc(i.txt)}</span></li>`).join('')}</ul>
-      <p class="note"><span class="st st-prev">PREVISTO</span> projeção pelo cruzamento GFS/ECMWF/ICON (mediana ponderada). ⛔ impeditivo pelos limites da missão · ⚠ atenção · ℹ referência. Limites: vento ${limitKt()} kt (${esc(H[0].c.wrefLbl || '')})${numOrNull(S.mission.baseMinFt) != null ? `, base mínima ${fmt(+S.mission.baseMinFt)} ft` : ''}${numOrNull(S.mission.ceilMin) != null ? `, teto mínimo ${fmt(+S.mission.ceilMin)} ft` : ''}${numOrNull(S.mission.visMin) != null ? `, visibilidade mínima ${fmt(+S.mission.visMin)} m` : ''} — configuráveis em Missão.</p>`;
+      <p class="note"><span class="st st-prev">PREVISTO</span> projeção pelo cruzamento GFS/ECMWF/ICON (mediana ponderada)${userOpmet().length ? ' + METAR/TAF inseridos por você' : ''}. ⛔ impeditivo pelos limites da missão · ⚠ atenção · ℹ referência. Limites: vento ${limitKt()} kt (${esc(H[0].c.wrefLbl || '')})${numOrNull(S.mission.baseMinFt) != null ? `, base mínima ${fmt(+S.mission.baseMinFt)} ft` : ''}${numOrNull(S.mission.ceilMin) != null ? `, teto mínimo ${fmt(+S.mission.ceilMin)} ft` : ''}${numOrNull(S.mission.visMin) != null ? `, visibilidade mínima ${fmt(+S.mission.visMin)} m` : ''} — configuráveis em Missão.</p>`;
   }
 
   /* ---------------- Render: cabeçalho e missão ---------------- */
@@ -1521,6 +1679,7 @@ const MET = (() => {
     const items = [];
     if (h.conv.level > 0) items.push(`<span class="conv c${h.conv.level}">${esc(h.conv.text)}</span>`);
     Object.entries(h.wx || {}).forEach(([w, ids]) => items.push(`<span class="conv ${/TS|\+/.test(w) ? 'c3' : 'c1'}" title="${esc(M.wxDesc(w))}">${esc(w)} <small>${ids.length}/${h.n} mod.</small></span>`));
+    (h.tafU || []).forEach(x => { [...(x.cond.prev.wx || []).filter(w => w !== 'NSW').map(w => [w, '']), ...x.cond.vari.flatMap(v => (v.wx || []).map(w => [w, v.tipo + ' ']))].forEach(([w, t]) => items.push(`<span class="conv ${/TS|\+/.test(w) ? 'c3' : 'c2'}">TAF ${esc(x.icao)} ${esc(t + w)}</span>`)); });
     return items.length ? `<div class="sw">${items.join('')}</div>` : '<span class="conv c0">Nada significativo</span>';
   }
   function renderTable(H) {
@@ -1550,6 +1709,12 @@ const MET = (() => {
         return mo != null ? `<span class="${h.minima && h.minima.ceil.length ? 'tbad' : ''}">${fmt(mo)} ft</span><small>${okta(tl.pct, tl.cov)}/8 ${tl.code}</small>` : '<span>Sem teto</span><small>nenhuma camada ≥ 5/8</small>'; }))),
       row('Altitude-densidade na ZL', 'ft · cruzamento dos modelos', H.map(h => h.daZl == null ? '<span class="na">—</span>' : `${fmt(h.daZl)} ft`)),
       row('Nuvens significativas e tempo presente', 'CB · TCU · precipitação · trovoada', H.map(h => sigWx(h))),
+      ...userOpmet().filter(ad => ad.tafs.length).map(ad => row(`TAF ${esc(ad.icao)}`, `inserido${ad.dist != null ? ' · ' + fmt(ad.dist, 1) + ' km da ZL' : ''} · vento 10 m · vis. · nuvens`, H.map(h => {
+        const x = (h.tafU || []).find(t => t.icao === ad.icao); if (!x) return '<span class="na">fora da validade</span>';
+        const P = x.cond.prev, W = x.wind && x.wind.prev, bmin = numOrNull(S.mission.baseMinFt);
+        const bad = (W && (W.kt > lim || (W.gust || 0) > lim)) || (bmin != null && P.ceil != null && P.ceil < bmin) || (x.at && (x.at.ts || x.at.cb));
+        return `<span class="${bad ? 'tbad' : ''}">${windTxt(W)}</span><small>${[visTxt(P.vis), (P.clouds || []).join(' ') || (P.ceil == null ? 'sem teto' : ''), (P.wx || []).filter(w => w !== 'NSW').join(' ')].filter(Boolean).join(' · ')}</small>${x.cond.vari.map(v => `<small class="tvar">${esc(v.tipo)} ${[visTxt(v.vis), (v.clouds || []).join(' '), (v.wx || []).join(' ')].filter(Boolean).join(' ')}</small>`).join('')}${(x.wind ? x.wind.vari : []).filter(v => !x.cond.vari.length).map(v => `<small class="tvar">${esc(v.tipo)} ${windTxt(v)}</small>`).join('')}`; }))),
+      ...(() => { const wb = windBias(); return wb && Math.abs(wb.b) >= 2 ? [row('Vento 10 m ajustado', `${wb.b > 0 ? '−' : '+'}${fmt(Math.abs(wb.b), 1)} kt · viés METAR ${esc(wb.src)}`, H.map(h => cell(h, h => { const a = Math.max(0, h.c.wind - wb.b), lead = (h.utc - wb.last) / 3600e3; return `<span class="${a > lim ? 'tbad' : a >= 0.8 * lim ? 'twarn' : ''}">${fmt(a)}</span><small>modelo ${fmt(h.c.wind)} · ${lead >= 0 ? '+' + fmt(lead) + ' h do METAR' : 'antes do METAR'}</small>`; })))] : []; })(),
       row('Confiança', 'por horário', H.map(h => h.overall ? `<span class="pill ${cClass(h.overall)}">${h.overall}</span>` : `<span class="na">—</span>`)),
     ].join('');
     el.innerHTML = `<div class="tbl-wrap"><table class="hourly"><thead>${head}</thead><tbody>${body}</tbody></table></div>
@@ -1829,8 +1994,9 @@ const MET = (() => {
       const ad = A[code];
       if (!ad) return `<article class="ad"><header><b>${esc(code)}</b><span class="small">aguardando a próxima atualização</span></header></article>`;
       if (ad.erro) return `<article class="ad"><header><b>${esc(code)}</b><span class="small err">${esc(ad.erro)}</span></header></article>`;
-      const met = (ad.metar || []).map(x => M.parseMetar(x)).filter(x => x.time).pop();
-      const tafp = (ad.taf || []).map(x => { const p = M.localParts(hourUtc(0), 'UTC'); try { return M.parseTaf(x, { y: p.y, mo: p.mo }); } catch (e) { return null; } }).filter(Boolean)[0];
+      const uo = userOpmet().find(a => a.icao === code);
+      const met = uo && uo.metars.length ? uo.metars[0] : (ad.metar || []).map(x => M.parseMetar(x)).filter(x => x.time).pop();
+      const tafp = uo && uo.tafs.length ? uo.tafs[0] : (ad.taf || []).map(x => { const p = M.localParts(hourUtc(0), 'UTC'); try { return M.parseTaf(x, { y: p.y, mo: p.mo }); } catch (e) { return null; } }).filter(Boolean)[0];
       const ceil = M.ceilingFt(met), vis = met ? met.vis : null;
       const cond = met ? ((cmin != null && ceil != null && ceil < cmin) || (vmin != null && vis != null && vis < vmin) ? 'bad' : (cmin == null && vmin == null) ? 'na' : 'ok') : 'na';
       const dist = ad.lat != null ? haversine(m.lat, m.lon, ad.lat, ad.lon) : null;
@@ -2009,6 +2175,7 @@ const MET = (() => {
       const keep = {};
       if (samePos && S.mission.tadN) keep.tadN = S.mission.tadN; // valores do Time and Date só valem para a mesma coordenada
       if (samePos && S.mission.date === m.date && S.mission.astroNight) keep.astroNight = S.mission.astroNight;
+      if (S.mission.opmetUser) keep.opmetUser = S.mission.opmetUser;
       S.mission = Object.assign(DEFAULT_MISSION(), m, keep);
       if (await save('mission', S.mission)) { flash(changedPlace && (S.models || S.sounding) ? 'Missão salva. Coordenada, data ou fuso mudaram: recarregue modelos e sondagem.' : 'Missão salva.'); logHist('Missão atualizada: ' + (m.name || 'sem nome')); }
       $('#mission').open = false;
@@ -2072,7 +2239,7 @@ const MET = (() => {
 
   function renderAll() {
     const H = hasPos() ? hours() : [];
-    renderHeader(); renderVerdicts(H); renderProj(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrace(H); renderSources();
+    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrace(H); renderSources();
     $('#sec-main').hidden = !hasPos();
   }
 
