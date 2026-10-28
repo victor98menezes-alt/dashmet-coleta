@@ -6,7 +6,7 @@
 /* Layout: faixa de comando (brasões + missão) → parecer H..H+5 → tabela horária com coluna lateral → síntese → altitude → D-1/D0/D+1 → confiança → fontes.
    Identidade: sala de briefing noturna do Batalhão de Precursores — azul-noite, ouro do distintivo, vermelho do escudo só na faixa de comando. */
 :root{
-  --bg:#eef1f4; --surface:#ffffff; --sunk:#e6eaef; --fg:#13202b; --muted:#5b6876; --line:#d6dde5; --accent:#9a7414; --accent-2:#1d7fb8; --cloud:#4f5a66;
+  --bg:#eef1f4; --surface:#ffffff; --sunk:#e6eaef; --fg:#13202b; --muted:#5b6876; --line:#d6dde5; --accent:#9a7414; --accent-2:#1d7fb8; --cloud:#2e3843; --cloud-lo:#a3adb8;
   --ok:#1f7a4a; --ok-bg:#dff1e6; --warn:#946200; --warn-bg:#fbefcf; --bad:#b3261e; --bad-bg:#fbe1de; --na:#76818d; --na-bg:#e9edf1;
   --m1:#1d7fb8; --m2:#7b4fb0; --m3:#c2551f; --obs:#127a72;
   --shadow:0 1px 2px rgba(19,32,43,.06),0 8px 24px -12px rgba(19,32,43,.18);
@@ -14,12 +14,12 @@
   --f-disp:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --f-body:"IBM Plex Sans","Segoe UI",Arial,sans-serif; --f-data:"IBM Plex Mono",ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#081018; --surface:#0f1a25; --sunk:#16232f; --fg:#e6ecf2; --muted:#93a3b4; --line:#223242; --accent:#e9b92f; --accent-2:#4fb3e8; --cloud:#d5dde6;
+  --bg:#081018; --surface:#0f1a25; --sunk:#16232f; --fg:#e6ecf2; --muted:#93a3b4; --line:#223242; --accent:#e9b92f; --accent-2:#4fb3e8; --cloud:#f4f7fa; --cloud-lo:#6c7a89;
   --ok:#5fcf8f; --ok-bg:#12301f; --warn:#f0bf4c; --warn-bg:#33280e; --bad:#ff7b70; --bad-bg:#3a1714; --na:#8796a6; --na-bg:#18242f;
   --m1:#4fb3e8; --m2:#b48ce6; --m3:#f08a52; --obs:#4fd1c2;
   --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#081018; --surface:#0f1a25; --sunk:#16232f; --fg:#e6ecf2; --muted:#93a3b4; --line:#223242; --accent:#e9b92f; --accent-2:#4fb3e8; --cloud:#d5dde6;
+  --bg:#081018; --surface:#0f1a25; --sunk:#16232f; --fg:#e6ecf2; --muted:#93a3b4; --line:#223242; --accent:#e9b92f; --accent-2:#4fb3e8; --cloud:#f4f7fa; --cloud-lo:#6c7a89;
   --ok:#5fcf8f; --ok-bg:#12301f; --warn:#f0bf4c; --warn-bg:#33280e; --bad:#ff7b70; --bad-bg:#3a1714; --na:#8796a6; --na-bg:#18242f;
   --m1:#4fb3e8; --m2:#b48ce6; --m3:#f08a52; --obs:#4fd1c2;
   --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark}
@@ -1808,22 +1808,25 @@ const MET = (() => {
     const hsh = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
     const vn = (x, y2) => { const xi = Math.floor(x), yi = Math.floor(y2), xf = x - xi, yf = y2 - yi, sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
       const a = hsh(xi, yi), b = hsh(xi + 1, yi), c2 = hsh(xi, yi + 1), d = hsh(xi + 1, yi + 1); return a + (b - a) * sx + (c2 - a) * sy + (a - b - c2 + d) * sx * sy; };
-    const tex = (t, ft) => 0.62 + 0.26 * vn(t * 1.6, ft / 700) + 0.12 * vn(t * 4.1 + 7, ft / 260);
+    const tex = (t, ft) => 0.86 + 0.10 * vn(t * 1.6, ft / 700) + 0.04 * vn(t * 4.1 + 7, ft / 260);
     // campo contínuo tempo × altitude (interpolação bilinear) desenhado em canvas e suavizado
-    const NX = 23 * 12 + 1, NY = Math.max(60, Math.round((TOP - zlFt) / 40));
+    const NX = 23 * 16 + 1, NY = Math.max(90, Math.round((TOP - zlFt) / 25));
     const cv = document.createElement('canvas'); cv.width = NX; cv.height = NY;
     const ctx = cv.getContext('2d'), img = ctx.createImageData(NX, NY);
-    const css = getComputedStyle(document.documentElement).getPropertyValue('--cloud').trim() || '#55606b';
-    const rgb = (css.match(/[0-9a-f]{2}/gi) || ['55', '60', '6b']).slice(0, 3).map(h => parseInt(h, 16));
+    const cssv = (k, d) => (getComputedStyle(document.documentElement).getPropertyValue(k).trim() || d);
+    const hex = c => (c.match(/[0-9a-f]{2}/gi) || []).slice(0, 3).map(h => parseInt(h, 16));
+    const hiC = hex(cssv('--cloud', '#2e3843')), loC = hex(cssv('--cloud-lo', '#9aa5b0'));
     for (let px = 0; px < NX; px++) {
-      const t = px / 12, i = Math.min(22, Math.floor(t)), f0 = t - i, f = f0 * f0 * (3 - 2 * f0), a = prof[i], b = prof[i + 1];
+      const t = px / 16, i = Math.min(22, Math.floor(t)), f0 = t - i, f = f0 * f0 * (3 - 2 * f0), a = prof[i], b = prof[i + 1];
       for (let py = 0; py < NY; py++) {
         const ft = TOP - (py + 0.5) / NY * (TOP - zlFt);
         const va = a ? a(ft) : null, vb = b ? b(ft) : null;
         const v = va == null && vb == null ? 0 : va == null ? vb : vb == null ? va : va * (1 - f) + vb * f;
         const o = (py * NX + px) * 4;
-        img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2];
-        img.data[o + 3] = Math.round(255 * Math.min(0.93, Math.pow(Math.max(0, v) / 100, 0.7) * tex(t, ft)));
+        // cor e opacidade pela cobertura: pouca nuvem = cinza claro; muita nuvem = cinza escuro e opaco
+        const q = Math.max(0, Math.min(1, v / 100)), mix = Math.pow(q, 0.8);
+        for (let k = 0; k < 3; k++) img.data[o + k] = Math.round(loC[k] + (hiC[k] - loC[k]) * mix);
+        img.data[o + 3] = v < 8 ? 0 : Math.round(255 * Math.min(0.97, (0.38 + 0.62 * Math.pow(q, 0.55)) * tex(t, ft)));
       }
     }
     ctx.putImageData(img, 0, 0);
@@ -1833,7 +1836,7 @@ const MET = (() => {
     const y = ft => B - (ft - zlFt) / (TOP - zlFt) * plotH;
     const pw = W - L - R, cw = pw / 24, xc = i => L + (i + 0.5) * cw, xt = t => L + cw / 2 + t * cw;
     let s = `<svg viewBox="0 0 ${W} ${B + 90}" class="cc" role="img" aria-label="Perfil de nuvens do dia ${m.date.split('-').reverse().join('/')}: cobertura e base das nuvens de ${fmt(zlFt)} ft (ZL) a ${fmt(TOP)} ft MSL, com janelas para o salto">`;
-    s += `<defs><filter id="ccblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="5 3.5"/></filter><clipPath id="ccclip"><rect x="${L}" y="${T}" width="${pw}" height="${plotH}"/></clipPath></defs>`;
+    s += `<defs><filter id="ccblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="1.6 1.1"/></filter><clipPath id="ccclip"><rect x="${L}" y="${T}" width="${pw}" height="${plotH}"/></clipPath></defs>`;
     s += `<rect x="${L}" y="${T}" width="${pw}" height="${plotH}" class="cc-bg"/>`;
     // noite (valores do Time and Date inseridos, se houver)
     const tadD = (m.tadN || {})[m.date] || {}, tadP = (m.tadN || {})[M.shiftDate(m.date, -1)] || {};
@@ -1884,7 +1887,7 @@ const MET = (() => {
     el.innerHTML = `<h3 class="sub cc-title">Nuvens e janelas de salto — ${esc(m.date.split('-').reverse().join('/'))}</h3>
       <div class="cc-sum"><span class="pill ok">✓ Favorável</span> ${lst('ok') || 'nenhuma'} <span class="pill warn">! Com restrições</span> ${lst('warn') || 'nenhuma'} <span class="pill bad">✕ Desfavorável</span> ${lst('bad') || 'nenhuma'}</div>
       <div class="cc-wrap">${s}</div>
-      <p class="note"><span class="st st-est">ESTIMADO</span> nuvens pelo cruzamento GFS/ECMWF/ICON (cobertura por nível de pressão, interpolada no tempo e na altitude e suavizada): quanto mais escuro, mais oitavos. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5 (parecer completo, com o TAF inserido); demais horas: parecer pelos modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
+      <p class="note"><span class="st st-est">ESTIMADO</span> nuvens pelo cruzamento GFS/ECMWF/ICON (cobertura por nível de pressão, interpolada no tempo e na altitude): quanto mais forte o tom da nuvem, mais oitavos; contorno claro = poucas nuvens. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5 (parecer completo, com o TAF inserido); demais horas: parecer pelos modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
   }
 
   /* ---------------- Gráfico de vento ---------------- */
