@@ -1,0 +1,70 @@
+{
+  "avisos_ativos": {
+    "url": "https://apiprevmet3.inmet.gov.br/avisos/ativos",
+    "status": 200,
+    "tipo": "application/json; charset=utf-8",
+    "cors": null,
+    "bytes": 354270
+  },
+  "avisos_rss": {
+    "url": "https://apiprevmet3.inmet.gov.br/avisos/rss",
+    "status": 200,
+    "tipo": "application/rss+xml",
+    "cors": null,
+    "bytes": 133277
+  },
+  "previsao_rio": {
+    "url": "https://apiprevmet3.inmet.gov.br/previsao/3304557",
+    "status": 200,
+    "tipo": "application/json; charset=utf-8",
+    "cors": null,
+    "bytes": 263594
+  },
+  "estacao_proxima_rio": {
+    "url": "https://apiprevmet3.inmet.gov.br/estacao/proxima/3304557",
+    "status": 200,
+    "tipo": "application/json; charset=utf-8",
+    "cors": null,
+    "bytes": 705
+  },
+  "alert_as_rss": {
+    "url": "http://alert-as.inmet.gov.br/cap_12/rss/alert-as.rss",
+    "erro": "RemoteDisconnected('Remote end closed connection without response')"
+  },
+  "ibge_municipio": {
+    "url": "https://servicodados.ibge.gov.br/api/v1/localidades/municipios/3304557",
+    "erro": "URLError(TimeoutError('timed out'))"
+  },
+  "ibge_rj_municipios": {
+    "url": "https://servicodados.ibge.gov.br/api/v1/localidades/estados/RJ/municipios",
+    "erro": "URLError(TimeoutError('timed out'))"
+  },
+  "nominatim_reverse": {
+    "url": "https://nominatim.openstreetmap.org/reverse?lat=-22.875&lon=-43.384&format=json&zoom=10&accept-language=pt-BR",
+    "status": 200,
+    "tipo": "application/json; charset=utf-8",
+    "cors": null,
+    "bytes": 599
+  },
+  "cptec_latlon": {
+    "url": "http://servicos.cptec.inpe.br/XML/cidade/7dias/-22.87/-43.38/previsaoLatLon.xml",
+    "status": 200,
+    "tipo": "text/xml;charset=ISO-8859-1",
+    "cors": null,
+    "bytes": 793
+  },
+  "cptec_busca": {
+    "url": "http://servicos.cptec.inpe.br/XML/listaCidades?city=rio%20de%20janeiro",
+    "status": 200,
+    "tipo": "text/xml;charset=ISO-8859-1",
+    "cors": null,
+    "bytes": 129
+  },
+  "openmeteo_8d": {
+    "url": "https://api.open-meteo.com/v1/forecast?latitude=-22.875&longitude=-43.384&hourly=temperature_2m,precipitation,cape,weather_code,pressure_msl&models=gfs_seamless,ecmwf_ifs025,icon_seamless&forecast_days=9&timezone=America/Sao_Paulo",
+    "status": 200,
+    "tipo": "application/json; charset=utf-8",
+    "cors": null,
+    "bytes": 21408
+  }
+}
