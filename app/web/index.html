@@ -188,7 +188,10 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 /* Temperatura */
 svg .tc-night{fill:#33407a;fill-opacity:.10}
 svg .tc-vg{stroke:var(--line);stroke-width:.6;stroke-opacity:.6}
-svg .tc-area{fill-opacity:.55} svg .tc-line{fill:none;stroke:#d8231c;stroke-width:2.6;stroke-linejoin:round}
+svg .tc-area{fill-opacity:.42}
+svg .tp-max{fill:#7cc8f2;fill-opacity:.85} svg .tp-med{fill:#1239c9} svg .tp-med.cv{fill:#7a3fd0}
+svg .tp-ax{fill:#2a6fd6} svg .tp-hi{fill:#1d55c8;font-weight:700}
+svg .tp-lg1{fill:#1239c9} svg .tp-lg2{fill:#7cc8f2} svg .tp-lg3{fill:#7a3fd0} svg .tc-line{fill:none;stroke:#d8231c;stroke-width:2.6;stroke-linejoin:round}
 svg .tc-at{fill:none;stroke:#e07b16;stroke-width:1.6;stroke-dasharray:5 4}
 svg .tc-pt{fill:#d8231c} svg .tc-mm{fill:var(--fg);font:700 12px var(--f-data);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
 svg .tc-v{fill:var(--fg);font:500 8.5px var(--f-data);paint-order:stroke;stroke:var(--surface);stroke-width:2.5px}
@@ -1967,9 +1970,15 @@ const MET = (() => {
     const temps = V.flatMap(c => [c.h.c.temp, c.h.c.at]).filter(v => v != null);
     let lo = Math.floor((Math.min(...temps) - 1) / 2) * 2, hi = Math.ceil((Math.max(...temps) + 1) / 2) * 2;
     if (hi - lo < 8) { hi = lo + 8; }
-    const W = 1000, L = 96, R = 14, T = 58, PH = 220, B = T + PH;
+    const W = 1000, L = 96, R = 52, T = 58, PH = 240, B = T + PH;
     const pw = W - L - R, cw = pw / 24, xc = i => L + (i + 0.5) * cw, y = t => B - (t - lo) / (hi - lo) * PH;
-    let s = `<svg viewBox="0 0 ${W} ${B + 50}" class="cc tc" role="img" aria-label="Temperatura horária do dia ${m.date.split('-').reverse().join('/')} com ícones de tempo">`;
+    // precipitação: mediana (consolidado) e máximo entre os modelos, em mm/h, eixo à direita
+    const prOf = h => { if (!h || !h.n) return null; const v = Object.values(h.per).map(p => p.pr).filter(x => x != null); return { med: h.c.pr, max: v.length ? Math.max(...v) : null, pp: h.c.pp, sh: h.c.sh, n: v.length }; };
+    const PR = cols.map(c => prOf(c.h));
+    const prMaxAll = Math.max(0, ...PR.filter(Boolean).map(p => Math.max(p.med || 0, p.max || 0)));
+    const pTop = Math.max(5, Math.ceil(prMaxAll)), pStep = pTop <= 6 ? 1 : pTop <= 12 ? 2 : 5;
+    const yp = v => B - Math.min(v, pTop) / pTop * PH;
+    let s = `<svg viewBox="0 0 ${W} ${B + 66}" class="cc tc" role="img" aria-label="Temperatura horária do dia ${m.date.split('-').reverse().join('/')} com ícones de tempo">`;
     s += `<defs><linearGradient id="tcg" gradientUnits="userSpaceOnUse" x1="0" y1="${y(lo)}" x2="0" y2="${y(hi)}">${Array.from({ length: 9 }, (_, k) => { const t = lo + (hi - lo) * k / 8; return `<stop offset="${k / 8}" stop-color="${tColor(t)}"/>`; }).join('')}</linearGradient><clipPath id="tcclip"><rect x="${L}" y="${T}" width="${pw}" height="${PH}"/></clipPath></defs>`;
     s += `<rect x="${L}" y="${T}" width="${pw}" height="${PH}" class="cc-bg"/>`;
     // noite
@@ -1987,6 +1996,13 @@ const MET = (() => {
     const smooth = P => P.map((p, i) => { if (!i) return `M${p[0].toFixed(1)} ${p[1].toFixed(1)}`; const a = P[i - 1], dx = (p[0] - a[0]) / 2; return `C${(a[0] + dx).toFixed(1)} ${a[1].toFixed(1)} ${(p[0] - dx).toFixed(1)} ${p[1].toFixed(1)} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`; }).join(' ');
     s += `<g clip-path="url(#tcclip)">`;
     segs.forEach(P => { s += `<path d="${smooth(P)} L${P[P.length - 1][0]} ${B} L${P[0][0]} ${B} Z" fill="url(#tcg)" class="tc-area"/>`; });
+    s += `</g>`;
+    // barras de precipitação (atrás das curvas)
+    PR.forEach((p, i) => { if (!p) return; const bw = cw * 0.62, x0 = xc(i) - bw / 2;
+      if (p.max != null && p.max >= 0.05) s += `<rect x="${x0}" y="${yp(p.max)}" width="${bw}" height="${B - yp(p.max)}" class="tp-max"/>`;
+      if (p.med != null && p.med >= 0.05) s += `<rect x="${x0 + bw * 0.18}" y="${yp(p.med)}" width="${bw * 0.64}" height="${B - yp(p.med)}" class="tp-med ${p.sh > 0 ? 'cv' : ''}"/>`;
+      if ((p.max || 0) >= 0.05) s += `<rect x="${L + i * cw}" y="${T}" width="${cw}" height="${PH}" fill="transparent"><title>${M.pad(i)}:00 — precipitação ${fmt(p.med, 1)} mm/h (mediana) · até ${fmt(p.max, 1)} mm/h no modelo mais chuvoso · probabilidade ${fmt(p.pp)}%${p.sh > 0 ? ' · convectiva (pancadas)' : ''}</title></rect>`; });
+    s += `<g clip-path="url(#tcclip)">`;
     // sensação térmica
     const ap = cols.map(c => c.h && c.h.n && c.h.c.at != null ? [xc(c.i), y(c.h.c.at)] : null).filter(Boolean);
     if (ap.length > 1) s += `<path d="${smooth(ap)}" class="tc-at"/>`;
@@ -2004,19 +2020,26 @@ const MET = (() => {
     // eixo x de 1 em 1 hora
     s += `<line x1="${L}" x2="${W - R}" y1="${B}" y2="${B}" class="cc-gnd"/>`;
     cols.forEach(c => { s += `<text x="${xc(c.i)}" y="${B + 16}" text-anchor="middle" class="cc-h ${c.win ? 'w' : ''}">${M.pad(c.i)}</text>`; });
+    // eixo de precipitação (direita) e probabilidade por hora
+    for (let v = 0; v <= pTop; v += pStep) s += `<text x="${W - R + 6}" y="${yp(v) + 3.5}" class="cc-ax tp-ax">${v}</text>`;
+    s += `<text x="${W - 4}" y="${T - 8}" text-anchor="end" class="cc-ax tp-ax">mm/h</text>`;
+    s += `<text x="${L - 6}" y="${B + 32}" text-anchor="end" class="cc-ax k">Prob. chuva</text>`;
+    PR.forEach((p, i) => { if (p && p.pp != null) s += `<text x="${xc(i)}" y="${B + 32}" text-anchor="middle" class="cc-ax ${p.pp >= 50 ? 'tp-hi' : ''}">${fmt(p.pp)}%</text>`; });
     s += `<text x="${L - 6}" y="${B + 16}" text-anchor="end" class="cc-ax k">Hora</text><text x="${L - 6}" y="${T - 22}" text-anchor="end" class="cc-ax k">Tempo</text><text x="8" y="${T + 10}" class="cc-ax">°C</text>`;
     const hNow = H[0] ? cols.find(c => Math.abs(c.utc - H[0].utc) < 60e3) : null;
     if (hNow) s += `<line x1="${xc(hNow.i)}" x2="${xc(hNow.i)}" y1="${T - 46}" y2="${B}" class="cc-hl"/>`;
-    s += `<text x="${L + 6}" y="${B + 36}" class="cc-ax"><tspan class="tc-lg1">━</tspan> temperatura a 2 m   <tspan class="tc-lg2">┅</tspan> sensação térmica   <tspan class="tc-lg3">■</tspan> noite</text>`;
+    s += `<text x="${L + 6}" y="${B + 54}" class="cc-ax"><tspan class="tc-lg1">━</tspan> temperatura a 2 m   <tspan class="tc-lg2">┅</tspan> sensação térmica   <tspan class="tp-lg1">█</tspan> precipitação (mediana)   <tspan class="tp-lg2">█</tspan> máximo entre modelos   <tspan class="tp-lg3">█</tspan> convectiva   <tspan class="tc-lg3">■</tspan> noite</text>`;
     s += '</svg>';
     // resumo do tempo por períodos
     const grp = []; ic.forEach((x, i) => { const k = x ? x.t : '—'; const g = grp[grp.length - 1]; if (g && g.k === k) g.to = i; else grp.push({ k, from: i, to: i }); });
     const sum = grp.filter(g => g.k !== '—').map(g => `<span class="tc-s"><b>${esc(g.k)}</b> ${M.pad(g.from)}h–${M.pad(g.to + 1 === 24 ? 0 : g.to + 1)}h</span>`).join('');
-    el.innerHTML = `<h3 class="sub cc-title">Temperatura e tempo — ${esc(m.date.split('-').reverse().join('/'))}</h3>
-      <div class="cc-sum">Máx. <b>${fmt(mx.h.c.temp)} °C</b> às ${M.pad(mx.i)}h · mín. <b>${fmt(mn.h.c.temp)} °C</b> às ${M.pad(mn.i)}h</div>
+    const prTot = PR.reduce((a, p) => a + (p && p.med ? p.med : 0), 0), prPk = PR.reduce((a, p, i) => p && p.med != null && (a == null || p.med > PR[a].med) ? i : a, null);
+    const rainH = PR.map((p, i) => p && p.med >= 0.1 ? i : null).filter(v => v != null);
+    el.innerHTML = `<h3 class="sub cc-title">Temperatura, tempo e precipitação — ${esc(m.date.split('-').reverse().join('/'))}</h3>
+      <div class="cc-sum">Máx. <b>${fmt(mx.h.c.temp)} °C</b> às ${M.pad(mx.i)}h · mín. <b>${fmt(mn.h.c.temp)} °C</b> às ${M.pad(mn.i)}h · precipitação no dia <b>${fmt(prTot, 1)} mm</b>${prPk != null && PR[prPk].med >= 0.1 ? ` (pico ${fmt(PR[prPk].med, 1)} mm/h às ${M.pad(prPk)}h)` : ''} · horas com chuva ≥ 0,1 mm/h: ${rainH.length ? rainH.map(i => M.pad(i) + 'h').join(', ') : 'nenhuma'}</div>
       <div class="tc-sums">${sum}</div>
       <div class="cc-wrap">${s}</div>
-      <p class="note"><span class="st st-prev">PREVISTO</span> temperatura e sensação térmica: mediana GFS/ECMWF/ICON. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
+      <p class="note"><span class="st st-prev">PREVISTO</span> temperatura e sensação térmica: mediana GFS/ECMWF/ICON. Precipitação (eixo à direita, mm/h): barra azul-escura = mediana dos modelos; barra azul-clara = valor do modelo mais chuvoso (indica o que pode ocorrer); roxa = componente convectiva (pancadas); probabilidade de chuva sob cada hora. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
   }
 
   /* ---------------- Gráfico de vento ---------------- */
