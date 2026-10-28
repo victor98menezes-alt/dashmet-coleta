@@ -185,6 +185,20 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 .an-txt{font-size:.86rem;line-height:1.55;margin:8px 0;max-width:115ch}
 .tad-h{font:600 .7rem var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg);margin:12px 0 0}
 .sw{display:flex;flex-direction:column;gap:3px;align-items:center}
+/* Temperatura */
+svg .tc-night{fill:#33407a;fill-opacity:.10}
+svg .tc-vg{stroke:var(--line);stroke-width:.6;stroke-opacity:.6}
+svg .tc-area{fill-opacity:.55} svg .tc-line{fill:none;stroke:#d8231c;stroke-width:2.6;stroke-linejoin:round}
+svg .tc-at{fill:none;stroke:#e07b16;stroke-width:1.6;stroke-dasharray:5 4}
+svg .tc-pt{fill:#d8231c} svg .tc-mm{fill:var(--fg);font:700 12px var(--f-data);paint-order:stroke;stroke:var(--surface);stroke-width:3px}
+svg .tc-v{fill:var(--fg);font:500 8.5px var(--f-data);paint-order:stroke;stroke:var(--surface);stroke-width:2.5px}
+svg .ic-sun circle{fill:#ffcf2e;stroke:#e09a12;stroke-width:1} svg .ic-sun line{stroke:#f0a91a;stroke-width:1.6;stroke-linecap:round}
+svg .ic-moon{fill:#e9ecf5;stroke:#8792b3;stroke-width:1}
+svg .ic-cl circle,svg .ic-cl rect{fill:#f3f6f9;stroke:#8a96a3;stroke-width:.9} svg .ic-cl2 circle,svg .ic-cl2 rect{fill:#c5ccd4;stroke:#7d8995;stroke-width:.9} svg .ic-cl3 circle,svg .ic-cl3 rect{fill:#7b8794;stroke:#515c68;stroke-width:.9}
+svg .ic-rain line{stroke:#2f7fd1;stroke-width:1.6;stroke-linecap:round} svg .ic-bolt{fill:#ffcf2e;stroke:#c98a00;stroke-width:.8}
+svg .ic-fog line{stroke:#8a96a3;stroke-width:2;stroke-linecap:round}
+svg .tc-lg1{fill:#d8231c} svg .tc-lg2{fill:#e07b16} svg .tc-lg3{fill:#33407a;fill-opacity:.35}
+.tc-sums{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:.78rem;margin-bottom:6px} .tc-s b{font-weight:600}
 /* Perfil de nuvens */
 .cc-title{margin:18px 0 6px} .cc-wrap{overflow-x:auto} svg.cc{min-width:720px;width:100%;display:block}
 svg .cc-win{fill:var(--accent);fill-opacity:.06;stroke:var(--accent);stroke-opacity:.55;stroke-width:1.2}
@@ -400,6 +414,7 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
           <header><h2 id="h-hour">Evolução horária H a H+5</h2><span class="small">superfície · consolidado</span></header>
           <div id="hourly"></div>
           <div id="cloudchart"></div>
+          <div id="tempchart"></div>
           <div id="windchart"></div>
         </section>
         <div class="side">
@@ -1767,6 +1782,7 @@ const MET = (() => {
         <dt>Altitude-densidade na ZL</dt><dd>Indica o quanto o ar na ZL está mais rarefeito que o padrão (calor, pressão baixa, ZL elevada). Escala qualitativa: Desprezível · Leve · Moderado · Acentuado. Efeitos na navegação e no pouso:${daPresent.length ? '' : ' —'}<ul class="da-eff">${(daPresent.length ? daPresent : [0, 1, 2, 3]).map(k => `<li><b>${DA_EFF[k].txt}</b> — <i>Semiautomático:</i> ${DA_EFF[k].saL} <i>Salto livre:</i> ${DA_EFF[k].slL}</li>`).join('')}</ul></dd>
       </dl></details>`;
     renderCloudChart(H);
+    renderTempChart(H);
     renderWindChart(H);
   }
 
@@ -1888,6 +1904,119 @@ const MET = (() => {
       <div class="cc-sum"><span class="pill ok">✓ Favorável</span> ${lst('ok') || 'nenhuma'} <span class="pill warn">! Com restrições</span> ${lst('warn') || 'nenhuma'} <span class="pill bad">✕ Desfavorável</span> ${lst('bad') || 'nenhuma'}</div>
       <div class="cc-wrap">${s}</div>
       <p class="note"><span class="st st-est">ESTIMADO</span> nuvens pelo cruzamento GFS/ECMWF/ICON (cobertura por nível de pressão, interpolada no tempo e na altitude): quanto mais forte o tom da nuvem, mais oitavos; contorno claro = poucas nuvens. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5 (parecer completo, com o TAF inserido); demais horas: parecer pelos modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
+  }
+
+  /* ---------------- Temperatura e tempo (meteograma do dia D) ---------------- */
+  /** Ícone de tempo por hora a partir do cruzamento dos modelos. */
+  function wxIcon(h, day) {
+    if (!h || !h.n) return null;
+    const c = h.c, wx = Object.keys(h.wx || {}), cc = c.cc;
+    if ((h.conv && h.conv.level >= 3) || wx.some(w => /TS/.test(w))) return { k: 'ts', t: 'Trovoada' };
+    if (wx.some(w => /FG/.test(w)) || (c.vis != null && c.vis < 1000)) return { k: 'fog', t: 'Nevoeiro' };
+    if ((c.pr != null && c.pr >= 0.2) || wx.some(w => /RA|DZ/.test(w) && h.wx[w].length >= 2)) return { k: c.sh > 0 ? 'shower' : 'rain', t: c.sh > 0 ? 'Pancadas de chuva' : 'Chuva' };
+    if (cc == null) return null;
+    if (cc < 20) return { k: day ? 'sun' : 'moon', t: day ? 'Sol' : 'Céu claro' };
+    if (cc < 50) return { k: day ? 'sunc' : 'moonc', t: day ? 'Sol entre nuvens' : 'Poucas nuvens' };
+    if (cc < 85) return { k: day ? 'mostly' : 'mostlyn', t: 'Parcialmente nublado' };
+    return { k: 'ovc', t: 'Nublado' };
+  }
+  function iconSvg(k, cx, cy) {
+    const sun = (x, y2, r) => `<g class="ic-sun"><circle cx="${x}" cy="${y2}" r="${r}"/>${[0, 45, 90, 135, 180, 225, 270, 315].map(a => { const ra = a * Math.PI / 180; return `<line x1="${x + Math.cos(ra) * (r + 2)}" y1="${y2 + Math.sin(ra) * (r + 2)}" x2="${x + Math.cos(ra) * (r + 5)}" y2="${y2 + Math.sin(ra) * (r + 5)}"/>`; }).join('')}</g>`;
+    const moon = (x, y2, r) => `<path class="ic-moon" d="M${x + r * 0.35} ${y2 - r} a${r} ${r} 0 1 0 ${r * 0.65} ${r * 1.55} a${r * 0.8} ${r * 0.8} 0 1 1 ${-r * 0.65} ${-r * 1.55}z"/>`;
+    const cloud = (x, y2, s2, cls = 'ic-cl') => `<g class="${cls}"><circle cx="${x - 5 * s2}" cy="${y2 + 1 * s2}" r="${4.5 * s2}"/><circle cx="${x + 1 * s2}" cy="${y2 - 2.5 * s2}" r="${6 * s2}"/><circle cx="${x + 6.5 * s2}" cy="${y2 + 1.5 * s2}" r="${4 * s2}"/><rect x="${x - 9.5 * s2}" y="${y2 + 1 * s2}" width="${20 * s2}" height="${4.5 * s2}" rx="${2.2 * s2}"/></g>`;
+    const drops = (x, y2, n) => `<g class="ic-rain">${Array.from({ length: n }, (_, i) => `<line x1="${x - 5 + i * 5}" y1="${y2}" x2="${x - 7 + i * 5}" y2="${y2 + 5}"/>`).join('')}</g>`;
+    const bolt = (x, y2) => `<path class="ic-bolt" d="M${x} ${y2} l-4 7 h3.5 l-2 6 l6 -8 h-3.5 l2 -5z"/>`;
+    switch (k) {
+      case 'sun': return sun(cx, cy, 6);
+      case 'moon': return moon(cx, cy, 6);
+      case 'sunc': return sun(cx - 4, cy - 4, 5) + cloud(cx + 3, cy + 3, 0.75);
+      case 'moonc': return moon(cx - 4, cy - 4, 5) + cloud(cx + 3, cy + 3, 0.75);
+      case 'mostly': return sun(cx - 6, cy - 5, 4) + cloud(cx + 1, cy + 1, 1);
+      case 'mostlyn': return moon(cx - 6, cy - 5, 4) + cloud(cx + 1, cy + 1, 1);
+      case 'ovc': return cloud(cx - 3, cy - 2, 0.8, 'ic-cl2') + cloud(cx + 2, cy + 2, 1);
+      case 'rain': return cloud(cx, cy - 3, 1, 'ic-cl2') + drops(cx, cy + 5, 3);
+      case 'shower': return sun(cx - 6, cy - 7, 4) + cloud(cx + 1, cy - 2, 0.95) + drops(cx + 1, cy + 6, 3);
+      case 'ts': return cloud(cx, cy - 4, 1, 'ic-cl3') + bolt(cx, cy + 3);
+      case 'fog': return `<g class="ic-fog">${[-4, 0, 4].map((d, i) => `<line x1="${cx - 9 + i * 2}" y1="${cy + d}" x2="${cx + 9 - i * 2}" y2="${cy + d}"/>`).join('')}</g>`;
+    }
+    return '';
+  }
+  /** Escala de cor da temperatura (°C). */
+  function tColor(t) {
+    const S2 = [[0, '#3b6fd6'], [10, '#39a3d9'], [16, '#46b77a'], [20, '#8fd14f'], [24, '#e9df3c'], [28, '#f2a531'], [32, '#e8622c'], [36, '#c9302c']];
+    if (t <= S2[0][0]) return S2[0][1]; if (t >= S2[S2.length - 1][0]) return S2[S2.length - 1][1];
+    for (let i = 1; i < S2.length; i++) if (t <= S2[i][0]) { const f = (t - S2[i - 1][0]) / (S2[i][0] - S2[i - 1][0]); const a = M2rgb(S2[i - 1][1]), b = M2rgb(S2[i][1]); return `rgb(${a.map((v, k) => Math.round(v + (b[k] - v) * f)).join(',')})`; }
+  }
+  const M2rgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  function renderTempChart(H) {
+    const el = $('#tempchart');
+    if (!el) return;
+    if (!S.models || !hasPos()) { el.innerHTML = ''; return; }
+    const m = S.mission, tz = m.tz;
+    const [Y, MO, DD] = m.date.split('-').map(Number), t0 = M.zonedToUtc(Y, MO, DD, 0, 0, tz);
+    const cols = Array.from({ length: 24 }, (_, i) => { const utc = t0 + i * 3600e3, w = H.find(h => Math.abs(h.utc - utc) < 60e3); return { i, utc, win: !!w, h: w || computeHour(null, utc) }; });
+    const V = cols.filter(c => c.h && c.h.n && c.h.c.temp != null);
+    if (!V.length) { el.innerHTML = '<p class="small muted">Temperatura indisponível: os modelos carregados não cobrem o dia D.</p>'; return; }
+    // dia/noite: ICMN–FCVC inseridos do Time and Date; na falta, crepúsculo civil calculado (aproximado)
+    const tadD = (m.tadN || {})[m.date] || {}, tadP = (m.tadN || {})[M.shiftDate(m.date, -1)] || {};
+    const hm = v => { if (!v || !/^\d{1,2}:\d{2}$/.test(v)) return null; const [a, b] = v.split(':').map(Number); return a + b / 60; };
+    let dIni = hm(tadD.icmn0) ?? hm(tadP.icmn1), dFim = hm(tadD.fcvc), dSrc = 'Time and Date (inserido)';
+    if (dIni == null || dFim == null) { try { const A = M.astronomy(m.date, m.lat, m.lon, tz); const lp = t => { const p = M.localParts(t, tz); return p.h + p.mi / 60; }; if (dIni == null && A.icmc) dIni = lp(A.icmc); if (dFim == null && A.fcvc) dFim = lp(A.fcvc); dSrc = 'crepúsculo civil calculado (aproximado)'; } catch (e) { /* sem astronomia */ } }
+    const isDay = i => dIni != null && dFim != null ? (i + 0.5 > dIni && i + 0.5 < dFim) : (i >= 6 && i < 18);
+    // escala
+    const temps = V.flatMap(c => [c.h.c.temp, c.h.c.at]).filter(v => v != null);
+    let lo = Math.floor((Math.min(...temps) - 1) / 2) * 2, hi = Math.ceil((Math.max(...temps) + 1) / 2) * 2;
+    if (hi - lo < 8) { hi = lo + 8; }
+    const W = 1000, L = 96, R = 14, T = 58, PH = 220, B = T + PH;
+    const pw = W - L - R, cw = pw / 24, xc = i => L + (i + 0.5) * cw, y = t => B - (t - lo) / (hi - lo) * PH;
+    let s = `<svg viewBox="0 0 ${W} ${B + 50}" class="cc tc" role="img" aria-label="Temperatura horária do dia ${m.date.split('-').reverse().join('/')} com ícones de tempo">`;
+    s += `<defs><linearGradient id="tcg" gradientUnits="userSpaceOnUse" x1="0" y1="${y(lo)}" x2="0" y2="${y(hi)}">${Array.from({ length: 9 }, (_, k) => { const t = lo + (hi - lo) * k / 8; return `<stop offset="${k / 8}" stop-color="${tColor(t)}"/>`; }).join('')}</linearGradient><clipPath id="tcclip"><rect x="${L}" y="${T}" width="${pw}" height="${PH}"/></clipPath></defs>`;
+    s += `<rect x="${L}" y="${T}" width="${pw}" height="${PH}" class="cc-bg"/>`;
+    // noite
+    cols.forEach(c => { if (!isDay(c.i)) s += `<rect x="${L + c.i * cw}" y="${T - 46}" width="${cw + 0.5}" height="${PH + 46}" class="tc-night"/>`; });
+    // janela H..H+5
+    const wi = cols.filter(c => c.win).map(c => c.i);
+    if (wi.length) s += `<rect x="${L + wi[0] * cw}" y="${T - 50}" width="${(wi[wi.length - 1] - wi[0] + 1) * cw}" height="${PH + 50 + 30}" rx="6" class="cc-win"/>`;
+    // grade de 2 em 2 °C e de 1 em 1 h
+    for (let t = lo; t <= hi; t += 2) { const yy = y(t); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-g ${t % 10 ? '' : 'k'}"/><text x="${L - 6}" y="${yy + 3.5}" text-anchor="end" class="cc-ax k">${t}°</text>`; }
+    cols.forEach(c => { s += `<line x1="${xc(c.i)}" x2="${xc(c.i)}" y1="${T}" y2="${B}" class="tc-vg"/>`; });
+    // área e curva
+    const pts = cols.map(c => c.h && c.h.n && c.h.c.temp != null ? [xc(c.i), y(c.h.c.temp)] : null);
+    const segs = []; let cur = [];
+    pts.forEach(p => { if (p) cur.push(p); else if (cur.length) { segs.push(cur); cur = []; } }); if (cur.length) segs.push(cur);
+    const smooth = P => P.map((p, i) => { if (!i) return `M${p[0].toFixed(1)} ${p[1].toFixed(1)}`; const a = P[i - 1], dx = (p[0] - a[0]) / 2; return `C${(a[0] + dx).toFixed(1)} ${a[1].toFixed(1)} ${(p[0] - dx).toFixed(1)} ${p[1].toFixed(1)} ${p[0].toFixed(1)} ${p[1].toFixed(1)}`; }).join(' ');
+    s += `<g clip-path="url(#tcclip)">`;
+    segs.forEach(P => { s += `<path d="${smooth(P)} L${P[P.length - 1][0]} ${B} L${P[0][0]} ${B} Z" fill="url(#tcg)" class="tc-area"/>`; });
+    // sensação térmica
+    const ap = cols.map(c => c.h && c.h.n && c.h.c.at != null ? [xc(c.i), y(c.h.c.at)] : null).filter(Boolean);
+    if (ap.length > 1) s += `<path d="${smooth(ap)}" class="tc-at"/>`;
+    segs.forEach(P => { s += `<path d="${smooth(P)}" class="tc-line"/>`; });
+    s += `</g>`;
+    // máxima e mínima
+    const mx = V.reduce((a, b) => b.h.c.temp > a.h.c.temp ? b : a), mn = V.reduce((a, b) => b.h.c.temp < a.h.c.temp ? b : a);
+    [[mx, -8, 'máx'], [mn, 16, 'mín']].forEach(([c, dy]) => { s += `<circle cx="${xc(c.i)}" cy="${y(c.h.c.temp)}" r="3.5" class="tc-pt"/><text x="${xc(c.i)}" y="${y(c.h.c.temp) + dy}" text-anchor="middle" class="tc-mm">${fmt(c.h.c.temp)}°</text>`; });
+    // valores horários (pequenos) e ícones
+    const ic = cols.map(c => wxIcon(c.h, isDay(c.i)));
+    cols.forEach((c, i) => {
+      if (c.h && c.h.n && c.h.c.temp != null && c !== mx && c !== mn) s += `<text x="${xc(i)}" y="${y(c.h.c.temp) - 6}" text-anchor="middle" class="tc-v">${fmt(c.h.c.temp)}</text>`;
+      if (ic[i]) s += `<g class="tc-ic"><title>${M.pad(i)}:00 — ${esc(ic[i].t)}${c.h.c.cc != null ? ' · nuvens ' + fmt(c.h.c.cc) + '%' : ''}${c.h.c.pr ? ' · ' + fmt(c.h.c.pr, 1) + ' mm/h' : ''} · ${fmt(c.h.c.temp)} °C (sensação ${fmt(c.h.c.at)} °C)</title>${iconSvg(ic[i].k, xc(i), T - 26)}</g>`;
+    });
+    // eixo x de 1 em 1 hora
+    s += `<line x1="${L}" x2="${W - R}" y1="${B}" y2="${B}" class="cc-gnd"/>`;
+    cols.forEach(c => { s += `<text x="${xc(c.i)}" y="${B + 16}" text-anchor="middle" class="cc-h ${c.win ? 'w' : ''}">${M.pad(c.i)}</text>`; });
+    s += `<text x="${L - 6}" y="${B + 16}" text-anchor="end" class="cc-ax k">Hora</text><text x="${L - 6}" y="${T - 22}" text-anchor="end" class="cc-ax k">Tempo</text><text x="8" y="${T + 10}" class="cc-ax">°C</text>`;
+    const hNow = H[0] ? cols.find(c => Math.abs(c.utc - H[0].utc) < 60e3) : null;
+    if (hNow) s += `<line x1="${xc(hNow.i)}" x2="${xc(hNow.i)}" y1="${T - 46}" y2="${B}" class="cc-hl"/>`;
+    s += `<text x="${L + 6}" y="${B + 36}" class="cc-ax"><tspan class="tc-lg1">━</tspan> temperatura a 2 m   <tspan class="tc-lg2">┅</tspan> sensação térmica   <tspan class="tc-lg3">■</tspan> noite</text>`;
+    s += '</svg>';
+    // resumo do tempo por períodos
+    const grp = []; ic.forEach((x, i) => { const k = x ? x.t : '—'; const g = grp[grp.length - 1]; if (g && g.k === k) g.to = i; else grp.push({ k, from: i, to: i }); });
+    const sum = grp.filter(g => g.k !== '—').map(g => `<span class="tc-s"><b>${esc(g.k)}</b> ${M.pad(g.from)}h–${M.pad(g.to + 1 === 24 ? 0 : g.to + 1)}h</span>`).join('');
+    el.innerHTML = `<h3 class="sub cc-title">Temperatura e tempo — ${esc(m.date.split('-').reverse().join('/'))}</h3>
+      <div class="cc-sum">Máx. <b>${fmt(mx.h.c.temp)} °C</b> às ${M.pad(mx.i)}h · mín. <b>${fmt(mn.h.c.temp)} °C</b> às ${M.pad(mn.i)}h</div>
+      <div class="tc-sums">${sum}</div>
+      <div class="cc-wrap">${s}</div>
+      <p class="note"><span class="st st-prev">PREVISTO</span> temperatura e sensação térmica: mediana GFS/ECMWF/ICON. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
   }
 
   /* ---------------- Gráfico de vento ---------------- */
