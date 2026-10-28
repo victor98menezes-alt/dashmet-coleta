@@ -187,7 +187,12 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 .sw{display:flex;flex-direction:column;gap:3px;align-items:center}
 /* Perfil de nuvens */
 .cc-title{margin:18px 0 6px} .cc-wrap{overflow-x:auto} svg.cc{min-width:720px;width:100%;display:block}
-svg .cc-win{fill:var(--accent);fill-opacity:.07}
+svg .cc-win{fill:var(--accent);fill-opacity:.06;stroke:var(--accent);stroke-opacity:.55;stroke-width:1.2}
+svg .cc-bg{fill:var(--surface)} svg .cc-night{fill:#5b6fd6;fill-opacity:.08} svg .cc-nt{fill:#5b6fd6;font:600 9px var(--f-body)}
+svg .cc-bl{fill:none;stroke:var(--fg);stroke-width:1.3;stroke-dasharray:4 3;stroke-opacity:.7} svg .cc-bd{fill:var(--fg)} svg .cc-bd.bad{fill:var(--bad)}
+svg .cc-v.ok{fill:var(--ok)} svg .cc-v.warn{fill:var(--warn)} svg .cc-v.bad{fill:var(--bad)} svg .cc-v.na{fill:var(--na-bg)}
+svg .cc-vv{font:700 12px var(--f-body);fill:#fff} svg .cc-vv.na{fill:var(--na)}
+.cc-sum{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font:500 .82rem var(--f-data);margin-bottom:6px}
 svg .cc-cl{fill:var(--cloud)}
 svg .cc-g{stroke:var(--line);stroke-width:1;stroke-dasharray:3 4} svg .cc-g.k{stroke-dasharray:none;stroke-opacity:.9}
 svg .cc-gnd{stroke:var(--fg);stroke-width:1.6}
@@ -1772,60 +1777,114 @@ const MET = (() => {
     if (!S.models || !hasPos()) { el.innerHTML = ''; return; }
     const m = S.mission, tz = m.tz, bmin = numOrNull(m.baseMinFt);
     const zlFt = numOrNull(m.zlElevFt) != null ? +m.zlElevFt : (S.models.meta.elevation || 0) / FT;
-    const TOP = 12000, KS = [];
-    for (let k = -3; k <= 8; k++) KS.push(k);
-    const cols = KS.map(k => {
-      const h = k >= 0 && k < H.length ? H[k] : computeHour(null, hourUtc(0) + k * 3600e3);
-      return { k, h, label: k === 0 ? 'H' : (k > 0 ? 'H+' + k : 'H' + k).replace('-', '−') };
+    const TOP = 12000;
+    // 24 horas do dia D (hora local); janela H..H+5 usa o cálculo completo (com TAF inserido)
+    const [Y, MO, DD] = m.date.split('-').map(Number);
+    const t0 = M.zonedToUtc(Y, MO, DD, 0, 0, tz);
+    const cols = Array.from({ length: 24 }, (_, i) => {
+      const utc = t0 + i * 3600e3, w = H.find(h => Math.abs(h.utc - utc) < 60e3);
+      return { i, utc, win: !!w, h: w || computeHour(null, utc) };
     });
-    if (!cols.some(c => c.h && c.h.n && c.h.layers && c.h.layers.levels)) { el.innerHTML = '<p class="small muted">Perfil de nuvens indisponível: os modelos carregados não trazem cobertura por nível.</p>'; return; }
-    // geometria
-    const W = 1000, L = 96, R = 14, T = 34, ROWS = 46, lines = [];
-    for (let f = 1000; f <= TOP; f += 500) if (f > zlFt + 100) lines.push(f);
-    const yMin = zlFt, plotH = 23 * 17, B = T + plotH;
-    const y = ft => B - (ft - yMin) / (TOP - yMin) * plotH;
-    const cw = (W - L - R) / cols.length, x = i => L + i * cw;
-    let s = `<svg viewBox="0 0 ${W} ${B + ROWS + 6}" class="cc" role="img" aria-label="Perfil de nuvens por horário: cobertura e base das nuvens em pés MSL, de ${fmt(zlFt)} ft (ZL) a ${fmt(TOP)} ft">`;
-    // janela H..H+5
-    const i0 = cols.findIndex(c => c.k === 0), i5 = cols.findIndex(c => c.k === H.length - 1);
-    s += `<rect x="${x(i0)}" y="${T - 22}" width="${x(i5 + 1) - x(i0)}" height="${plotH + 22}" class="cc-win"/>`;
-    // nuvens: cobertura interpolada a cada 100 ft entre os níveis de pressão (mediana dos modelos), zerada abaixo da base da camada mais baixa
-    cols.forEach((c, i) => {
-      const h = c.h; if (!h || !h.n || !h.layers || !h.layers.levels) return;
+    const ok = cols.filter(c => c.h && c.h.n && c.h.layers && c.h.layers.levels);
+    if (!ok.length) { el.innerHTML = '<p class="small muted">Perfil de nuvens indisponível: os modelos carregados não cobrem o dia D com cobertura por nível.</p>'; return; }
+    // perfil vertical de cada hora: cada nível de pressão vira um núcleo de nuvem (gaussiana) com a cobertura do nível;
+    // a camada mais baixa desce até a base estimada (NCL); nada abaixo da base
+    const prof = cols.map(c => {
+      const h = c.h; if (!h || !h.n || !h.layers || !h.layers.levels) return null;
       const lv = h.layers.levels.map(l => ({ ft: l.z / FT, cov: l.cover })).filter(l => l.cov != null).sort((a, b) => a.ft - b.ft);
-      if (!lv.length) return;
       const base0 = h.layers.cons[0] ? zlFt + h.layers.cons[0].baseFt : null;
-      const covAt = ft => { if (ft <= lv[0].ft) return lv[0].cov; for (let j = 1; j < lv.length; j++) if (ft <= lv[j].ft) { const f = (ft - lv[j - 1].ft) / (lv[j].ft - lv[j - 1].ft); return lv[j - 1].cov + f * (lv[j].cov - lv[j - 1].cov); } return lv[lv.length - 1].cov; };
-      if (base0 != null && base0 < TOP) {
-        // gradiente vertical contínuo: opacidade proporcional à cobertura em cada altitude
-        const gid = `ccg${i}`, stops = [];
-        for (let ft = base0; ft <= TOP; ft += 100) { const cv = covAt(ft), op = cv < 10 ? 0 : 0.10 + 0.80 * Math.min(100, cv) / 100; stops.push(`<stop offset="${((ft - base0) / (TOP - base0)).toFixed(4)}" style="stop-color:var(--cloud);stop-opacity:${op.toFixed(2)}"/>`); }
-        s += `<defs><linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="0" y1="${y(base0)}" x2="0" y2="${y(TOP)}">${stops.join('')}</linearGradient></defs><rect x="${x(i) + 1}" y="${y(TOP)}" width="${cw - 2}" height="${y(base0) - y(TOP)}" fill="url(#${gid})"/>`;
-      }
-      // marcas de base de cada camada
-      h.layers.cons.forEach((ly, j) => { const f = zlFt + ly.baseFt; if (f > TOP) return; const yy = y(f);
-        s += `<line x1="${x(i) + 3}" x2="${x(i + 1) - 3}" y1="${yy}" y2="${yy}" class="cc-base ${bmin != null && ly.baseFt < bmin ? 'bad' : ''}"/><text x="${x(i) + cw / 2}" y="${yy + 11}" text-anchor="middle" class="cc-lb">${okta(ly.pct, ly.cov)}/8 ${ly.cov}</text>`; });
-      // precipitação (barra ao solo) e convecção (topo)
-      if (h.c.pr != null && h.c.pr >= 0.1) { const ph = Math.min(60, 8 + h.c.pr * 8); s += `<rect x="${x(i) + 4}" y="${B - ph}" width="${Math.max(6, cw * 0.14)}" height="${ph}" class="cc-pr ${h.c.sh > 0 ? 'cv' : ''}"><title>${fmt(h.c.pr, 1)} mm/h${h.c.sh > 0 ? ' (convectiva)' : ''}</title></rect>`; }
-      if (h.conv && h.conv.level >= 1) s += `<text x="${x(i) + cw / 2}" y="${T + 12}" text-anchor="middle" class="cc-cv l${Math.min(3, h.conv.level)}">${h.conv.level >= 3 ? '⚡ CB' : h.conv.level === 2 ? 'TCU/CB' : 'TCU'}</text>`;
+      if (!lv.length || base0 == null) return () => 0;
+      lv.forEach((l, j) => { const dn = j ? l.ft - lv[j - 1].ft : 1500, up = j < lv.length - 1 ? lv[j + 1].ft - l.ft : 3000; l.sg = Math.max(250, Math.min(2200, 0.55 * Math.min(dn, up))); });
+      const low = lv.find(l => l.cov >= 8 && l.ft >= base0 - 400);
+      return ft => {
+        if (ft < base0 - 60) return 0;
+        let v = 0;
+        lv.forEach(l => { if (l.cov < 8) return; const d = (ft - l.ft) / l.sg; v = Math.max(v, l.cov * Math.exp(-d * d)); });
+        if (low && ft >= base0 && ft <= low.ft) v = Math.max(v, low.cov);
+        return v * Math.min(1, (ft - base0 + 60) / 160);
+      };
     });
-    // grade e eixo (ft MSL)
-    lines.forEach(f => { const yy = y(f); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-g ${f % 1000 ? '' : 'k'}"/><text x="${L - 6}" y="${yy + 3.5}" text-anchor="end" class="cc-ax ${f % 1000 ? '' : 'k'}">${fmt(f)}</text>`; });
-    s += `<line x1="${L}" x2="${W - R}" y1="${B}" y2="${B}" class="cc-gnd"/><text x="${L - 6}" y="${B + 4}" text-anchor="end" class="cc-ax k">ZL ${fmt(zlFt)}</text><text x="8" y="${T - 10}" class="cc-ax">ft MSL</text>`;
-    // teto mínimo e altitude de lançamento/saída
+    // textura (ruído de valor determinístico) para aspecto de nuvem
+    const hsh = (a, b) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+    const vn = (x, y2) => { const xi = Math.floor(x), yi = Math.floor(y2), xf = x - xi, yf = y2 - yi, sx = xf * xf * (3 - 2 * xf), sy = yf * yf * (3 - 2 * yf);
+      const a = hsh(xi, yi), b = hsh(xi + 1, yi), c2 = hsh(xi, yi + 1), d = hsh(xi + 1, yi + 1); return a + (b - a) * sx + (c2 - a) * sy + (a - b - c2 + d) * sx * sy; };
+    const tex = (t, ft) => 0.62 + 0.26 * vn(t * 1.6, ft / 700) + 0.12 * vn(t * 4.1 + 7, ft / 260);
+    // campo contínuo tempo × altitude (interpolação bilinear) desenhado em canvas e suavizado
+    const NX = 23 * 12 + 1, NY = Math.max(60, Math.round((TOP - zlFt) / 40));
+    const cv = document.createElement('canvas'); cv.width = NX; cv.height = NY;
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(NX, NY);
+    const css = getComputedStyle(document.documentElement).getPropertyValue('--cloud').trim() || '#55606b';
+    const rgb = (css.match(/[0-9a-f]{2}/gi) || ['55', '60', '6b']).slice(0, 3).map(h => parseInt(h, 16));
+    for (let px = 0; px < NX; px++) {
+      const t = px / 12, i = Math.min(22, Math.floor(t)), f0 = t - i, f = f0 * f0 * (3 - 2 * f0), a = prof[i], b = prof[i + 1];
+      for (let py = 0; py < NY; py++) {
+        const ft = TOP - (py + 0.5) / NY * (TOP - zlFt);
+        const va = a ? a(ft) : null, vb = b ? b(ft) : null;
+        const v = va == null && vb == null ? 0 : va == null ? vb : vb == null ? va : va * (1 - f) + vb * f;
+        const o = (py * NX + px) * 4;
+        img.data[o] = rgb[0]; img.data[o + 1] = rgb[1]; img.data[o + 2] = rgb[2];
+        img.data[o + 3] = Math.round(255 * Math.min(0.93, Math.pow(Math.max(0, v) / 100, 0.7) * tex(t, ft)));
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const field = cv.toDataURL('image/png');
+    // geometria
+    const W = 1000, L = 96, R = 14, T = 40, plotH = 23 * 15, B = T + plotH;
+    const y = ft => B - (ft - zlFt) / (TOP - zlFt) * plotH;
+    const pw = W - L - R, cw = pw / 24, xc = i => L + (i + 0.5) * cw, xt = t => L + cw / 2 + t * cw;
+    let s = `<svg viewBox="0 0 ${W} ${B + 90}" class="cc" role="img" aria-label="Perfil de nuvens do dia ${m.date.split('-').reverse().join('/')}: cobertura e base das nuvens de ${fmt(zlFt)} ft (ZL) a ${fmt(TOP)} ft MSL, com janelas para o salto">`;
+    s += `<defs><filter id="ccblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation="5 3.5"/></filter><clipPath id="ccclip"><rect x="${L}" y="${T}" width="${pw}" height="${plotH}"/></clipPath></defs>`;
+    s += `<rect x="${L}" y="${T}" width="${pw}" height="${plotH}" class="cc-bg"/>`;
+    // noite (valores do Time and Date inseridos, se houver)
+    const tadD = (m.tadN || {})[m.date] || {}, tadP = (m.tadN || {})[M.shiftDate(m.date, -1)] || {};
+    const hm = v => { if (!v || !/^\d{1,2}:\d{2}$/.test(v)) return null; const [a, b2] = v.split(':').map(Number); return a + b2 / 60; };
+    const icmn = hm(tadD.icmn0) ?? hm(tadP.icmn1), fcvc = hm(tadD.fcvc);
+    const xh = hh => Math.max(L, Math.min(W - R, L + hh * cw));
+    if (icmn != null) s += `<rect x="${L}" y="${T}" width="${xh(icmn) - L}" height="${plotH}" class="cc-night"/><text x="${(L + xh(icmn)) / 2}" y="${B - 6}" text-anchor="middle" class="cc-nt">noite · ICMN ${esc(tadD.icmn0 || tadP.icmn1)}</text>`;
+    if (fcvc != null) s += `<rect x="${xh(fcvc)}" y="${T}" width="${W - R - xh(fcvc)}" height="${plotH}" class="cc-night"/><text x="${(xh(fcvc) + W - R) / 2}" y="${T + 24}" text-anchor="middle" class="cc-nt">noite · FCVC ${esc(tadD.fcvc)}</text>`;
+    // janela H..H+5
+    const wi = cols.filter(c => c.win).map(c => c.i);
+    if (wi.length) s += `<rect x="${L + wi[0] * cw}" y="${T - 26}" width="${(wi[wi.length - 1] - wi[0] + 1) * cw}" height="${plotH + 26 + 82}" rx="6" class="cc-win"/>`;
+    // grade a cada 500 ft MSL
+    for (let f = 1000; f <= TOP; f += 500) if (f > zlFt + 100) { const yy = y(f); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-g ${f % 1000 ? '' : 'k'}"/><text x="${L - 6}" y="${yy + 3.5}" text-anchor="end" class="cc-ax ${f % 1000 ? '' : 'k'}">${fmt(f)}</text>`; }
+    // nuvens
+    s += `<g clip-path="url(#ccclip)"><image href="${field}" x="${xt(0)}" y="${T}" width="${23 * cw}" height="${plotH}" preserveAspectRatio="none" filter="url(#ccblur)"/></g>`;
+    // linha da base da camada mais baixa
+    const pts = cols.map(c => c.h && c.h.n && c.h.layers && c.h.layers.cons[0] && zlFt + c.h.layers.cons[0].baseFt <= TOP ? [xc(c.i), y(zlFt + c.h.layers.cons[0].baseFt)] : null);
+    let path = '', on = false; pts.forEach(p => { if (p) { path += (on ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); on = true; } else on = false; });
+    if (path) s += `<path d="${path}" class="cc-bl"/>${pts.map((p, i) => p ? `<circle cx="${p[0]}" cy="${p[1]}" r="2.6" class="cc-bd ${bmin != null && cols[i].h.layers.cons[0].baseFt < bmin ? 'bad' : ''}"/>` : '').join('')}`;
+    // precipitação e convecção
+    cols.forEach(c => { const h = c.h; if (!h || !h.n) return;
+      if (h.c.pr != null && h.c.pr >= 0.1) { const ph = Math.min(50, 6 + h.c.pr * 7); s += `<rect x="${xc(c.i) - 3}" y="${B - ph}" width="6" height="${ph}" rx="2" class="cc-pr ${h.c.sh > 0 ? 'cv' : ''}"/>`; }
+      if (h.conv && h.conv.level >= 1) s += `<text x="${xc(c.i)}" y="${T + 11}" text-anchor="middle" class="cc-cv l${Math.min(3, h.conv.level)}">${h.conv.level >= 3 ? '⚡CB' : 'TCU'}</text>`; });
+    // teto mínimo e saída
     if (bmin != null && zlFt + bmin < TOP) { const yy = y(zlFt + bmin); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-min"/><text x="${W - R - 4}" y="${yy - 4}" text-anchor="end" class="cc-mt">teto mínimo ${fmt(bmin)} ft AGL</text>`; }
     if (m.activity === 'SLOP' && numOrNull(m.exitFtMSL) != null && +m.exitFtMSL < TOP) { const yy = y(+m.exitFtMSL); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-exit"/><text x="${W - R - 4}" y="${yy - 4}" text-anchor="end" class="cc-xt">saída ${fmt(+m.exitFtMSL)} ft MSL</text>`; }
-    // horários (topo) e linha H
-    cols.forEach((c, i) => { s += `<text x="${x(i) + cw / 2}" y="${T - 22 + 9}" text-anchor="middle" class="cc-h ${c.k >= 0 && c.k < H.length ? 'w' : ''}">${c.label} · ${M.hhmm(c.h ? c.h.utc : hourUtc(0) + c.k * 3600e3, tz)}</text>`; });
-    s += `<line x1="${x(i0)}" x2="${x(i0)}" y1="${T - 12}" y2="${B}" class="cc-hl"/>`;
-    // linha inferior: base da camada mais baixa (ft AGL) e cobertura
-    s += `<text x="${L - 6}" y="${B + 20}" text-anchor="end" class="cc-ax k">Base (ft AGL)</text><text x="${L - 6}" y="${B + 36}" text-anchor="end" class="cc-ax">camada</text>`;
-    cols.forEach((c, i) => { const h = c.h, ly = h && h.layers && h.layers.cons[0];
+    s += `<line x1="${L}" x2="${W - R}" y1="${B}" y2="${B}" class="cc-gnd"/><text x="${L - 6}" y="${B + 4}" text-anchor="end" class="cc-ax k">ZL ${fmt(zlFt)}</text><text x="8" y="${T - 4}" class="cc-ax">ft MSL</text>`;
+    // horas
+    s += `<text x="${L - 6}" y="${T - 12}" text-anchor="end" class="cc-ax k">Hora</text>`;
+    cols.forEach(c => { s += `<text x="${xc(c.i)}" y="${T - 12}" text-anchor="middle" class="cc-h ${c.win ? 'w' : ''}">${M.pad(c.i)}</text>`; });
+    const hNow = H[0] ? cols.find(c => Math.abs(c.utc - H[0].utc) < 60e3) : null;
+    if (hNow) s += `<line x1="${xc(hNow.i)}" x2="${xc(hNow.i)}" y1="${T - 6}" y2="${B}" class="cc-hl"/><text x="${xc(hNow.i) + 4}" y="${B - 4}" class="cc-mt">H</text>`;
+    // faixas inferiores: base das nuvens (ft AGL) e janela de salto
+    const r1 = B + 8, r3 = B + 34, r2 = B + 60;
+    s += `<text x="${L - 6}" y="${r1 + 15}" text-anchor="end" class="cc-ax k">Base (ft AGL)</text><text x="${L - 6}" y="${r3 + 15}" text-anchor="end" class="cc-ax k">Oitavos</text><text x="${L - 6}" y="${r2 + 15}" text-anchor="end" class="cc-ax k">Janela de salto</text>`;
+    cols.forEach(c => { const h = c.h, x0 = L + c.i * cw + 1, ly = h && h.n && h.layers ? h.layers.cons[0] : null;
       const st = !h || !h.n ? 'na' : !ly ? 'ok' : bmin != null && ly.baseFt < bmin ? 'bad' : 'ok';
-      s += `<rect x="${x(i) + 1}" y="${B + 6}" width="${cw - 2}" height="20" rx="3" class="cc-b ${st}"/><text x="${x(i) + cw / 2}" y="${B + 20}" text-anchor="middle" class="cc-bv">${!h || !h.n ? '—' : ly ? fmt(ly.baseFt) : 'sem'}</text><text x="${x(i) + cw / 2}" y="${B + 38}" text-anchor="middle" class="cc-ax">${ly ? okta(ly.pct, ly.cov) + '/8 ' + ly.code : (h && h.n ? '0/8' : '')}</text>`; });
+      s += `<rect x="${x0}" y="${r1}" width="${cw - 2}" height="22" rx="3" class="cc-b ${st}"/><text x="${xc(c.i)}" y="${r1 + 15}" text-anchor="middle" class="cc-bv">${!h || !h.n ? '—' : ly ? (ly.baseFt >= 10000 ? fmt(ly.baseFt / 1000, 0) + 'k' : fmt(ly.baseFt)) : '--'}</text>`;
+      s += `<text x="${xc(c.i)}" y="${r3 + 15}" text-anchor="middle" class="cc-ax k">${!h || !h.n ? '' : ly ? okta(ly.pct, ly.cov) + '/8' : '0/8'}</text>`;
+      const v = h ? vClass(h.verdict) : 'na';
+      s += `<rect x="${x0}" y="${r2}" width="${cw - 2}" height="22" rx="3" class="cc-v ${v}"/><text x="${xc(c.i)}" y="${r2 + 15}" text-anchor="middle" class="cc-vv ${v}">${v === 'ok' ? '✓' : v === 'warn' ? '!' : v === 'bad' ? '✕' : '—'}</text>`;
+      s += `<rect x="${L + c.i * cw}" y="${T}" width="${cw}" height="${plotH + 86}" fill="transparent"><title>${M.pad(c.i)}:00 — ${h ? esc(h.verdict) : 'sem dados'}${h && h.layers && h.layers.cons.length ? '\nNuvens: ' + h.layers.cons.map(x => `${okta(x.pct, x.cov)}/8 ${x.code}`).join(' ') : '\nSem nuvens'}${h && h.reasons && h.reasons.length ? '\n' + esc(h.reasons.slice(0, 3).join('\n')) : ''}</title></rect>`; });
     s += '</svg>';
-    el.innerHTML = `<h3 class="sub cc-title">Perfil de nuvens — base em ft MSL (ZL a 12.000 ft)</h3><div class="cc-wrap">${s}</div>
-      <p class="note"><span class="st st-est">ESTIMADO</span> cruzamento GFS/ECMWF/ICON: tons de cinza = cobertura de nuvens por altitude (mais escuro = mais oitavos), interpolada entre os níveis de pressão (1000 a 600 hPa nesta faixa); linha preta = base de cada camada (com a cobertura em oitavos), vermelha quando abaixo do teto mínimo. Barras azuis ao solo = precipitação (roxa = convectiva); TCU/CB no topo da coluna. Faixa destacada = janela H a H+5; linha tracejada = H. Grade a cada 500 ft MSL a partir do solo da ZL.</p>`;
+    // janelas contínuas por parecer
+    const groups = []; cols.forEach(c => { const v = c.h && c.h.n ? vClass(c.h.verdict) : 'na'; const g = groups[groups.length - 1]; if (g && g.v === v) g.to = c.i; else groups.push({ v, from: c.i, to: c.i }); });
+    const span = g => `${M.pad(g.from)}h–${M.pad(g.to + 1 === 24 ? 0 : g.to + 1)}h`;
+    const lst = v => groups.filter(g => g.v === v).map(span).join(', ');
+    el.innerHTML = `<h3 class="sub cc-title">Nuvens e janelas de salto — ${esc(m.date.split('-').reverse().join('/'))}</h3>
+      <div class="cc-sum"><span class="pill ok">✓ Favorável</span> ${lst('ok') || 'nenhuma'} <span class="pill warn">! Com restrições</span> ${lst('warn') || 'nenhuma'} <span class="pill bad">✕ Desfavorável</span> ${lst('bad') || 'nenhuma'}</div>
+      <div class="cc-wrap">${s}</div>
+      <p class="note"><span class="st st-est">ESTIMADO</span> nuvens pelo cruzamento GFS/ECMWF/ICON (cobertura por nível de pressão, interpolada no tempo e na altitude e suavizada): quanto mais escuro, mais oitavos. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5 (parecer completo, com o TAF inserido); demais horas: parecer pelos modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
   }
 
   /* ---------------- Gráfico de vento ---------------- */
