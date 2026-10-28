@@ -195,6 +195,17 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 table.msl th.l,table.msl td.l{text-align:left} table.msl td{font-size:.82rem}
 table.trend td small{display:block}
 #windchart svg .g1{stroke-opacity:.45;stroke-dasharray:2 3} #windchart svg .ax1{font-size:9px;opacity:.8}
+/* D a D+7 */
+.d7-av h4{margin:0 0 8px;font:700 .86rem var(--f-body)} .d7-av{margin-bottom:14px}
+.av{border:1px solid var(--line);border-left:6px solid var(--avc);border-radius:10px;padding:8px 12px;margin-bottom:8px;background:var(--sunk)}
+.av header{display:flex;gap:10px;flex-wrap:wrap;align-items:baseline} .av ul{margin:6px 0 0;padding-left:18px;font-size:.82rem} .avsev{font:700 .7rem var(--f-body);text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:999px;background:var(--avc);color:#1b1b1b}
+.avded{font-size:.82rem;margin:6px 0 0} .avtag{display:inline-block;font:600 .66rem var(--f-body);padding:2px 6px;border-radius:6px;background:var(--avc);color:#1b1b1b;margin:1px}
+table.d7 td{vertical-align:top;font-size:.8rem} table.d7 td small{display:block;text-align:left;line-height:1.35} table.d7 th small{display:block}
+svg .d7-day{stroke:var(--fg);stroke-opacity:.25} svg .d7-front{fill:#2f7fd1;fill-opacity:.10} svg .d7-front.k{fill-opacity:.22} svg .d7-ft{fill:#2f7fd1;font:700 9px var(--f-body)}
+svg .d7-p{fill:none;stroke:#7b5cd6;stroke-width:1.6} svg .d7-pax{fill:#7b5cd6} svg .d7-ts{font:11px var(--f-body)}
+svg .tc-pr{fill:#1f5fd6;fill-opacity:.85} svg .tc-prc{fill:#6cc8f2;fill-opacity:.95}
+svg .d7-arr{fill:var(--muted)} svg .d7-arr.bad{fill:var(--bad)}
+.legend i.lg-t{background:#d8231c} .legend i.lg-p{background:#7b5cd6} .legend i.lg-r{background:#1f5fd6} .legend i.lg-rc{background:#6cc8f2} .legend i.lg-f{background:#2f7fd1;opacity:.35}
 /* Temperatura */
 svg .tc-night{fill:#33407a;fill-opacity:.10}
 svg .tc-vg{stroke:var(--line);stroke-width:.6;stroke-opacity:.6}
@@ -393,6 +404,7 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
       <div class="fld"><label for="f-zl">Altitude da ZL</label><input id="f-zl" inputmode="numeric" placeholder="ex.: 112"><span class="hint">ft MSL · base para ZL + 750 ft</span></div>
       <div class="fld"><label for="f-wref">Vento de referência do limite</label><select id="f-wref"><option value="ZL750">ZL + 750 ft (aferição)</option><option value="10M">10 m (superfície do modelo)</option></select></div>
       <div class="fld"><label for="f-icao">Estação OACI de referência</label><input id="f-icao" placeholder="ex.: SBAF" maxlength="4" autocomplete="off"><span class="hint">METAR/TAF próximos da ZL</span></div>
+      <div class="fld"><label for="f-ibge">Município (código IBGE)</label><input id="f-ibge" inputmode="numeric" placeholder="automático" maxlength="7" autocomplete="off"><span class="hint">Previsão e avisos do INMET · vazio = identificar pela coordenada</span></div>
       <div class="fld"><label for="f-ad">Aeródromos próximos</label><input id="f-ad" placeholder="ex.: SBAF, SBGL" autocomplete="off"><span class="hint">Até 4 · localização e distância à ZL (AISWEB)</span></div>
       <fieldset><legend>Limites e critérios</legend>
         <div class="fld"><label for="f-lim-eng">Vento sup. máx. — enganchado</label><input id="f-lim-eng" inputmode="decimal"><span class="hint">kt (informado: 13)</span></div>
@@ -452,7 +464,7 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
 
       <section class="panel" aria-labelledby="h-days"><header><h2 id="h-days">Evolução D-1 · D0 · D+1</h2></header><div id="days"></div></section>
 
-      <section class="panel" aria-labelledby="h-trend"><header><h2 id="h-trend">Tendência 24 · 48 · 72 h</h2><span class="small">D0 · D+1 · D+2 · consolidado dos modelos</span></header><div id="trend"></div></section>
+      <section class="panel" aria-labelledby="h-trend"><header><h2 id="h-trend">Tendência D a D+7 — mudança de tempo, perigos e avisos</h2><span class="small">INMET (avisos e previsão) · CPTEC · GFS/ECMWF/ICON</span></header><div id="trend"></div></section>
 
       <section class="panel" aria-labelledby="h-conf"><header><h2 id="h-conf">Confiabilidade</h2></header><div id="conf"></div></section>
     </div>
@@ -750,7 +762,7 @@ const MET = (() => {
     const q = new URLSearchParams({
       latitude: m.lat.toFixed(4), longitude: m.lon.toFixed(4), hourly: hourly.join(','),
       models: MODELS.map(x => x.key).join(','), wind_speed_unit: 'kn', timezone: m.tz,
-      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, 2),
+      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, 7),
     });
     return 'https://api.open-meteo.com/v1/forecast?' + q.toString().replace(/%2C/g, ',');
   }
@@ -1013,7 +1025,7 @@ const MET = (() => {
   function tomorrow(tz) { const p = M.localParts(Date.now() + 864e5, tz); return M.isoDate(p.y, p.mo, p.d); }
   const DEFAULT_MISSION = () => ({
     name: '', latStr: '', lonStr: '', lat: null, lon: null, date: tomorrow('America/Sao_Paulo'), hour: 10, tz: 'America/Sao_Paulo',
-    activity: 'ENG', launchFtAGL: 1000, exitFtMSL: null, windLimitEng: 13, windLimitSlop: 18, baseMinFt: 1000, icao: '', zlElevFt: null, windRef: 'ZL750', aerodromos: '', xwLimit: null, ceilMin: null, visMin: null,
+    activity: 'ENG', launchFtAGL: 1000, exitFtMSL: null, windLimitEng: 13, windLimitSlop: 18, baseMinFt: 1000, icao: '', ibge: '', zlElevFt: null, windRef: 'ZL750', aerodromos: '', xwLimit: null, ceilMin: null, visMin: null,
     weights: { GFS: 1, ECMWF: 1, ICON: 1 }, capeMod: 1000, capeStrong: 2500, updatedAt: null,
   });
   const S = { mission: DEFAULT_MISSION(), models: null, sounding: null, obs: null, analysis: null, astro: null, oficiais: null, aer: null, sys: null, history: [], db: null, user: null, mcp: null, downloads: null, canWrite: true, selHour: 0, upperSrc: 'auto', tab: 'modelos' };
@@ -1137,6 +1149,9 @@ const MET = (() => {
       if (x.at && (x.at.cb || x.at.ts)) { if (conv.level < 3) { conv.level = 3; conv.text = `${x.at.ts ? 'TS/CB' : 'CB'} previsto (${tag})`; } conv.src.push(`${tag}: ${x.at.groups.filter(g => /TS|CB/.test(g)).join(' | ')}`); }
       else if (x.at && x.at.tcu) { if (conv.level < 2) { conv.level = 2; conv.text = `TCU previsto (${tag})`; } conv.src.push(`${tag}: TCU`); }
     });
+    // INMET: avisos vigentes no horário e previsão textual do período (manhã/tarde/noite)
+    r.inmet = utcOv == null ? inmetAt(utc) : null;
+    if (r.inmet && r.inmet.ts) { if (conv.level < 2) { conv.level = 2; conv.text = 'TCU/CB possível (INMET)'; } conv.src.push(`INMET ${r.inmet.periodo}: ${r.inmet.texto}`); }
     // vento na ZL (ZL + 750 ft), 1ª camada acima e altura de lançamento
     r.zl = zlWinds(r);
     const useZl = S.mission.windRef === 'ZL750' && r.zl && r.zl.c750;
@@ -1182,6 +1197,10 @@ const MET = (() => {
       if (cmin != null) { if (P.ceil != null && P.ceil < cmin) r.minima.ceil.push(`${tag} ${fmt(P.ceil)} ft`); x.cond.vari.forEach(v => { if (v.ceil != null && v.ceil < cmin) r.minima.ceil.push(`${tag} ${v.tipo} ${fmt(v.ceil)} ft`); }); }
       if (vmin != null) { if (P.vis != null && P.vis < vmin) r.minima.vis.push(`${tag} ${fmt(P.vis)} m`); x.cond.vari.forEach(v => { if (v.vis != null && v.vis < vmin) r.minima.vis.push(`${tag} ${v.tipo} ${fmt(v.vis)} m`); }); }
     });
+    if (r.inmet) {
+      r.inmet.avisos.forEach(a => { const txt = `Aviso INMET: ${a.descricao} (${a.severidade})`; if (/tempestade|vendaval/i.test(a.descricao) || /^perigo$|grande perigo/i.test(a.severidade)) reasons.push(txt); else restr.push(txt); });
+      if (r.inmet.texto && /pancada|chuva|trovoad|rajada/i.test(r.inmet.texto)) restr.push(`Previsão INMET (${r.inmet.periodo}): ${r.inmet.texto}`);
+    }
     if (r.minima.ceil.length) restr.push(`Teto abaixo do mínimo de ${fmt(cmin)} ft (${r.minima.ceil.join(', ')})`);
     if (r.minima.vis.length) restr.push(`Visibilidade abaixo do mínimo de ${fmt(vmin)} m (${r.minima.vis.join(', ')})`);
     // altitude-densidade na ZL (modelo)
@@ -1538,7 +1557,7 @@ const MET = (() => {
     $('#f-name').value = m.name || ''; $('#f-lat').value = m.latStr || (m.lat ?? ''); $('#f-lon').value = m.lonStr || (m.lon ?? '');
     $('#f-date').value = m.date || ''; $('#f-hour').value = String(m.hour); $('#f-tz').value = m.tz; $('#f-act').value = m.activity;
     $('#f-lim-eng').value = m.windLimitEng; $('#f-lim-slop').value = m.windLimitSlop; $('#f-launch').value = m.launchFtAGL ?? ''; $('#f-exit').value = m.exitFtMSL ?? '';
-    $('#f-base').value = m.baseMinFt ?? ''; $('#f-icao').value = m.icao || '';
+    $('#f-base').value = m.baseMinFt ?? ''; $('#f-icao').value = m.icao || ''; if ($('#f-ibge')) $('#f-ibge').value = m.ibge || '';
     $('#f-w-gfs').value = m.weights.GFS; $('#f-w-ecmwf').value = m.weights.ECMWF; $('#f-w-icon').value = m.weights.ICON;
     $('#f-cape-m').value = m.capeMod; $('#f-cape-s').value = m.capeStrong;
     $('#f-zl').value = m.zlElevFt ?? ''; $('#f-wref').value = m.windRef || 'ZL750'; $('#f-ad').value = m.aerodromos || ''; $('#f-vis').value = m.visMin ?? '';
@@ -1557,7 +1576,7 @@ const MET = (() => {
     const m = {
       name: $('#f-name').value.trim(), latStr: $('#f-lat').value.trim(), lonStr: $('#f-lon').value.trim(), lat, lon, date: $('#f-date').value, hour: +$('#f-hour').value, tz,
       activity: $('#f-act').value, windLimitEng: num('#f-lim-eng', 13), windLimitSlop: num('#f-lim-slop', 18), launchFtAGL: num('#f-launch', null), exitFtMSL: num('#f-exit', null),
-      baseMinFt: num('#f-base', null), icao: $('#f-icao').value.trim().toUpperCase(),
+      baseMinFt: num('#f-base', null), icao: $('#f-icao').value.trim().toUpperCase(), ibge: ($('#f-ibge') ? $('#f-ibge').value.trim().replace(/\D/g, '') : ''),
       weights: { GFS: num('#f-w-gfs', 1), ECMWF: num('#f-w-ecmwf', 1), ICON: num('#f-w-icon', 1) }, capeMod: num('#f-cape-m', 1000), capeStrong: num('#f-cape-s', 2500), updatedAt: nowIso(),
       zlElevFt: num('#f-zl', null), windRef: $('#f-wref').value, aerodromos: $('#f-ad').value.toUpperCase().split(/[\s,;]+/).filter(x => /^[A-Z0-9]{4}$/.test(x)).slice(0, 4).join(','), visMin: num('#f-vis', null),
     };
@@ -1715,6 +1734,16 @@ const MET = (() => {
     const el = $('#inmet');
     if (!hasPos()) { el.innerHTML = ''; return; }
     const O = S.oficiais, I = O && O.inmet;
+    const EP = O && O.inmet_prev && O.inmet_prev.estacao;
+    if (EP && EP.dados && EP.estacao && O.lat != null && Math.abs(O.lat - S.mission.lat) <= 0.05 && Math.abs(O.lon - S.mission.lon) <= 0.05) {
+      const e = EP.estacao, d = EP.dados, f = k => (d[k] == null || d[k] === '' ? null : +d[k]), tz = S.mission.tz, kt = v => v == null ? null : v * 1.943844;
+      const hr = String(d.HR_MEDICAO || '').padStart(4, '0'), t = d.DT_MEDICAO ? Date.parse(`${d.DT_MEDICAO}T${hr.slice(0, 2)}:${hr.slice(2)}:00Z`) : NaN;
+      el.innerHTML = `<div class="est"><div class="est-h"><b>${esc(e.NOME)} (${esc(e.CODIGO)})</b><span class="small">${esc(e.DISTANCIA_EM_KM)} km do município</span></div>
+        <div class="ins"><span><b>${dir3(f('VEN_DIR'))}°/${fmt(kt(f('VEN_VEL')))} kt</b> <small>raj. ${fmt(kt(f('VEN_RAJ')))}</small></span><span>${fmt(f('TEM_INS'), 1)} / ${fmt(f('PTO_INS'), 1)} °C</span><span>${fmt(f('PRE_INS'), 1)} hPa</span><span>chuva ${fmt(f('CHUVA'), 1)} mm/h · UR ${fmt(f('UMD_INS'))}%</span></div>
+        <p class="small">Observado ${isNaN(t) ? esc(d.DT_MEDICAO + ' ' + hr + ' UTC') : M.ddmm(t, tz) + ' ' + M.hhmm(t, tz)} · vento a 10 m convertido de m/s</p></div>
+        <p class="note"><span class="st st-obs">OBSERVADO</span> INMET — estação automática mais próxima do município (apiprevmet3, sem token).</p>`;
+      return;
+    }
     if (!I || O.lat == null || Math.abs(O.lat - S.mission.lat) > 0.05 || Math.abs(O.lon - S.mission.lon) > 0.05) { el.innerHTML = `<p class="muted">Disponível após a próxima atualização.</p>`; return; }
     if (I.erro) { el.innerHTML = `<p class="err small">${esc(I.erro)}</p>`; return; }
     if (!I.estacoes.length) { el.innerHTML = `<p class="muted">Nenhuma estação automática operante a até 120 km.</p>`; return; }
@@ -1770,6 +1799,7 @@ const MET = (() => {
     if (h.conv.level > 0) items.push(`<span class="conv c${h.conv.level}">${esc(h.conv.text)}</span>`);
     Object.entries(h.wx || {}).forEach(([w, ids]) => items.push(`<span class="conv ${/TS|\+/.test(w) ? 'c3' : 'c1'}" title="${esc(M.wxDesc(w))}">${esc(w)} <small>${ids.length}/${h.n} mod.</small></span>`));
     (h.tafU || []).forEach(x => { [...(x.cond.prev.wx || []).filter(w => w !== 'NSW').map(w => [w, '']), ...x.cond.vari.flatMap(v => (v.wx || []).map(w => [w, v.tipo + ' ']))].forEach(([w, t]) => items.push(`<span class="conv ${/TS|\+/.test(w) ? 'c3' : 'c2'}">TAF ${esc(x.icao)} ${esc(t + w)}</span>`)); });
+    if (h.inmet) { h.inmet.avisos.forEach(a => items.push(`<span class="conv c3" title="${esc(a.severidade)}">INMET: ${esc(a.descricao)}</span>`)); if (h.inmet.texto && /trovoad|pancada/i.test(h.inmet.texto)) items.push(`<span class="conv c2" title="Previsão INMET (${esc(h.inmet.periodo)})">INMET: ${esc(h.inmet.texto)}</span>`); }
     return items.length ? `<div class="sw">${items.join('')}</div>` : '<span class="conv c0">Nada significativo</span>';
   }
   function renderTable(H) {
@@ -2566,7 +2596,7 @@ const MET = (() => {
 
   function renderAll() {
     const H = hasPos() ? hours() : [];
-    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrend(); renderMsl(H); renderTrace(H); renderSources();
+    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderD7(H); renderMsl(H); renderTrace(H); renderSources();
     renderDeductions(H);
     $('#sec-main').hidden = !hasPos();
   }
@@ -2774,11 +2804,12 @@ const MET = (() => {
     const nt = (S.mission.tadN || {})[nightEve().eve];
     const rows = [
       ['Previsão do tempo para a operação', V.length ? st(best.length ? 'ok' : rest.length ? 'warn' : 'bad', best.length ? `Favorável ${hrs(best, tz)}` : rest.length ? `Somente com restrições (${hrs(rest, tz)})` : 'Janela H a H+5 desfavorável', '#h-verd') : st('na', 'Sem modelos carregados', '#h-src')],
-      ['Tendência 24, 48 e 72 h', dayCons(M.shiftDate(D, 2)) ? st('ok', 'D0, D+1 e D+2 disponíveis', '#h-trend') : st('warn', 'Atualize os dados para estender a 72 h', '#h-trend')],
+      ['Tendência 24, 48 e 72 h (até D+7)', d7Series() && d7Series().n >= 72 ? st('ok', `Modelos até D+${Math.ceil(d7Series().n / 24) - 1}${S.oficiais && S.oficiais.inmet_prev && S.oficiais.inmet_prev.previsao ? ' + previsão INMET' : ''}${S.oficiais && S.oficiais.cptec && S.oficiais.cptec.dias ? ' + CPTEC' : ''}`, '#h-trend') : st('warn', 'Atualize os dados para estender até D+7', '#h-trend')],
       ['Cartas de vento de camada', V.some(h => h.zl && h.zl.cLayer) ? st('ok', `Vento por nível e ZL + 750 ft${S.sounding ? ' + sondagem NOAA' : ''}`, '#h-up') : st('warn', 'Ventos em altitude indisponíveis', '#h-up')],
       ['Condições predominantes da região (relevo, litoral)', st('warn', 'Avaliação do MSL — o modelo não resolve efeitos locais finos (brisa, vale, encosta)', '#h-days')],
       ['Atividades convectivas', V.some(h => h.conv.level >= 3) ? st('bad', 'CB/trovoada na janela', '#h-proj') : V.some(h => h.conv.level >= 1) ? st('warn', 'TCU/potencial convectivo na janela', '#h-proj') : st('ok', 'Sem convecção relevante na janela', '#h-proj')],
       ['Regiões de alta e baixa pressão', A.d0 ? st('ok', 'Análise sinótica D-1/D0/D+1 preenchida', '#h-days') : st('warn', 'Análise sinótica pendente; tendência de PNMM disponível', '#h-days')],
+      ['Avisos meteorológicos oficiais (INMET)', S.oficiais && S.oficiais.inmet_prev && S.oficiais.inmet_prev.avisos ? (S.oficiais.inmet_prev.avisos.length ? st(S.oficiais.inmet_prev.avisos.some(a => /tempestade|vendaval|grande perigo/i.test(a.descricao + ' ' + a.severidade)) ? 'bad' : 'warn', S.oficiais.inmet_prev.avisos.map(a => esc(a.descricao + ' — ' + a.severidade)).join('; '), '#h-trend') : st('ok', 'Nenhum aviso para o local', '#h-trend')) : st('warn', 'Avisos INMET não coletados — atualizar dados (aplicativo)', '#h-trend')],
       ['Previsão de perigos (tornado, raios, chuva forte, gelo, ventos fortes, turbulência)', P.items.some(i => i.sev === 'bad') ? st('bad', `${P.items.filter(i => i.sev === 'bad').length} impeditivo(s) na projeção`, '#h-proj') : P.items.some(i => i.sev === 'warn') ? st('warn', 'Pontos de atenção na projeção', '#h-proj') : st('ok', 'Nenhum perigo identificado', '#h-proj')],
       ['Fases da Lua e luminosidade', nt ? st('ok', `Inserido: ${esc(nt.fase || 'fase n/d')}${nt.ilum ? ', ' + fmt(+nt.ilum) + '%' : ''}`, '#h-astro') : st('warn', 'Inserir valores do Time and Date', '#h-astro')],
       ['Períodos mais adequados para HALO/HAHO', st(best.length ? 'ok' : 'warn', best.length ? `Janela H a H+5: ${best.map(h => M.hhmm(h.utc, tz)).join(', ')} — no dia: ver "Nuvens e janelas de salto"` : 'Ver "Nuvens e janelas de salto" para outra janela no dia', '#cloudchart')],
@@ -2799,6 +2830,198 @@ const MET = (() => {
     addDed('#opm', dedOpm(H), 'Deduzida para o salto — METAR/TAF');
     addDed('#days', dedDays(), 'Deduzida para o salto — situação sinótica e tendência');
     addDed('#synth-ded', [...dedHourly(H).filter(i => i.s === 'bad'), ...dedClouds(H).filter(i => i.s === 'bad'), ...dedOpm(H).filter(i => i.s === 'bad')].slice(0, 6), 'Impeditivos para o MSL na janela');
+  }
+
+  /* ---------------- Tendência D a D+7: mudança de tempo, perigos e avisos (INMET + CPTEC + modelos) ---------------- */
+  const keyMs = (k, tz) => { const [d, h] = k.split('T'); const [y, mo, dd] = d.split('-').map(Number); return M.zonedToUtc(y, mo, dd, +h.slice(0, 2), 0, tz); };
+  const SEM = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  const dowOf = ds => SEM[new Date(ds + 'T12:00:00Z').getUTCDay()];
+  /** INMET no instante: avisos vigentes e texto da previsão do período (manhã 06–12, tarde 12–18, noite 18–06). */
+  function inmetAt(utc) {
+    const IP = S.oficiais && S.oficiais.inmet_prev; if (!IP) return null;
+    const ms = s2 => { const mm = (s2 || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/); return mm ? M.zonedToUtc(+mm[1], +mm[2], +mm[3], +mm[4], +mm[5], 'America/Sao_Paulo') : null; };
+    const avisos = (IP.avisos || []).filter(a => { const a0 = ms(a.inicio), a1 = ms(a.fim); return a0 != null && a1 != null && utc >= a0 && utc <= a1 + 60e3; });
+    const p = M.localParts(utc, 'America/Sao_Paulo'); let ds = M.isoDate(p.y, p.mo, p.d), per = p.h >= 6 && p.h < 12 ? 'manha' : p.h >= 12 && p.h < 18 ? 'tarde' : 'noite';
+    if (p.h < 6) { ds = M.shiftDate(ds, -1); per = 'noite'; }
+    const it = (IP.previsao || []).find(x => x.data === ds);
+    const v = it ? (it.periodos ? it.periodos[per] : it.dia) : null;
+    const texto = v ? v.resumo : null;
+    return { avisos, texto, periodo: it && it.periodos ? { manha: 'manhã', tarde: 'tarde', noite: 'noite' }[per] : 'dia', ts: !!texto && /trovoad/i.test(texto) };
+  }
+  /** Série horária consolidada (mediana ponderada) de D 00h até D+7 23h, e séries por modelo. */
+  let _d7memo = { key: null, val: null };
+  function d7Series() {
+    if (!S.models) return null;
+    const m = S.mission, key = JSON.stringify([S.models.fetchedAt, m.date, m.tz, m.weights]);
+    if (_d7memo.key === key) return _d7memo.val;
+    const T0 = S.models.time.indexOf(m.date + 'T00:00'); if (T0 < 0) return null;
+    const n = Math.min(8 * 24, S.models.time.length - T0), ids = modelIds(), W = m.weights || {};
+    const per = {}; ids.forEach(id => { const o = S.models.models[id]; const g = v => Array.from({ length: n }, (_, i) => o[v] ? o[v][T0 + i] : null);
+      per[id] = { t: g('temperature_2m'), p: g('pressure_msl'), pr: g('precipitation'), sh: g('showers'), dir: g('wind_direction_10m'), kt: g('wind_speed_10m'), gust: g('wind_gusts_10m'), cape: g('cape'), wc: g('weather_code'), cc: g('cloud_cover') }; });
+    const med = (v, i) => { const a = ids.map(id => ({ v: per[id][v][i], w: W[id] ?? 1 })).filter(x => x.v != null); return a.length ? M.weightedMedian(a) : null; };
+    const cons = { utc: [], key: [] }; ['t', 'p', 'pr', 'sh', 'kt', 'gust', 'cape', 'cc'].forEach(v => cons[v] = []); cons.dir = []; cons.ts = [];
+    for (let i = 0; i < n; i++) {
+      const k = S.models.time[T0 + i]; cons.key.push(k); cons.utc.push(keyMs(k, m.tz));
+      ['t', 'p', 'pr', 'sh', 'kt', 'gust', 'cape', 'cc'].forEach(v => cons[v].push(med(v, i)));
+      cons.dir.push(M.circularMedoid(ids.map(id => ({ v: per[id].dir[i], w: W[id] ?? 1 })).filter(x => x.v != null)));
+      cons.ts.push(ids.filter(id => per[id].wc[i] != null && per[id].wc[i] >= 95).length);
+    }
+    const val = { n, ids, per, cons };
+    _d7memo = { key, val };
+    return val;
+  }
+  /** Assinatura de passagem de frente fria em uma série de modelo (giro do vento + subida de pressão e/ou queda de temperatura). */
+  function frontsIn(s, south) {
+    const n = s.t.length, out = [];
+    const vmean = (a, b) => { let u = 0, v = 0, c = 0; for (let i = Math.max(0, a); i < Math.min(n, b); i++) { if (s.dir[i] == null || s.kt[i] == null) continue; const r = s.dir[i] * Math.PI / 180, k = Math.max(1, s.kt[i]); u += -k * Math.sin(r); v += -k * Math.cos(r); c++; } return c ? { dir: (Math.atan2(-u, -v) * 180 / Math.PI + 360) % 360, kt: Math.hypot(u, v) / c } : null; };
+    const inPre = d => south ? (d >= 270 || d <= 100) : (d >= 80 && d <= 270), inPost = d => south ? (d >= 120 && d <= 260) : (d >= 280 || d <= 60);
+    const mean = (a, b, arr) => { const x = arr.slice(Math.max(0, a), Math.min(n, b)).filter(v => v != null); return x.length ? x.reduce((p, q) => p + q, 0) / x.length : null; };
+    for (let i = 6; i < n - 6; i++) {
+      const a = vmean(i - 6, i), b = vmean(i, i + 6); if (!a || !b) continue;
+      const wind = inPre(a.dir) && inPost(b.dir) && M.angDiff(a.dir, b.dir) >= 70 && b.kt >= 3;
+      if (!wind) continue;
+      const pmin = Math.min(...s.p.slice(i - 6, i + 7).filter(v => v != null)), p12 = s.p[Math.min(n - 1, i + 12)];
+      const pres = p12 != null && isFinite(pmin) && p12 - pmin >= 1.5;
+      const tb = mean(i - 24, i, s.t), ta = mean(i, i + 24, s.t), temp = tb != null && ta != null && ta - tb <= -1.5;
+      const rain = s.pr.slice(Math.max(0, i - 6), Math.min(n, i + 7)).reduce((p, q) => p + (q || 0), 0) >= 1;
+      if (pres || temp) out.push({ i, score: 2 + pres + temp + rain, pres, temp, rain, pre: a.dir, post: b.dir, kt: b.kt });
+    }
+    const keep = []; out.sort((x, y) => y.score - x.score).forEach(c => { if (!keep.some(k => Math.abs(k.i - c.i) < 36)) keep.push(c); });
+    return keep.sort((x, y) => x.i - y.i);
+  }
+  function d7Fronts(D7) {
+    const south = S.mission.lat < 0, all = [];
+    D7.ids.forEach(id => frontsIn(D7.per[id], south).forEach(f => all.push(Object.assign({ id }, f))));
+    const cl = []; all.sort((a, b) => a.i - b.i).forEach(f => { const c = cl.find(c2 => Math.abs(c2.i - f.i) <= 9 && !c2.ids.includes(f.id)); if (c) { c.mem.push(f); c.ids.push(f.id); c.i = Math.round(c.mem.reduce((p, q) => p + q.i, 0) / c.mem.length); } else cl.push({ i: f.i, ids: [f.id], mem: [f] }); });
+    return cl.map(c => ({ i: c.i, utc: D7.cons.utc[c.i], ids: c.ids, n: c.ids.length, pres: c.mem.some(x => x.pres), temp: c.mem.some(x => x.temp), rain: c.mem.some(x => x.rain), post: c.mem[0].post }));
+  }
+  /** Resumo diário D..D+7. */
+  function d7Days(D7) {
+    const m = S.mission, lim = limitKt(), capeM = +m.capeMod || 1000, days = [];
+    const IP = S.oficiais && S.oficiais.inmet_prev, CP = S.oficiais && S.oficiais.cptec;
+    for (let d = 0; d < Math.ceil(D7.n / 24); d++) {
+      const a = d * 24, b = Math.min(D7.n, a + 24), ds = M.shiftDate(m.date, d), C = D7.cons, sl = arr => arr.slice(a, b).filter(v => v != null);
+      const dayStat = id => { const s = D7.per[id], x = k => s[k].slice(a, b).filter(v => v != null); return { pr: x('pr').reduce((p, q) => p + q, 0), tmax: x('t').length ? Math.max(...x('t')) : null, ts: s.wc.slice(a, b).filter(v => v != null && v >= 95).length }; };
+      const ms = D7.ids.map(dayStat);
+      const prs = ms.map(x => x.pr), tmx = ms.map(x => x.tmax).filter(v => v != null);
+      const spPr = prs.length ? Math.max(...prs) - Math.min(...prs) : null, spT = tmx.length ? Math.max(...tmx) - Math.min(...tmx) : null;
+      const tsAgree = C.ts.slice(a, b).filter(k => k >= 2).length, tsAny = C.ts.slice(a, b).filter(k => k >= 1).length;
+      const conf = spPr == null ? null : (spPr < 3 && spT < 2) ? 'ALTA' : (spPr < 10 && spT < 4) ? 'MÉDIA' : 'BAIXA';
+      const st = { ds, dow: dowOf(ds), tmin: sl(C.t).length ? Math.min(...sl(C.t)) : null, tmax: sl(C.t).length ? Math.max(...sl(C.t)) : null, pr: sl(C.pr).reduce((p, q) => p + q, 0), sh: sl(C.sh).reduce((p, q) => p + q, 0),
+        gmax: sl(C.gust).length ? Math.max(...sl(C.gust)) : null, kmax: sl(C.kt).length ? Math.max(...sl(C.kt)) : null, cape: sl(C.cape).length ? Math.max(...sl(C.cape)) : null, pmin: sl(C.p).length ? Math.min(...sl(C.p)) : null,
+        tsAgree, tsAny, conf, spPr, spT, n: b - a };
+      st.inmet = IP && IP.previsao ? IP.previsao.find(x => x.data === ds) : null;
+      st.cptec = CP && CP.dias ? CP.dias.find(x => x.data === ds) : null;
+      st.avisos = IP && IP.avisos ? IP.avisos.filter(x => (x.inicio || '').slice(0, 10) <= ds && (x.fim || '').slice(0, 10) >= ds) : [];
+      const txt = st.inmet ? JSON.stringify(st.inmet).toLowerCase() : '';
+      const avSev = st.avisos.some(x => /grande perigo|^perigo$/i.test(x.severidade)) ? 2 : st.avisos.length ? 1 : 0;
+      let b2 = 0; const why = [];
+      if (st.gmax > lim) { b2++; why.push(`rajada ${fmt(st.gmax)} kt`); }
+      if (st.pr >= 5) { b2++; why.push(`chuva ${fmt(st.pr, 1)} mm`); }
+      if (st.cape >= capeM) { b2++; why.push('potencial de tempestade'); }
+      if (tsAgree) { b2 += 2; why.push(`trovoada em ${tsAgree} h (≥ 2 modelos)`); }
+      if (/trovoad/.test(txt)) { b2++; why.push('INMET prevê trovoadas'); }
+      if (avSev) { b2 += avSev; why.push(`aviso INMET (${st.avisos.map(x => x.descricao).join(', ')})`); }
+      st.v = b2 >= 2 ? 'DESFAVORÁVEL' : b2 ? 'FAVORÁVEL COM RESTRIÇÕES' : 'FAVORÁVEL'; st.why = why;
+      days.push(st);
+    }
+    return days;
+  }
+  const AV_EFF = [[/tempestade/i, 'bad', 'CB/trovoadas, rajadas, granizo e chuva intensa — impeditivo para salto e lançamento enquanto vigorar.'],
+    [/chuva|chuvas/i, 'warn', 'chuva intensa reduz visibilidade e teto; nuvens convectivas associadas podem gerar rajadas.'],
+    [/vendaval|vento/i, 'bad', 'ventos fortes/rajadas acima dos limites do salto; deriva e pouso perigosos.'],
+    [/decl[ií]nio de temperatura|frio|geada/i, 'warn', 'mudança de massa de ar (frente fria): giro do vento, rajadas e nebulosidade baixa.'],
+    [/baixa umidade/i, 'info', 'ar seco — desgaste físico; não afeta diretamente o paraquedas.'],
+    [/nevoeiro/i, 'warn', 'visibilidade e teto muito baixos — ZL não visível.']];
+  function renderD7(H) {
+    const el = $('#trend'); if (!el) return;
+    if (!hasPos()) { el.innerHTML = ''; return; }
+    const m = S.mission, tz = m.tz, lim = limitKt();
+    const IP = S.oficiais && S.oficiais.inmet_prev, CP = S.oficiais && S.oficiais.cptec;
+    const D7 = d7Series();
+    let html = '';
+    // avisos INMET
+    if (IP && !IP.erro) {
+      const mun = IP.municipio || {};
+      const av = IP.avisos || [];
+      html += `<div class="d7-av"><h4>Avisos meteorológicos do INMET para o local <span class="small">· ${esc(mun.nome || '—')} - ${esc(mun.uf || '')} (IBGE ${esc(mun.geocode || '—')}; ${esc(mun.metodo || '')})</span></h4>${IP.avisos_erro ? `<p class="err small">Avisos indisponíveis: ${esc(IP.avisos_erro)}</p>` : av.length ? av.map(a => {
+        const eff = AV_EFF.find(e => e[0].test(a.descricao || ''));
+        return `<article class="av" style="--avc:${esc(a.cor || '#ffd400')}"><header><b>${esc(a.descricao)}</b><span class="avsev">${esc(a.severidade)}</span><span class="small">${esc((a.inicio || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2'))} a ${esc((a.fim || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2'))}</span></header>
+          <ul>${(a.riscos || []).map(r => `<li>${esc(r)}</li>`).join('')}</ul>${eff ? `<p class="avded"><b>Para o salto:</b> ${eff[2]}</p>` : ''}</article>`; }).join('') : '<p class="small ok">Nenhum aviso do INMET vigente ou futuro abrangendo a coordenada.</p>'}
+        <p class="note"><span class="st st-prev">OFICIAL</span> INMET (apiprevmet3), coleta ${esc(whenStr(S.oficiais.coletado_em_utc))}; ${IP.avisos_total_pais != null ? IP.avisos_total_pais + ' avisos ativos no país; ' : ''}filtrados pelo polígono do aviso e pelo município. <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">Abrir avisos no INMET</a> · <a href="https://portal.inmet.gov.br/" target="_blank" rel="noopener">Portal INMET</a></p></div>`;
+    } else html += `<div class="d7-av"><p class="small muted">Avisos e previsão do INMET: ${window.DASHMET_APP ? 'disponíveis após “Atualizar dados”.' : window.DASHMET_STANDALONE ? 'o INMET não permite consulta direta pelo navegador; use o aplicativo Windows ou consulte' : 'disponíveis após a próxima atualização; consulte também'} <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">avisos do INMET</a> e a <a href="https://portal.inmet.gov.br/" target="_blank" rel="noopener">previsão no portal</a>.</p></div>`;
+    if (!D7) { el.innerHTML = html + '<p class="muted">Modelos indisponíveis para D a D+7.</p>'; return; }
+    const days = d7Days(D7), fronts = d7Fronts(D7);
+    // tabela diária
+    const per = it => it ? (it.periodos ? ['manha', 'tarde', 'noite'].filter(p => it.periodos[p]).map(p => `<small><b>${p === 'manha' ? 'Manhã' : p === 'tarde' ? 'Tarde' : 'Noite'}:</b> ${esc(it.periodos[p].resumo)}</small>`).join('') : `<small>${esc(it.dia.resumo)}</small>`) : '<span class="na">—</span>';
+    const inmetV = it => { if (!it) return null; const v = it.periodos ? (it.periodos.tarde || it.periodos.manha) : it.dia; return v; };
+    const rows = [
+      ['INMET — previsão', 'texto oficial do município', days.map(d => per(d.inmet))],
+      ['INMET — temp. e vento', '', days.map(d => { const v = inmetV(d.inmet); return v ? `${fmt(v.temp_min)} / ${fmt(v.temp_max)} °C<small>${esc(v.dir_vento || '')} ${esc(v.int_vento || '')}</small>` : '<span class="na">—</span>'; })],
+      ['CPTEC/INPE', 'cidade mais próxima', days.map(d => d.cptec ? `<small>${esc(d.cptec.descricao)}</small><small>${esc(d.cptec.min)} / ${esc(d.cptec.max)} °C</small>` : '<span class="na">—</span>')],
+      ['Modelos — T mín/máx', '°C · mediana', days.map(d => `${fmt(d.tmin)} / ${fmt(d.tmax)}`)],
+      ['Modelos — chuva', 'mm no dia', days.map(d => `<span class="${d.pr >= 5 ? 'twarn' : ''}">${fmt(d.pr, 1)}</span>${d.sh > 0.5 ? '<small>pancadas</small>' : ''}`)],
+      ['Modelos — rajada máx.', 'kt · 10 m', days.map(d => `<span class="${d.gmax > lim ? 'tbad' : ''}">${fmt(d.gmax)}</span>`)],
+      ['Trovoada / CB', 'horas com TS', days.map(d => d.tsAgree ? `<span class="conv c3">${d.tsAgree} h provável</span>` : d.tsAny ? `<span class="conv c2">${d.tsAny} h possível</span>` : (capeClass(d.cape) && capeClass(d.cape).k >= 2 ? `<span class="conv c1">CAPE ${capeClass(d.cape).txt.toLowerCase()}</span>` : '<span class="conv c0">não indicada</span>'))],
+      ['Pressão mínima', 'hPa', days.map(d => fmt(d.pmin))],
+      ['Mudança de tempo', 'assinatura nos modelos', days.map((d, di) => { const f = fronts.filter(x => Math.floor(x.i / 24) === di); return f.length ? f.map(x => `<span class="conv ${x.n >= 2 ? 'c3' : 'c2'}">Frente fria ~${M.hhmm(x.utc, tz)}</span><small>${x.n}/${D7.ids.length} modelos</small>`).join('') : '<span class="muted">—</span>'; })],
+      ['Concordância dos modelos', 'previsibilidade', days.map(d => d.conf ? `<span class="pill ${cClass(d.conf)}">${d.conf}</span>` : '—')],
+      ['Avisos INMET', '', days.map(d => d.avisos.length ? d.avisos.map(a => `<span class="avtag" style="--avc:${esc(a.cor || '#ffd400')}">${esc(a.descricao)}</span>`).join('') : '<span class="muted">—</span>')],
+      ['Tendência para o salto', 'indicativa', days.map(d => `<span class="pill ${vClass(d.v)}">${d.v === 'FAVORÁVEL COM RESTRIÇÕES' ? 'RESTRIÇÕES' : d.v}</span>${d.why.length ? `<small>${esc(d.why.slice(0, 2).join(' · '))}</small>` : ''}`)],
+    ];
+    html += `<div class="tbl-wrap"><table class="mini d7"><thead><tr><th></th>${days.map((d, i) => `<th>${i === 0 ? 'D' : 'D+' + i}<small>${d.dow} ${d.ds.split('-').reverse().slice(0, 2).join('/')}</small></th>`).join('')}</tr></thead><tbody>${rows.map(([n, u, cs]) => `<tr><th scope="row">${n}${u ? `<small>${u}</small>` : ''}</th>${cs.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    html += d7Chart(D7, fronts, days);
+    html += `<p class="note"><span class="st st-prev">PREVISTO</span> modelos GFS/ECMWF/ICON (mediana) até D+7; INMET: previsão oficial do município (até 5 dias) e avisos; CPTEC/INPE: previsão de 7 dias da cidade mais próxima${CP && CP.cidade ? ` (${esc(CP.cidade)} - ${esc(CP.uf)})` : ''}. <b>Assinatura de frente fria</b>: giro do vento de ${m.lat < 0 ? 'N/NW/NE para S/SW/SE' : 'S para N/NW'} acompanhado de subida da pressão e/ou queda da temperatura nas 24 h seguintes, procurada em cada modelo; indicada com o número de modelos concordantes. <b>Concordância</b>: diferença entre os modelos na chuva e na temperatura máxima do dia (quanto menor, mais previsível). Tendência indicativa — confirmar na análise horária quando o dia entrar na janela.</p>`;
+    el.innerHTML = html;
+    addDed('#trend', dedD7(days, fronts, D7), 'Deduzida para o salto — mudança de tempo D a D+7');
+  }
+  function d7Chart(D7, fronts, days) {
+    const C = D7.cons, n = D7.n, tz = S.mission.tz, lim = limitKt(), W = 1000, L = 52, R = 50, T = 34, PH = 200, B = T + PH;
+    const x = i => L + (i + 0.5) * (W - L - R) / n, cw = (W - L - R) / n;
+    const ts = C.t.filter(v => v != null), ps = C.p.filter(v => v != null); if (!ts.length) return '';
+    const tlo = Math.floor((Math.min(...ts) - 1) / 2) * 2, thi = Math.ceil((Math.max(...ts) + 1) / 2) * 2, plo = Math.floor(Math.min(...ps) - 1), phi = Math.ceil(Math.max(...ps) + 1);
+    const yt = v => B - (v - tlo) / (thi - tlo) * PH, yp = v => B - (v - plo) / (phi - plo) * PH, pmax = Math.max(5, Math.ceil(Math.max(...C.pr.map(v => v || 0)))), yr = v => B - Math.min(v, pmax) / pmax * PH * 0.6;
+    let s = `<svg viewBox="0 0 ${W} ${B + 46}" class="cc d7c" role="img" aria-label="Evolução de D a D+7: temperatura, pressão, precipitação, trovoadas, frentes e avisos">`;
+    s += `<rect x="${L}" y="${T}" width="${W - L - R}" height="${PH}" class="cc-bg"/>`;
+    // avisos INMET (faixa superior)
+    const IP = S.oficiais && S.oficiais.inmet_prev;
+    (IP && IP.avisos || []).forEach((a, j) => { const ms = s2 => { const mm = (s2 || '').match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/); return mm ? M.zonedToUtc(+mm[1], +mm[2], +mm[3], +mm[4], +mm[5], 'America/Sao_Paulo') : null; };
+      const a0 = ms(a.inicio), a1 = ms(a.fim); if (a0 == null || a1 == null) return; const i0 = Math.max(0, (a0 - C.utc[0]) / 3600e3), i1 = Math.min(n, (a1 - C.utc[0]) / 3600e3); if (i1 <= 0 || i0 >= n) return;
+      s += `<rect x="${L + i0 * cw}" y="${T - 30 + j * 7}" width="${(i1 - i0) * cw}" height="6" rx="2" fill="${esc(a.cor || '#ffd400')}"><title>INMET: ${esc(a.descricao)} — ${esc(a.severidade)} (${esc(a.inicio)} a ${esc(a.fim)})</title></rect>`; });
+    // dias
+    for (let d = 0; d <= n / 24; d++) { const xx = L + d * 24 * cw; s += `<line x1="${xx}" x2="${xx}" y1="${T}" y2="${B + 26}" class="d7-day"/>`; if (d < days.length) s += `<text x="${xx + 12 * cw}" y="${B + 38}" text-anchor="middle" class="cc-h w">${d === 0 ? 'D' : 'D+' + d} · ${days[d].dow.slice(0, 3)} ${days[d].ds.slice(8)}/${days[d].ds.slice(5, 7)}</text>`; }
+    // frentes
+    fronts.forEach(f => { s += `<rect x="${x(f.i) - 4 * cw}" y="${T}" width="${8 * cw}" height="${PH}" class="d7-front ${f.n >= 2 ? 'k' : ''}"><title>Assinatura de frente fria ~${M.ddmm(f.utc, tz)} ${M.hhmm(f.utc, tz)} — ${f.n}/${D7.ids.length} modelos (${f.ids.join(', ')})</title></rect><text x="${x(f.i)}" y="${T + 12}" text-anchor="middle" class="d7-ft">❄ frente</text>`; });
+    // chuva e trovoada
+    C.pr.forEach((v, i) => { if (v >= 0.1) s += `<rect x="${x(i) - cw * 0.45}" y="${yr(v)}" width="${cw * 0.9}" height="${B - yr(v)}" class="${(C.sh[i] || 0) > 0 ? 'tc-prc' : 'tc-pr'}"/>`; if (C.ts[i] >= 2) s += `<text x="${x(i)}" y="${B - 4}" text-anchor="middle" class="d7-ts">⚡</text>`; });
+    // linhas
+    const path = (arr, yf) => arr.map((v, i) => v == null ? '' : `${i && arr[i - 1] != null ? 'L' : 'M'}${x(i).toFixed(1)} ${yf(v).toFixed(1)}`).join('');
+    s += `<path d="${path(C.p, yp)}" class="d7-p"/><path d="${path(C.t, yt)}" class="tc-line"/>`;
+    // eixos
+    for (let v = tlo; v <= thi; v += 2) s += `<text x="${L - 5}" y="${yt(v) + 3}" text-anchor="end" class="cc-ax">${v}°</text><line x1="${L}" x2="${W - R}" y1="${yt(v)}" y2="${yt(v)}" class="cc-g"/>`;
+    const pst = phi - plo > 16 ? 4 : 2; for (let v = Math.ceil(plo / pst) * pst; v <= phi; v += pst) s += `<text x="${W - R + 4}" y="${yp(v) + 3}" class="cc-ax d7-pax">${v}</text>`;
+    s += `<text x="${W - 4}" y="${T - 4}" text-anchor="end" class="cc-ax d7-pax">hPa</text><text x="${L - 5}" y="${T - 4}" text-anchor="end" class="cc-ax">°C</text>`;
+    // vento a cada 6 h
+    for (let i = 3; i < n; i += 6) { const d = C.dir[i], k = C.kt[i]; if (d == null) continue; s += `<g transform="translate(${x(i)},${B + 14}) rotate(${(d + 180) % 360})"><path d="M0 -7 L3 3 L0 1 L-3 3 Z" class="d7-arr ${k > lim ? 'bad' : ''}"/></g>`; }
+    s += `<text x="${L - 5}" y="${B + 17}" text-anchor="end" class="cc-ax">vento</text>`;
+    if (IP && IP.avisos && IP.avisos.length) s += `<text x="${L - 5}" y="${T - 23}" text-anchor="end" class="cc-ax">avisos</text>`;
+    s += '</svg>';
+    return `<h3 class="sub cc-title">Evolução D a D+7 — temperatura, pressão, chuva, trovoadas e frentes</h3><div class="cc-wrap">${s}</div>
+      <div class="legend"><span><i class="lg-t"></i>temperatura (°C)</span><span><i class="lg-p"></i>pressão ao nível do mar (hPa, eixo à direita)</span><span><i class="lg-r"></i>chuva</span><span><i class="lg-rc"></i>pancadas</span><span>⚡ trovoada (≥ 2 modelos)</span><span><i class="lg-f"></i>assinatura de frente fria</span><span>↑ vento a 10 m (para onde sopra; vermelho acima do limite)</span></div>`;
+  }
+  function dedD7(days, fronts, D7) {
+    const tz = S.mission.tz, out = [];
+    const IP = S.oficiais && S.oficiais.inmet_prev;
+    (IP && IP.avisos || []).forEach(a => { const eff = AV_EFF.find(e => e[0].test(a.descricao || '')); out.push({ s: eff ? eff[1] : 'warn', t: `<b>Aviso INMET — ${esc(a.descricao)} (${esc(a.severidade)})</b> de ${esc((a.inicio || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2'))} a ${esc((a.fim || '').replace(/^(\d{4})-(\d{2})-(\d{2})/, '$3/$2'))}: ${eff ? eff[2] : 'avaliar o impacto na atividade.'}` }); });
+    fronts.forEach(f => out.push({ s: f.n >= 2 ? 'bad' : 'warn', t: `<b>Provável passagem de frente fria ~${M.ddmm(f.utc, tz)} às ${M.hhmm(f.utc, tz)}</b> (${f.n}/${D7.ids.length} modelos${f.pres ? ', pressão sobe após mínimo' : ''}${f.temp ? ', temperatura cai' : ''}${f.rain ? ', chuva na passagem' : ''}). Antes: vento ${S.mission.lat < 0 ? 'de N/NW' : 'de S'}, calor e pancadas isoladas; na passagem: rajadas, giro do vento, TCU/CB e trovoadas possíveis; depois: vento ${S.mission.lat < 0 ? 'de S/SE' : 'de N'} mais forte, queda de temperatura e nebulosidade baixa estratiforme. <b>Planejamento:</b> antecipar a atividade para antes do pré-frontal ou aguardar a estabilização pós-frontal.` }));
+    const ts = days.filter(d => d.tsAgree), cv = days.filter(d => !d.tsAgree && (d.tsAny || (capeClass(d.cape) || {}).k >= 2));
+    if (ts.length) out.push({ s: 'bad', t: `Trovoadas prováveis (CB) em ${ts.map(d => `${d.dow} ${d.ds.slice(8)}/${d.ds.slice(5, 7)}`).join(', ')}: estágio de maturidade com turbulência, relâmpagos, rajadas e granizo — dias críticos para a atividade aérea.` });
+    if (cv.length) out.push({ s: 'warn', t: `Potencial para TCU/CB em ${cv.map(d => `${d.dow} ${d.ds.slice(8)}/${d.ds.slice(5, 7)}`).join(', ')} (pancadas/CAPE): convecção tende a se formar com o aquecimento da tarde — preferir janelas pela manhã.` });
+    const low = days.filter(d => d.conf === 'BAIXA');
+    if (low.length) out.push({ s: 'warn', t: `Baixa concordância entre os modelos em ${low.map(d => `${d.ds.slice(8)}/${d.ds.slice(5, 7)}`).join(', ')}: cenário imprevisível — reavaliar a cada nova rodada e manter alternativa de data.` });
+    const fav = days.filter(d => d.v === 'FAVORÁVEL');
+    out.push(fav.length ? { s: 'ok', t: `Dias com tendência favorável: ${fav.map(d => `${d.dow} ${d.ds.slice(8)}/${d.ds.slice(5, 7)}`).join(', ')} (indicativo — confirmar na análise horária).` } : { s: 'warn', t: 'Nenhum dia de D a D+7 com tendência plenamente favorável.' });
+    return out;
   }
 
   /* ---------------- Inicialização ---------------- */
