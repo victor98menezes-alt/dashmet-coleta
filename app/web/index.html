@@ -194,6 +194,7 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 .ded li.bad span:last-child b{color:var(--bad)}
 table.msl th.l,table.msl td.l{text-align:left} table.msl td{font-size:.82rem}
 table.trend td small{display:block}
+#windchart svg .g1{stroke-opacity:.45;stroke-dasharray:2 3} #windchart svg .ax1{font-size:9px;opacity:.8}
 /* Temperatura */
 svg .tc-night{fill:#33407a;fill-opacity:.10}
 svg .tc-vg{stroke:var(--line);stroke-width:.6;stroke-opacity:.6}
@@ -2079,14 +2080,15 @@ const MET = (() => {
   function renderWindChart(H) {
     const el = $('#windchart');
     if (!S.models) { el.innerHTML = ''; return; }
-    const lim = limitKt(), W = 640, Hh = 210, L = 40, R = 16, T = 18, B = 36;
+    const lim = limitKt(), W = 640, Hh = 340, L = 40, R = 16, T = 28, B = 36;
     const all = []; H.forEach(h => { all.push(h.c.wind, h.c.gust); Object.values(h.per).forEach(p => all.push(p.wind, p.gust)); });
-    const max = Math.max(lim + 4, ...all.filter(v => v != null)) * 1.1;
-    const y = v => T + (Hh - T - B) * (1 - v / max), cw = (W - L - R) / 5, x = i => L + cw * i + cw / 2;
-    const ticks = []; const step = max > 40 ? 10 : 5; for (let v = 0; v <= max; v += step) ticks.push(v);
+    const max = Math.ceil(Math.max(lim + 2, ...all.filter(v => v != null)) + 1);
+    const y = v => T + (Hh - T - B) * (1 - v / max), cw = (W - L - R) / Math.max(1, H.length), x = i => L + cw * i + cw / 2;
+    const ticks = []; const step = max > 40 ? 2 : 1; for (let v = 0; v <= max; v += step) ticks.push(v);
     const colors = { GFS: 'var(--m1)', ECMWF: 'var(--m2)', ICON: 'var(--m3)', MODELO: 'var(--m1)' };
     let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Vento e rajadas por horário">`;
-    ticks.forEach(v => { s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid"/><text x="${L - 6}" y="${y(v) + 4}" class="ax" text-anchor="end">${v}</text>`; });
+    ticks.forEach(v => { const k5 = v % 5 === 0; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid${k5 ? '' : ' g1'}"/><text x="${L - 6}" y="${y(v) + 3.5}" class="ax${k5 ? '' : ' ax1'}" text-anchor="end">${v}</text>`; });
+    s += `<text x="${L - 6}" y="${T - 6}" class="ax1" text-anchor="end">kt</text>`;
     s += `<line x1="${L}" x2="${W - R}" y1="${y(lim)}" y2="${y(lim)}" class="lim"/><text x="${W - R}" y="${y(lim) - 5}" class="limt" text-anchor="end">limite ${lim} kt</text>`;
     H.forEach((h, i) => {
       const bw = cw * 0.34;
