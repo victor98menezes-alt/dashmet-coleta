@@ -15,27 +15,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Testar acesso às fontes
-        run: python sonda_fontes.py
-      - name: Testar Skyfield (efemérides JPL)
-        run: |
-          pip install --quiet skyfield
-          python - <<'PY'
-          from skyfield.api import load, wgs84
-          from skyfield import almanac
-          import datetime as dt
-          ts = load.timescale(); eph = load('de421.bsp')
-          loc = wgs84.latlon(-22.875, -43.384)
-          t0 = ts.utc(2026, 10, 14, 3); t1 = ts.utc(2026, 10, 15, 3)
-          f = almanac.dark_twilight_day(eph, loc)
-          t, e = almanac.find_discrete(t0, t1, f)
-          for ti, ei in zip(t, e):
-              print((ti.utc_datetime() - dt.timedelta(hours=3)).strftime('%H:%M'), almanac.TWILIGHTS[ei])
-          f2 = almanac.risings_and_settings(eph, eph['moon'], loc)
-          t, e = almanac.find_discrete(t0, t1, f2)
-          for ti, ei in zip(t, e):
-              print('Lua', (ti.utc_datetime() - dt.timedelta(hours=3)).strftime('%H:%M'), 'nasce' if ei else 'se põe')
-          PY
+      - name: Testar fontes INMET/IBGE/CPTEC
+        run: python sonda_inmet.py
       - name: Gravar resultado
         run: |
           git config user.name "coleta-meteorologica"
