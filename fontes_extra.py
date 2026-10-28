@@ -191,3 +191,162 @@ def redemet(icao, baixar, chave):
             _mensagens(corpo, msgs)
         out[tipo + "s"] = list(dict.fromkeys(m for m in msgs if m.startswith(("METAR", "SPECI") if tipo == "metar" else ("TAF",))))
     return out
+
+
+# ---------------------------------------------------------------------------
+# INMET (apiprevmet3, público): avisos meteorológicos, previsão do município e estação mais próxima
+# ---------------------------------------------------------------------------
+def _norm(s):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", str(s).lower()) if unicodedata.category(c) != "Mn").strip()
+
+
+def municipio_ibge(lat, lon, baixar, geocode=None):
+    """Código IBGE do município da coordenada: informado na missão > reverso OSM (Nominatim) > sede mais próxima."""
+    from municipios_br import MUNICIPIOS
+    por_cod = {m[0]: m for m in MUNICIPIOS}
+    if geocode:
+        try:
+            m = por_cod.get(int(geocode))
+            if m:
+                return {"geocode": m[0], "nome": m[1], "uf": m[4], "metodo": "informado na missão"}
+        except ValueError:
+            pass
+    st, corpo = baixar(f"https://nominatim.openstreetmap.org/reverse?lat={lat:.5f}&lon={lon:.5f}&format=json&zoom=10&accept-language=pt-BR", tentativas=2, timeout=30)
+    if st:
+        try:
+            a = json.loads(corpo).get("address", {})
+            nome = a.get("city") or a.get("town") or a.get("municipality") or a.get("village")
+            uf = (a.get("ISO3166-2-lvl4") or "")[-2:]
+            if nome and uf:
+                for m in MUNICIPIOS:
+                    if m[4] == uf and _norm(m[1]) == _norm(nome):
+                        return {"geocode": m[0], "nome": m[1], "uf": m[4], "metodo": "localização reversa (OpenStreetMap)"}
+        except Exception:
+            pass
+    m = min(MUNICIPIOS, key=lambda x: _dist_km(lat, lon, x[2], x[3]))
+    return {"geocode": m[0], "nome": m[1], "uf": m[4], "metodo": f"sede municipal mais próxima ({_dist_km(lat, lon, m[2], m[3]):.0f} km)"}
+
+
+def _no_poligono(lat, lon, geo):
+    """Ponto (lat, lon) dentro de Polygon/MultiPolygon GeoJSON (lon, lat)."""
+    try:
+        g = json.loads(geo) if isinstance(geo, str) else geo
+    except Exception:
+        return False
+    polys = [g["coordinates"]] if g.get("type") == "Polygon" else g.get("coordinates", []) if g.get("type") == "MultiPolygon" else []
+    for poly in polys:
+        anel = poly[0]
+        dentro = False
+        for i in range(len(anel)):
+            x1, y1 = anel[i][0], anel[i][1]
+            x2, y2 = anel[i - 1][0], anel[i - 1][1]
+            if (y1 > lat) != (y2 > lat) and lon < (x2 - x1) * (lat - y1) / ((y2 - y1) or 1e-12) + x1:
+                dentro = not dentro
+        if dentro:
+            return True
+    return False
+
+
+def _lista(txt):
+    if isinstance(txt, list):
+        return txt
+    try:
+        import ast
+        v = ast.literal_eval(txt)
+        return v if isinstance(v, list) else [str(v)]
+    except Exception:
+        return [str(txt)] if txt else []
+
+
+def inmet_prev(lat, lon, baixar, geocode=None):
+    """Avisos do INMET que abrangem a coordenada, previsão do município (até 5 dias) e estação automática mais próxima."""
+    base = "https://apiprevmet3.inmet.gov.br"
+    out = {"fonte": "INMET — apiprevmet3 (avisos, previsão e estação mais próxima)", "url_avisos": "https://alertas2.inmet.gov.br/"}
+    mun = municipio_ibge(lat, lon, baixar, geocode)
+    out["municipio"] = mun
+    gc = str(mun["geocode"])
+    # avisos
+    st, corpo = baixar(f"{base}/avisos/ativos", tentativas=2, timeout=60)
+    if st:
+        try:
+            dados = json.loads(corpo)
+            av = []
+            for grupo in ("hoje", "futuro"):
+                for a in dados.get(grupo, []) or []:
+                    dentro = _no_poligono(lat, lon, a.get("poligono")) or gc in str(a.get("geocodes", "")).split(",")
+                    if not dentro:
+                        continue
+                    av.append({"grupo": grupo, "id": a.get("id_aviso"), "descricao": a.get("descricao"), "severidade": a.get("severidade"),
+                               "cor": a.get("aviso_cor"), "inicio": a.get("inicio"), "fim": a.get("fim"), "riscos": _lista(a.get("riscos")),
+                               "instrucoes": _lista(a.get("instrucoes")), "estados": a.get("estados"), "codigo": a.get("codigo")})
+            out["avisos"] = av
+            out["avisos_total_pais"] = sum(len(dados.get(g, []) or []) for g in ("hoje", "futuro"))
+        except Exception as e:
+            out["avisos_erro"] = "leitura: " + repr(e)
+    else:
+        out["avisos_erro"] = str(corpo)[:200]
+    # previsão do município
+    st, corpo = baixar(f"{base}/previsao/{gc}", tentativas=2, timeout=60)
+    if st:
+        try:
+            dias = json.loads(corpo).get(gc, {})
+            prev = []
+            for data_br, v in dias.items():
+                d, m_, a_ = data_br.split("/")
+                item = {"data": f"{a_}-{m_}-{d}"}
+                limpa = lambda x: {k: val for k, val in x.items() if "icone" not in k}
+                if isinstance(v, dict) and "manha" in v:
+                    item["periodos"] = {p: limpa(v[p]) for p in ("manha", "tarde", "noite") if p in v}
+                else:
+                    item["dia"] = limpa(v)
+                prev.append(item)
+            out["previsao"] = prev
+        except Exception as e:
+            out["previsao_erro"] = "leitura: " + repr(e)
+    else:
+        out["previsao_erro"] = str(corpo)[:200]
+    # estação automática mais próxima (última observação)
+    st, corpo = baixar(f"{base}/estacao/proxima/{gc}", tentativas=2, timeout=45)
+    if st:
+        try:
+            out["estacao"] = json.loads(corpo)
+        except Exception as e:
+            out["estacao_erro"] = "leitura: " + repr(e)
+    return out
+
+
+CPTEC_TEMPO = {"ec": "Encoberto com chuvas isoladas", "ci": "Chuvas isoladas", "c": "Chuva", "in": "Instável", "pp": "Possibilidade de pancadas de chuva",
+               "cm": "Chuva pela manhã", "cn": "Chuva à noite", "pt": "Pancadas de chuva à tarde", "pm": "Pancadas de chuva pela manhã",
+               "np": "Nublado e pancadas de chuva", "pc": "Pancadas de chuva", "pn": "Parcialmente nublado", "cv": "Chuvisco", "ch": "Chuvoso",
+               "t": "Tempestade", "ps": "Predomínio de sol", "e": "Encoberto", "n": "Nublado", "cl": "Céu claro", "nv": "Nevoeiro", "g": "Geada",
+               "ne": "Neve", "nd": "Não definido", "pnt": "Pancadas de chuva à noite", "psc": "Possibilidade de chuva", "pcm": "Possibilidade de chuva pela manhã",
+               "pct": "Possibilidade de chuva à tarde", "pcn": "Possibilidade de chuva à noite", "npt": "Nublado com pancadas à tarde",
+               "npn": "Nublado com pancadas à noite", "ncn": "Nublado com possibilidade de chuva à noite", "nct": "Nublado com possibilidade de chuva à tarde",
+               "ncm": "Nublado com possibilidade de chuva pela manhã", "npm": "Nublado com pancadas pela manhã", "npp": "Nublado com possibilidade de chuva",
+               "vn": "Variação de nebulosidade", "ct": "Chuva à tarde", "ppn": "Possibilidade de pancadas de chuva à noite",
+               "ppt": "Possibilidade de pancadas de chuva à tarde", "ppm": "Possibilidade de pancadas de chuva pela manhã"}
+
+
+def cptec(lat, lon, baixar):
+    """Previsão CPTEC/INPE de até 7 dias para a cidade mais próxima da coordenada (serviço XML público)."""
+    out = {"fonte": "CPTEC/INPE — previsão de 7 dias (serviço XML)"}
+    st, corpo = baixar(f"http://servicos.cptec.inpe.br/XML/cidade/7dias/{lat:.2f}/{lon:.2f}/previsaoLatLon.xml", tentativas=2, timeout=45, binario=True)
+    if not st:
+        out["erro"] = str(corpo)[:200]
+        return out
+    corpo = corpo.decode("iso-8859-1", "replace") if isinstance(corpo, bytes) else corpo
+    try:
+        nome = re.search(r"<nome>(.*?)</nome>", corpo)
+        uf = re.search(r"<uf>(.*?)</uf>", corpo)
+        atu = re.search(r"<atualizacao>(.*?)</atualizacao>", corpo)
+        out.update({"cidade": nome.group(1) if nome else None, "uf": uf.group(1) if uf else None, "atualizacao": atu.group(1) if atu else None})
+        dias = []
+        for p in re.findall(r"<previsao>(.*?)</previsao>", corpo, re.S):
+            g = lambda k: (re.search(f"<{k}>(.*?)</{k}>", p) or [None, None])[1]
+            cod = g("tempo")
+            dias.append({"data": g("dia"), "tempo": cod, "descricao": CPTEC_TEMPO.get(cod, cod), "max": g("maxima"), "min": g("minima"), "iuv": g("iuv")})
+        out["dias"] = dias
+    except Exception as e:
+        out["erro"] = "leitura: " + repr(e)
+    return out

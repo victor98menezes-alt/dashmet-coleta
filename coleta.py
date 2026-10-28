@@ -86,7 +86,7 @@ def url_open_meteo(lat, lon, data, fuso):
     q = {
         "latitude": f"{lat:.4f}", "longitude": f"{lon:.4f}", "hourly": ",".join(hourly),
         "models": ",".join(MODELOS), "wind_speed_unit": "kn", "timezone": fuso,
-        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=2)).isoformat(),
+        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=7)).isoformat(),
     }
     return "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q, safe=",/")
 
@@ -242,6 +242,11 @@ def main():
               "redemet": fx.redemet(icao, baixar, os.environ.get("REDEMET_API_KEY", ""))}
     except Exception as e:
         ob = {"coletado_em_utc": agora, "erro": repr(e)}
+    for k, f in (("inmet_prev", lambda: fx.inmet_prev(lat, lon, baixar, os.environ.get("IBGE") or None)), ("cptec", lambda: fx.cptec(lat, lon, baixar))):
+        try:
+            ob[k] = f()
+        except Exception as e:
+            ob[k] = {"erro": repr(e)}
     json.dump(ob, open(os.path.join(pasta, "obs_oficiais.json"), "w", encoding="utf-8"), ensure_ascii=False)
     # AISWEB: ROTAER, distâncias declaradas, cartas IAC, METAR/TAF e RCR dos aeródromos da missão (e da estação de referência)
     import aisweb

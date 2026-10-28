@@ -47,7 +47,7 @@ jobs:
           pyinstaller --noconfirm --onefile --noconsole --name DashMetPrecursores --icon app/icone.ico --paths . `
             --add-data "app/web;web" --add-data "app/de421.bsp;." `
             --collect-data skyfield --collect-data tzdata --collect-all webview `
-            --hidden-import coleta --hidden-import fontes_extra --hidden-import aisweb @extra app/dashmet.py
+            --hidden-import coleta --hidden-import fontes_extra --hidden-import aisweb --hidden-import municipios_br @extra app/dashmet.py
 
       - name: Diagnóstico do executável
         shell: pwsh

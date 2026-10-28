@@ -167,6 +167,15 @@ def coletar():
               "redemet": FX.redemet(icao, C.baixar, cfg.get("redemet_api_key", ""))}
     except Exception as e:
         of = {"coletado_em_utc": marca, "lat": lat, "lon": lon, "erro": repr(e)}
+    etapa("INMET — avisos, previsão do município e estação; CPTEC 7 dias…")
+    try:
+        of["inmet_prev"] = FX.inmet_prev(lat, lon, C.baixar, m.get("ibge"))
+    except Exception as e:
+        of["inmet_prev"] = {"erro": repr(e)}
+    try:
+        of["cptec"] = FX.cptec(lat, lon, C.baixar)
+    except Exception as e:
+        of["cptec"] = {"erro": repr(e)}
     gravar("oficiais", of)
 
     # 6) OPMET — NOAA/AWC (mesmas mensagens OACI)
