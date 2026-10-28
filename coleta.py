@@ -86,7 +86,7 @@ def url_open_meteo(lat, lon, data, fuso):
     q = {
         "latitude": f"{lat:.4f}", "longitude": f"{lon:.4f}", "hourly": ",".join(hourly),
         "models": ",".join(MODELOS), "wind_speed_unit": "kn", "timezone": fuso,
-        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=1)).isoformat(),
+        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=2)).isoformat(),
     }
     return "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q, safe=",/")
 

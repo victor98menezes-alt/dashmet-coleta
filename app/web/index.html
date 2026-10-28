@@ -185,6 +185,15 @@ details.howto dt{font-weight:700} details.howto dd{margin:0;color:var(--muted)}
 .an-txt{font-size:.86rem;line-height:1.55;margin:8px 0;max-width:115ch}
 .tad-h{font:600 .7rem var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--fg);margin:12px 0 0}
 .sw{display:flex;flex-direction:column;gap:3px;align-items:center}
+/* Deduzidas para o salto */
+.ded{margin-top:14px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:10px 14px;background:var(--sunk)}
+.ded h4{margin:0 0 6px;font:700 .78rem var(--f-body);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.ded ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.ded li{display:grid;grid-template-columns:18px 1fr;gap:6px;font-size:.84rem;line-height:1.45}
+.ded li.bad .di{color:var(--bad)} .ded li.warn .di{color:var(--warn)} .ded li.ok .di{color:var(--ok)} .ded li.info .di{color:var(--muted)}
+.ded li.bad span:last-child b{color:var(--bad)}
+table.msl th.l,table.msl td.l{text-align:left} table.msl td{font-size:.82rem}
+table.trend td small{display:block}
 /* Temperatura */
 svg .tc-night{fill:#33407a;fill-opacity:.10}
 svg .tc-vg{stroke:var(--line);stroke-width:.6;stroke-opacity:.6}
@@ -409,6 +418,8 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
 
     <section class="panel" aria-labelledby="h-proj"><header><h2 id="h-proj">Projeção de impeditivos — H a H+5</h2><span class="small">vento · teto · nuvens · tempo presente · TCU/CB</span></header><div id="proj"></div></section>
 
+    <section class="panel" aria-labelledby="h-msl"><header><h2 id="h-msl">Ferramentas do MSL — situação para a decisão</h2><span class="small">previsão · tendência · ventos · convecção · perigos · Lua · janelas</span></header><div id="msl"></div></section>
+
     <section class="panel" aria-labelledby="h-opm"><header><h2 id="h-opm">METAR / TAF — aeródromos mais próximos</h2><span class="small">inserção manual · cruzamento com os modelos</span></header><div id="opm"></div></section>
 
     <div id="sec-main" class="wrap" style="gap:20px">
@@ -432,13 +443,15 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
 
       <section class="panel" aria-labelledby="h-exit"><header><h2 id="h-exit">Altitude de saída — temperatura e gelo</h2><span class="small">isoterma de 0 °C · risco de gelo</span></header><div id="exit"></div></section>
 
-      <section class="panel syn-p" aria-labelledby="h-syn"><header><h2 id="h-syn">Síntese meteorológica</h2></header><p id="synth"></p></section>
+      <section class="panel syn-p" aria-labelledby="h-syn"><header><h2 id="h-syn">Síntese meteorológica</h2></header><p id="synth"></p><div id="synth-ded"></div></section>
 
       <section class="panel" aria-labelledby="h-up"><header><h2 id="h-up">Vento em altitude</h2><span class="small">níveis de pressão · graus verdadeiros</span></header><div id="upper"></div><textarea id="copy-fallback" hidden aria-label="Camadas para copiar"></textarea></section>
 
       <section class="panel" aria-labelledby="h-aer"><header><h2 id="h-aer">Aeródromos próximos</h2><span class="small">teto · visibilidade · tempo presente · possibilidade de mudança</span></header><div id="aer"></div></section>
 
       <section class="panel" aria-labelledby="h-days"><header><h2 id="h-days">Evolução D-1 · D0 · D+1</h2></header><div id="days"></div></section>
+
+      <section class="panel" aria-labelledby="h-trend"><header><h2 id="h-trend">Tendência 24 · 48 · 72 h</h2><span class="small">D0 · D+1 · D+2 · consolidado dos modelos</span></header><div id="trend"></div></section>
 
       <section class="panel" aria-labelledby="h-conf"><header><h2 id="h-conf">Confiabilidade</h2></header><div id="conf"></div></section>
     </div>
@@ -736,7 +749,7 @@ const MET = (() => {
     const q = new URLSearchParams({
       latitude: m.lat.toFixed(4), longitude: m.lon.toFixed(4), hourly: hourly.join(','),
       models: MODELS.map(x => x.key).join(','), wind_speed_unit: 'kn', timezone: m.tz,
-      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, 1),
+      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, 2),
     });
     return 'https://api.open-meteo.com/v1/forecast?' + q.toString().replace(/%2C/g, ',');
   }
@@ -853,7 +866,27 @@ const MET = (() => {
   const WMO = { 45: 'FG', 48: 'FG', 51: '-DZ', 53: 'DZ', 55: '+DZ', 56: '-FZDZ', 57: 'FZDZ', 61: '-RA', 63: 'RA', 65: '+RA', 66: '-FZRA', 67: 'FZRA', 71: '-SN', 73: 'SN', 75: '+SN', 77: 'SG', 80: '-SHRA', 81: 'SHRA', 82: '+SHRA', 85: '-SHSN', 86: 'SHSN', 95: 'TSRA', 96: 'TSGR', 99: '+TSGR' };
   const wmoWx = c => c == null ? null : (WMO[Math.round(c)] || null);
   const WXDESC = { SH: 'pancadas', TSSH: 'trovoada com pancadas', GR: 'granizo', SQ: 'tempestade de vento', NSW: 'sem tempo significativo', BCFG: 'bancos de nevoeiro', MIFG: 'nevoeiro baixo', FG: 'nevoeiro', BR: 'névoa úmida', HZ: 'névoa seca', DZ: 'chuvisco', RA: 'chuva', SHRA: 'pancadas de chuva', TSRA: 'trovoada com chuva', TS: 'trovoada', TSGR: 'trovoada com granizo', SN: 'neve', FZRA: 'chuva congelante', FZDZ: 'chuvisco congelante', SHSN: 'pancadas de neve', SG: 'grãos de neve' };
-  const wxDesc = w => { const k = w.replace(/^[-+]|^VC/, ''); const base = WXDESC[k] || k; return w.startsWith('VC') ? base + ' nas vizinhanças' : (w[0] === '-' ? base + ' leve' : w[0] === '+' ? base + ' forte' : base); };
+  /** Decodificação do tempo presente conforme a Tabela 4678 (qualificador de intensidade/proximidade + descritor + precipitação/obscurecedor/outros). */
+  const WX_DESCR = { MI: 'baixo', BC: 'em bancos', PR: 'parcial', DR: 'flutuante', BL: 'soprada', SH: 'pancada', TS: 'trovoada', FZ: 'congelante' };
+  const WX_FEN = { DZ: 'chuvisco', RA: 'chuva', SN: 'neve', SG: 'grãos de neve', IC: 'cristais de gelo', PE: 'pelotas de gelo', PL: 'pelotas de gelo', GR: 'granizo', GS: 'granizo pequeno e/ou grãos de neve',
+    BR: 'névoa úmida', FG: 'nevoeiro', FU: 'fumaça', VA: 'cinzas vulcânicas', DU: 'poeira extensa', SA: 'areia', HZ: 'névoa seca',
+    PO: 'poeira/areia em redemoinhos', SQ: 'tempestade', FC: 'nuvem funil (tornado ou tromba d\'água)', SS: 'tempestade de areia', DS: 'tempestade de poeira', UP: 'precipitação desconhecida' };
+  const wxDesc = w => {
+    if (!w) return '';
+    if (w === 'NSW') return 'sem tempo significativo';
+    let s = w, q = '';
+    if (s.startsWith('VC')) { q = 'nas vizinhanças'; s = s.slice(2); } else if (s[0] === '-') { q = 'leve'; s = s.slice(1); } else if (s[0] === '+') { q = 'forte'; s = s.slice(1); }
+    const d = (s.match(/^(MI|BC|PR|DR|BL|SH|TS|FZ)/) || [])[1]; if (d) s = s.slice(2);
+    const f = (s.match(/.{2}/g) || []).map(x => WX_FEN[x] || x);
+    const fen = f.join(' e ');
+    let txt;
+    if (d === 'TS') txt = fen ? `trovoada com ${fen}` : 'trovoada';
+    else if (d === 'SH') txt = fen ? `pancada de ${fen}` : 'pancadas';
+    else if (d) txt = `${fen} ${WX_DESCR[d]}`;
+    else txt = fen;
+    if (w.startsWith('+') && /FC/.test(w)) return 'tornado ou tromba d\'água';
+    return q ? `${txt} ${q}` : txt;
+  };
   const COVDESC = { FEW: 'poucas nuvens', SCT: 'nuvens esparsas', BKN: 'nuvens fragmentadas', OVC: 'céu encoberto' };
   /** Camadas no formato METAR a partir de [{zAgl (m), cover (%)}] ordenado; até 3 camadas; base em centenas de pés. */
   function layersFrom(levels, nclFt) {
@@ -2531,8 +2564,239 @@ const MET = (() => {
 
   function renderAll() {
     const H = hasPos() ? hours() : [];
-    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrace(H); renderSources();
+    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderTrend(); renderMsl(H); renderTrace(H); renderSources();
+    renderDeductions(H);
     $('#sec-main').hidden = !hasPos();
+  }
+
+  /* ---------------- Deduzidas para a atividade de salto (MSL) ----------------
+     Base teórica: material de referência fornecido pelo MSL (estágios da trovoada, tempos presentes em uma trovoada,
+     Tabela 4678, nebulosidade/teto, classificação das nuvens e ferramentas do MSL). Limites operacionais: os da missão. */
+  const KMH2KT = 0.539957;
+  function dedBox(items, title) {
+    const L = items.filter(Boolean);
+    if (!L.length) return '';
+    const ic = { bad: '⛔', warn: '⚠', ok: '✓', info: '›' };
+    return `<div class="ded"><h4>${esc(title || 'Deduzida para o salto')}</h4><ul>${L.map(i => `<li class="${i.s}"><span class="di">${ic[i.s] || '›'}</span><span>${i.t}</span></li>`).join('')}</ul></div>`;
+  }
+  function addDed(sel, items, title) {
+    const el = $(sel); if (!el) return;
+    el.querySelectorAll(':scope > .ded').forEach(x => x.remove());
+    const html = dedBox(items, title); if (html) el.insertAdjacentHTML('beforeend', html);
+  }
+  const hrs = (hs, tz) => { if (!hs.length) return ''; const a = hs[0], b = hs[hs.length - 1]; return a === b ? `às ${M.hhmm(a.utc, tz)}` : `de ${M.hhmm(a.utc, tz)} a ${M.hhmm(b.utc, tz)}`; };
+  const isSlop = () => S.mission.activity === 'SLOP';
+  const actTxt = () => isSlop() ? 'salto livre operacional (HALO/HAHO)' : 'salto semiautomático (enganchado)';
+
+  /** Tabela horária: vento, teto, visibilidade, precipitação, convecção, temperatura e altitude-densidade na janela. */
+  function dedHourly(H) {
+    const V = H.filter(h => h.n); if (!V.length) return [];
+    const m = S.mission, tz = m.tz, lim = limitKt(), bmin = numOrNull(m.baseMinFt), out = [];
+    const wmax = V.reduce((a, h) => h.c.wind > a.c.wind ? h : a), gmax = V.reduce((a, h) => (h.c.gust || 0) > (a.c.gust || 0) ? h : a);
+    const z = V.filter(h => h.zl && h.zl.c750), zmax = z.length ? z.reduce((a, h) => h.zl.c750.kt > a.zl.c750.kt ? h : a) : null;
+    // vento
+    if (zmax && zmax.zl.c750.kt > lim) out.push({ s: 'bad', t: `Vento a ZL + 750 ft chega a <b>${fmt(zmax.zl.c750.kt)} kt</b> ${hrs([zmax], tz)}, acima do limite de ${lim} kt: <b>impeditivo</b> para o ${actTxt()} nesse horário.` });
+    else if (zmax) out.push({ s: zmax.zl.c750.kt >= 0.8 * lim ? 'warn' : 'ok', t: `Vento a ZL + 750 ft até ${fmt(zmax.zl.c750.kt)} kt (${hrs([zmax], tz)}) — ${zmax.zl.c750.kt >= 0.8 * lim ? 'próximo do limite: maior deriva, aproximação mais exigente e pouso com mais velocidade em relação ao solo' : 'dentro do limite'}. Pousar com proa para ${dir3(zmax.zl.c750.dir)}° (de onde vem o vento).` });
+    const gs = V.filter(h => h.c.gust != null && h.c.wind != null && h.c.gust - h.c.wind >= 10);
+    if (gmax.c.gust > lim) out.push({ s: 'bad', t: `Rajadas de ${fmt(gmax.c.gust, 1)} kt a 10 m ${hrs([gmax], tz)}: pouso com risco de arrasto e colapso do velame — impeditivo nesse horário.` });
+    if (gs.length) out.push({ s: 'warn', t: `Diferença rajada/vento médio ≥ 10 kt ${hrs(gs, tz)}: turbulência mecânica junto ao solo — oscilação na aproximação final e no flare.` });
+    const sh = V.filter(h => h.zl && h.zl.c750 && h.c.wind != null && (Math.abs(h.zl.c750.kt - h.c.wind) >= 6 || (h.c.wind >= 4 && M.angDiff(h.zl.c750.dir, h.c.dir) >= 45)));
+    if (sh.length) out.push({ s: 'warn', t: `Vento a 750 ft difere do vento de solo ${hrs(sh, tz)} (intensidade ou direção): o paraquedista encontra outro vento na aproximação final — atenção ao gradiente perto do solo.` });
+    // teto / nuvens
+    const low = bmin != null ? V.filter(h => h.c.ceilModel != null && h.c.ceilModel < bmin) : [];
+    if (low.length) out.push({ s: 'bad', t: `Teto abaixo de ${fmt(bmin)} ft ${hrs(low, tz)} (${[...new Set(low.map(h => okta(h.c.lowest.pct, h.c.lowest.cov) + '/8 ' + h.c.lowest.code))].join(', ')}): ${isSlop() ? 'sem referência visual da ZL na abertura e na navegação final' : 'sem visualização da ZL a partir da altura de lançamento'} — impeditivo.` });
+    else if (bmin != null && V.some(h => h.c.ceilModel != null)) out.push({ s: 'ok', t: `Teto previsto acima do mínimo de ${fmt(bmin)} ft em toda a janela.` });
+    // visibilidade
+    const vis = V.filter(h => h.c.vis != null && h.c.vis < 5000);
+    if (vis.length) out.push({ s: numOrNull(m.visMin) != null && vis.some(h => h.c.vis < +m.visMin) ? 'bad' : 'warn', t: `Visibilidade reduzida (${rng(vis.map(h => h.c.vis / 1000), 1)} km) ${hrs(vis, tz)}: identificação da ZL, do balizamento e dos obstáculos fica difícil; aumenta o risco de colisão entre paraquedistas.` });
+    // precipitação
+    const rain = V.filter(h => h.c.pr != null && h.c.pr >= 0.2), conv = rain.filter(h => h.c.sh > 0);
+    if (rain.length) out.push({ s: 'warn', t: `Precipitação ${hrs(rain, tz)} (até ${fmt(Math.max(...rain.map(h => h.c.pr)), 1)} mm/h${conv.length ? ', com pancadas' : ''}): visibilidade reduzida, óculos e equipamento molhados, terreno escorregadio no pouso${conv.length ? '; pancadas indicam nuvem convectiva próxima — possibilidade de rajadas' : ''}.` });
+    // convecção (estágios da trovoada)
+    const cb = V.filter(h => h.conv.level >= 3), tcu = V.filter(h => h.conv.level >= 1 && h.conv.level < 3);
+    if (cb.length) out.push({ s: 'bad', t: `CB/trovoada ${hrs(cb, tz)}: estágio de maturidade — turbulência máxima, relâmpagos, rajadas pela "explosão" do ar frio das descendentes e possibilidade de granizo. <b>Impeditivo</b>; aguardar a dissipação e afastamento da célula.` });
+    if (tcu.length) out.push({ s: 'warn', t: `TCU/CAPE ${hrs(tcu, tz)}: estágio de cumulus — correntes ascendentes de até ~60 km/h (≈ ${fmt(60 * KMH2KT)} kt, segundo o material de referência), capazes de elevar ou deslocar o paraquedista sob o velame. Evitar lançar sob ou próximo dessas nuvens.` });
+    // temperatura / sensação
+    const hot = V.filter(h => h.c.at != null && h.c.at >= 32);
+    if (hot.length) out.push({ s: 'warn', t: `Sensação térmica de ${rng(hot.map(h => h.c.at))} °C ${hrs(hot, tz)}: maior desgaste físico da tropa equipada — hidratação e tempo de espera embarcado reduzido.` });
+    // altitude-densidade
+    const da = V.map(h => daCat(h.daZl)).filter(Boolean), dk = da.length ? Math.max(...da.map(q => q.k)) : null;
+    if (dk != null) out.push({ s: dk >= 2 ? 'warn' : 'info', t: `Altitude-densidade na ZL com efeito ${DA_EFF[dk].txt.toLowerCase()}: ${isSlop() ? DA_EFF[dk].slL : DA_EFF[dk].saL}` });
+    return out;
+  }
+
+  /** Perfil de nuvens: classificação das camadas e consequências por fase do salto. */
+  function dedClouds(H) {
+    const V = H.filter(h => h.n && h.layers); if (!V.length) return [];
+    const m = S.mission, tz = m.tz, bmin = numOrNull(m.baseMinFt), out = [], trop = Math.abs(m.lat) <= 23.5;
+    const zl = numOrNull(m.zlElevFt) ?? 0, exitAgl = isSlop() && numOrNull(m.exitFtMSL) != null ? +m.exitFtMSL - zl : null, launch = !isSlop() ? (numOrNull(m.launchFtAGL) || 1000) : null;
+    const cls = ft => { const mm = ft * FT; return mm < 2000 ? 'baixa' : mm < (trop ? 8000 : 7000) ? 'média' : 'alta'; };
+    const all = V.flatMap(h => h.layers.cons.map(l => Object.assign({ h }, l)));
+    if (!all.length) { out.push({ s: 'ok', t: 'Sem nuvens previstas na janela: céu claro — boa referência visual da ZL.' }); return out; }
+    const byCls = { baixa: [], média: [], alta: [] }; all.forEach(l => byCls[cls(l.baseFt)].push(l));
+    const conv = V.some(h => h.conv.level >= 1 || (h.c.sh || 0) > 0);
+    out.push({ s: 'info', t: `Nuvens ${['baixa', 'média', 'alta'].filter(k => byCls[k].length).map(k => `${k}s (${[...new Set(byCls[k].map(l => okta(l.pct, l.cov) + '/8 ' + l.code))].slice(0, 4).join(', ')})`).join('; ')}. Aspecto provável: ${conv ? '<b>cumuliforme</b> (ar instável, desenvolvimento vertical, precipitação em pancadas)' : '<b>estratiforme</b> (ar estável, camadas horizontais, precipitação leve e contínua)'}. Classificação pela altura da base: baixas 30–2.000 m; médias 2.000–${trop ? '8.000' : '7.000'} m (latitude ${trop ? 'tropical' : 'temperada'}).` });
+    if (!isSlop()) {
+      const bad = V.filter(h => h.layers.cons.some(l => l.baseFt < Math.max(launch, bmin || 0)));
+      out.push(bad.length ? { s: 'bad', t: `Camada abaixo da altura de lançamento (${fmt(launch)} ft) ${hrs(bad, tz)}: o mestre de salto não visualiza a ZL nem os pontos de referência no lançamento — sem lançamento nesses horários.` } : { s: 'ok', t: `Nenhuma camada abaixo da altura de lançamento (${fmt(launch)} ft) na janela.` });
+    } else if (exitAgl != null) {
+      const thr = V.filter(h => h.layers.cons.some(l => l.baseFt < exitAgl && (l.cov === 'BKN' || l.cov === 'OVC')));
+      const any = V.filter(h => h.layers.cons.some(l => l.baseFt < exitAgl));
+      if (thr.length) out.push({ s: 'bad', t: `Camada BKN/OVC entre a saída (${fmt(+m.exitFtMSL)} ft MSL) e a ZL ${hrs(thr, tz)}: queda livre e/ou navegação sob velame dentro de nuvem — sem referência visual, risco de desorientação e de colisão entre paraquedistas; ZL não identificada do ponto de saída.` });
+      else if (any.length) out.push({ s: 'warn', t: `Nuvens FEW/SCT abaixo da saída ${hrs(any, tz)}: possível passagem por nuvem isolada — manter separação e referência da ZL; prever desvio na navegação.` });
+      else out.push({ s: 'ok', t: `Nenhuma camada entre a saída (${fmt(+m.exitFtMSL)} ft MSL) e a ZL na janela.` });
+      const mid = V.filter(h => h.layers.cons.some(l => cls(l.baseFt) === 'média' && l.baseFt < exitAgl));
+      if (mid.length && V.some(h => h.exit && h.exit.iceLevels && h.exit.iceLevels.length)) out.push({ s: 'warn', t: 'Nuvens médias com temperatura entre 0 e −10 °C abaixo da saída: condição de gelo claro (cristal), associado a turbulência forte segundo o material de referência.' });
+    }
+    // melhor período do dia pela base
+    const ok = V.filter(h => !h.layers.cons.some(l => l.baseFt < (bmin || 0)) && h.conv.level < 3);
+    out.push(ok.length ? { s: 'info', t: `Horários da janela com base acima do mínimo e sem CB: ${ok.map(h => M.hhmm(h.utc, tz)).join(', ')}.` } : { s: 'bad', t: 'Nenhum horário da janela com base acima do mínimo e sem CB — ver o gráfico do dia para outra janela.' });
+    return out;
+  }
+
+  /** Temperatura, tempo e precipitação no dia D. */
+  function dedTemp(H) {
+    const V = H.filter(h => h.n); if (!V.length) return [];
+    const tz = S.mission.tz, out = [];
+    const tmax = V.reduce((a, h) => h.c.temp > a.c.temp ? h : a), tmin = V.reduce((a, h) => h.c.temp < a.c.temp ? h : a);
+    out.push({ s: 'info', t: `Temperatura na janela de ${fmt(tmin.c.temp)} a ${fmt(tmax.c.temp)} °C${tmax.c.at != null ? ` (sensação até ${fmt(Math.max(...V.map(h => h.c.at ?? -99)))} °C)` : ''}. ${tmax.c.temp - tmin.c.temp >= 3 ? (V[V.length - 1].c.temp > V[0].c.temp ? 'Aquecimento ao longo da janela favorece convecção à tarde.' : 'Resfriamento ao longo da janela — tendência de estabilização.') : 'Pouca variação térmica.'}` });
+    const ts = V.filter(h => Object.keys(h.wx || {}).some(w => /TS/.test(w)) || h.conv.level >= 3);
+    if (ts.length) out.push({ s: 'bad', t: `Trovoada ${hrs(ts, tz)}: relâmpagos, rajadas, chuva forte nos níveis inferiores e granizo nos níveis médios e superiores (estágio de maturidade) — impeditivo; downburst e rajadas podem atingir a ZL antes da chuva.` });
+    const rain = V.filter(h => (h.c.pr || 0) >= 0.2);
+    if (rain.length && !ts.length) out.push({ s: 'warn', t: `Chuva ${hrs(rain, tz)}: ${rain.some(h => h.c.sh > 0) ? 'em pancadas (nuvem convectiva — rajadas possíveis)' : 'contínua e fraca (nuvem estratiforme)'}; reduz a visibilidade e molha equipamento e terreno.` });
+    const dry = V.filter(h => (h.c.pr || 0) < 0.2 && (h.c.pp || 0) < 50 && h.conv.level < 3);
+    out.push(dry.length ? { s: 'ok', t: `Sem chuva prevista ${hrs(dry, tz)}${dry.length < V.length ? ' (não necessariamente contínuo)' : ''}.` } : { s: 'warn', t: 'Chuva ou probabilidade ≥ 50% em todos os horários da janela.' });
+    return out;
+  }
+
+  /** Vento na ZL e em altitude (deriva, gradiente, direção de pouso, HAHO). */
+  function dedWinds(H) {
+    const V = H.filter(h => h.n && h.zl); if (!V.length) return [];
+    const tz = S.mission.tz, lim = limitKt(), out = [];
+    const h0 = V[0], z = h0.zl;
+    if (z.c750) out.push({ s: 'info', t: `Em H, vento a ZL + 750 ft ${dir3(z.c750.dir)}°/${fmt(z.c750.kt)} kt: aproximação final e pouso com proa ${dir3(z.c750.dir)}° (${M.cardinal(z.c750.dir)}); deriva no sentido ${dir3((z.c750.dir + 180) % 360)}°.` });
+    if (z.cLayer && z.c750) { const dk = z.cLayer.kt - z.c750.kt, dd = M.angDiff(z.cLayer.dir, z.c750.dir); if (Math.abs(dk) >= 5 || dd >= 30) out.push({ s: z.cLayer.kt > lim ? 'bad' : 'warn', t: `1ª camada acima (${fmt(z.cLayer.p)} hPa): ${dir3(z.cLayer.dir)}°/${fmt(z.cLayer.kt)} kt — cisalhamento de ${fmt(Math.abs(dk))} kt e ${fmt(dd)}° em relação a 750 ft: mudança de deriva durante a descida; considerar no ponto de lançamento.` }); }
+    if (isSlop() && z.cLaunch) out.push({ s: 'info', t: `Vento na altitude de saída ${dir3(z.cLaunch.dir)}°/${fmt(z.cLaunch.kt)} kt: no HAHO, o deslocamento sob velame será a favor de ${dir3((z.cLaunch.dir + 180) % 360)}° — ponto de lançamento a barlavento (${M.cardinal(z.cLaunch.dir)}) da ZL; calcular a distância na planilha HAHO/CSL com os ventos de camada.` });
+    else if (z.cLaunch) out.push({ s: 'info', t: `Vento na altura de lançamento ${dir3(z.cLaunch.dir)}°/${fmt(z.cLaunch.kt)} kt: base para o cálculo do ponto de lançamento (deriva a sotavento ${dir3((z.cLaunch.dir + 180) % 360)}°).` });
+    const turn = V.filter((h, i) => i && h.zl.c750 && V[i - 1].zl.c750 && M.angDiff(h.zl.c750.dir, V[i - 1].zl.c750.dir) >= 45 && h.zl.c750.kt >= 4);
+    if (turn.length) out.push({ s: 'warn', t: `Giro do vento a 750 ft ${hrs(turn, tz)}: revisar direção de pouso, balizamento e ponto de lançamento.` });
+    return out;
+  }
+
+  /** Altitude de saída: temperatura, isoterma de 0 °C e gelo. */
+  function dedExit(H) {
+    const e = H.find(h => h.exit && h.exit.top != null); if (!e) return [];
+    const x = e.exit, out = [], top = x.top / FT;
+    if (x.t != null) out.push({ s: x.t <= -10 ? 'warn' : 'info', t: `Temperatura de ${fmt(x.t)} °C na ${isSlop() ? 'saída' : 'altura de lançamento'} (${fmt(top)} ft MSL)${x.t <= 0 ? ': risco de lesão pelo frio e embaçamento de óculos/altímetro; proteção térmica de mãos e face' : ''}.` });
+    if (x.fzl != null) out.push({ s: 'info', t: `Isoterma de 0 °C a ~${fmt(x.fzl / FT)} ft: ${x.fzl < x.top ? 'a queda livre atravessa ar abaixo de 0 °C' : 'toda a descida em ar acima de 0 °C'}.` });
+    if (x.iceLevels && x.iceLevels.length) out.push({ s: 'warn', t: `Ar saturado entre 0 e −20 °C em ${x.iceLevels.map(l => l.p + ' hPa').join(', ')}: risco de formação de gelo em superfícies (aeronave e equipamento); entre 0 e −10 °C, nos níveis médios, predomina gelo claro, associado a turbulência forte (material de referência).` });
+    return out;
+  }
+
+  /** Astronomia: luminosidade natural nos horários da missão. */
+  function dedAstro(H) {
+    const m = S.mission, { eve } = nightEve(), v = (m.tadN || {})[eve];
+    if (!v) return [{ s: 'info', t: 'Insira os horários do Time and Date para deduzir a luminosidade da noite.' }];
+    const N = nightAnalysis(v, eve, m.tz); if (N.miss || N.err) return [];
+    const out = [], il = v.ilum !== undefined && v.ilum !== '' ? +v.ilum : null;
+    const inDark = H.filter(h => N.segs.some(g => !g.moon && h.utc >= g.from && h.utc < g.to)), inLit = H.filter(h => N.segs.some(g => g.moon && h.utc >= g.from && h.utc < g.to));
+    if (inDark.length) out.push({ s: 'warn', t: `Visibilidade nula ${hrs(inDark, m.tz)}: sem luz natural — identificação da ZL, do balizamento e dos obstáculos depende de meios artificiais e de óculos de visão noturna; aproximação e pouso mais críticos; maior risco de colisão entre paraquedistas.` });
+    if (inLit.length) out.push({ s: 'info', t: `Noite com luar ${hrs(inLit, m.tz)}${il != null ? ` (${fmt(il)}% do disco)` : ''}: ${il != null && il >= 50 ? 'boa referência visual do terreno quando a Lua estiver alta e sem nuvens' : 'luminosidade limitada'}; nebulosidade reduz o luar.` });
+    if (!inDark.length && !inLit.length) { const ev = N.start, en = N.end, before = H.every(h => h.utc < ev), after = H.every(h => h.utc >= en);
+      out.push(before || after ? { s: 'info', t: `A janela H a H+5 não coincide com a noite selecionada (${eve.split('-').reverse().slice(0, 2).join('/')} → ${M.shiftDate(eve, 1).split('-').reverse().slice(0, 2).join('/')}). Se a janela for noturna, selecione a outra noite em “Inserir valores do Time and Date”; se for diurna, não há restrição de luminosidade.` } : { s: 'ok', t: 'Janela H a H+5 no período diurno/crepuscular.' }); }
+    return out;
+  }
+
+  /** METAR/TAF inseridos: tendência e possibilidade de mudança. */
+  function dedOpm(H) {
+    const U = userOpmet(); if (!U.length) return [];
+    const tz = S.mission.tz, out = [];
+    U.forEach(ad => {
+      const met = ad.metars[0];
+      if (met && met.wx.length) out.push({ s: met.wx.some(w => /TS|\+|SQ|FC|GR/.test(w)) ? 'bad' : 'warn', t: `METAR ${esc(ad.icao)} ${M.hhmm(met.utc, tz)}: ${met.wx.map(w => esc(M.wxDesc(w))).join(', ')} observado.` });
+      const ch = H.map(h => { const x = (h.tafU || []).find(t => t.icao === ad.icao); return x ? { h, ch: changesAt(x.taf, h.utc) } : null; }).filter(x => x && x.ch.length);
+      if (ch.length) { const ts = ch.filter(x => x.ch.some(c => /TS|CB/.test(c.txt))); out.push({ s: ts.length ? 'bad' : 'warn', t: `TAF ${esc(ad.icao)} prevê mudança ${hrs(ch.map(x => x.h), tz)} (${[...new Set(ch.flatMap(x => x.ch.map(c => c.k)))].join(', ')}): condições podem piorar temporariamente dentro da janela${ts.length ? ' — inclui trovoada/CB: impeditivo enquanto vigorar' : ''}. Reavaliar com novo METAR antes do lançamento.` }); }
+      else if (ad.tafs.length) out.push({ s: 'ok', t: `TAF ${esc(ad.icao)} sem grupos de mudança na janela.` });
+    });
+    const wb = windBias();
+    if (wb && Math.abs(wb.b) >= 3) out.push({ s: 'warn', t: `Modelos ${wb.b > 0 ? 'superestimam' : 'subestimam'} o vento em ${fmt(Math.abs(wb.b), 1)} kt em relação ao observado: considerar o vento ajustado ao comparar com o limite.` });
+    return out;
+  }
+
+  /** Sinótica D-1/D0/D+1 e tendência 24/48/72 h. */
+  function dedDays() {
+    const out = [], A = S.analysis || {}, txt = [A.d1, A.d0, A.dp1].filter(Boolean).join(' ').toLowerCase();
+    const K = [[/frente fria/, 'bad', 'Frente fria: ar frio substitui o quente na superfície — mudança brusca de vento, nebulosidade cumuliforme, pancadas e trovoadas na passagem; após a passagem, vento mais forte e queda de temperatura.'],
+      [/frente quente/, 'warn', 'Frente quente: nebulosidade estratiforme extensa, teto baixo e chuva contínua antes da passagem.'],
+      [/estacion[aá]ria/, 'warn', 'Frente estacionária: condição de mau tempo persistente sobre a região.'],
+      [/oclus/, 'warn', 'Frente oclusa: combinação de nebulosidade baixa e convecção.'],
+      [/linha de instabilidade/, 'bad', 'Linha de instabilidade: CB organizados em linha, rajadas e trovoadas — impeditivo na passagem.'],
+      [/cavado/, 'warn', 'Cavado: favorece nebulosidade e pancadas, sobretudo à tarde.'],
+      [/zcas/, 'warn', 'ZCAS: nebulosidade e chuva persistentes por vários dias.'],
+      [/alta press|anticiclone/, 'ok', 'Alta pressão: tendência de tempo estável, pouca nebulosidade e ventos fracos (possível névoa ao amanhecer).']];
+    K.forEach(([re, s, t]) => { if (re.test(txt)) out.push({ s, t }); });
+    const D = S.mission.date, d0 = dayCons(D), d1 = dayCons(M.shiftDate(D, 1)), d2 = dayCons(M.shiftDate(D, 2));
+    if (d0 && d1 && d0.pmin != null && d1.pmin != null) { const dp = d1.pmin - d0.pmin; if (Math.abs(dp) >= 3) out.push({ s: dp < 0 ? 'warn' : 'info', t: `Pressão mínima ${dp < 0 ? 'cai' : 'sobe'} ${fmt(Math.abs(dp))} hPa de D0 para D+1: ${dp < 0 ? 'aproximação de sistema de baixa pressão/frente — piora provável' : 'influência de alta pressão — tendência de melhora'}.` }); }
+    [[d1, 'D+1'], [d2, 'D+2']].forEach(([d, l]) => { if (!d) return; const bad = []; if (d.gmax > limitKt()) bad.push(`rajadas até ${fmt(d.gmax)} kt`); if (d.pr >= 5) bad.push(`chuva ${fmt(d.pr, 1)} mm`); if (d.cape >= (+S.mission.capeMod || 1000)) bad.push('potencial de tempestade'); out.push({ s: bad.length ? 'warn' : 'ok', t: `${l} como alternativa: ${bad.length ? bad.join(', ') : 'sem restrição relevante nos modelos (vento, chuva e convecção)'}.` }); });
+    return out;
+  }
+  /** Consolidado diário (mediana entre modelos) para a tendência 24/48/72 h. */
+  function dayCons(dateStr) {
+    const st = dayStats(dateStr); if (!st) return null;
+    const ids = Object.keys(st), med = k => { const a = ids.map(i => st[i][k]).filter(v => v != null); return a.length ? M.weightedMedian(a.map(v => ({ v, w: 1 }))) : null; };
+    return { wmax: med('wmax'), gmax: med('gmax'), pr: med('pr'), sh: med('sh'), ppmax: med('ppmax'), cape: med('cape'), tmin: med('tmin'), tmax: med('tmax'), pmin: med('pmin') };
+  }
+  function renderTrend() {
+    const el = $('#trend'); if (!el) return;
+    if (!S.models || !hasPos()) { el.innerHTML = ''; return; }
+    const D = S.mission.date, lim = limitKt();
+    const days = [['D0 (24 h)', D], ['D+1 (48 h)', M.shiftDate(D, 1)], ['D+2 (72 h)', M.shiftDate(D, 2)]].map(([l, d]) => ({ l, d, c: dayCons(d) }));
+    const cell = (c, f) => c ? f(c) : '<span class="na">sem dados — atualizar</span>';
+    const rows = [['Vento máx. 10 m', c => `<span class="${c.wmax > lim ? 'tbad' : ''}">${fmt(c.wmax)} kt</span>`], ['Rajada máx.', c => `<span class="${c.gmax > lim ? 'tbad' : ''}">${fmt(c.gmax)} kt</span>`],
+      ['Chuva no dia', c => `${fmt(c.pr, 1)} mm${c.sh > 0.5 ? ' <small>pancadas</small>' : ''}`], ['Prob. máx.', c => `${fmt(c.ppmax)}%`], ['Potencial de tempestade', c => { const q = capeClass(c.cape); return q ? `<span class="cape ${q.cls}">${q.txt}</span>` : '—'; }],
+      ['T mín / máx', c => `${fmt(c.tmin)} / ${fmt(c.tmax)} °C`], ['PNMM mínima', c => `${fmt(c.pmin)} hPa`],
+      ['Tendência para o salto', c => { const b = (c.gmax > lim) + (c.pr >= 5) + (c.cape >= (+S.mission.capeMod || 1000)); return `<span class="pill ${b >= 2 ? 'bad' : b ? 'warn' : 'ok'}">${b >= 2 ? 'DESFAVORÁVEL' : b ? 'COM RESTRIÇÕES' : 'FAVORÁVEL'}</span>`; }]];
+    el.innerHTML = `<div class="tbl-wrap"><table class="mini trend"><thead><tr><th></th>${days.map(x => `<th>${x.l}<small>${x.d.split('-').reverse().slice(0, 2).join('/')}</small></th>`).join('')}</tr></thead><tbody>${rows.map(([n, f]) => `<tr><th scope="row">${n}</th>${days.map(x => `<td>${cell(x.c, f)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
+      <p class="note"><span class="st st-prev">PREVISTO</span> mediana GFS/ECMWF/ICON do dia inteiro (hora local). Tendência diária indicativa: considera rajada acima do limite, chuva ≥ 5 mm e CAPE acima do limiar moderado; não substitui a análise horária.</p>`;
+  }
+
+  /** Ferramentas do MSL: situação de cada capacidade para a decisão. */
+  function renderMsl(H) {
+    const el = $('#msl'); if (!el) return;
+    if (!hasPos()) { el.innerHTML = ''; return; }
+    const V = H.filter(h => h.n), tz = S.mission.tz;
+    const st = (s, t, a) => ({ s, t, a });
+    const best = V.filter(h => h.verdict === 'FAVORÁVEL'), rest = V.filter(h => h.verdict === 'FAVORÁVEL COM RESTRIÇÕES');
+    const P = projection(H);
+    const ad = userOpmet(), A = S.analysis || {}, D = S.mission.date;
+    const nt = (S.mission.tadN || {})[nightEve().eve];
+    const rows = [
+      ['Previsão do tempo para a operação', V.length ? st(best.length ? 'ok' : rest.length ? 'warn' : 'bad', best.length ? `Favorável ${hrs(best, tz)}` : rest.length ? `Somente com restrições (${hrs(rest, tz)})` : 'Janela H a H+5 desfavorável', '#h-verd') : st('na', 'Sem modelos carregados', '#h-src')],
+      ['Tendência 24, 48 e 72 h', dayCons(M.shiftDate(D, 2)) ? st('ok', 'D0, D+1 e D+2 disponíveis', '#h-trend') : st('warn', 'Atualize os dados para estender a 72 h', '#h-trend')],
+      ['Cartas de vento de camada', V.some(h => h.zl && h.zl.cLayer) ? st('ok', `Vento por nível e ZL + 750 ft${S.sounding ? ' + sondagem NOAA' : ''}`, '#h-up') : st('warn', 'Ventos em altitude indisponíveis', '#h-up')],
+      ['Condições predominantes da região (relevo, litoral)', st('warn', 'Avaliação do MSL — o modelo não resolve efeitos locais finos (brisa, vale, encosta)', '#h-days')],
+      ['Atividades convectivas', V.some(h => h.conv.level >= 3) ? st('bad', 'CB/trovoada na janela', '#h-proj') : V.some(h => h.conv.level >= 1) ? st('warn', 'TCU/potencial convectivo na janela', '#h-proj') : st('ok', 'Sem convecção relevante na janela', '#h-proj')],
+      ['Regiões de alta e baixa pressão', A.d0 ? st('ok', 'Análise sinótica D-1/D0/D+1 preenchida', '#h-days') : st('warn', 'Análise sinótica pendente; tendência de PNMM disponível', '#h-days')],
+      ['Previsão de perigos (tornado, raios, chuva forte, gelo, ventos fortes, turbulência)', P.items.some(i => i.sev === 'bad') ? st('bad', `${P.items.filter(i => i.sev === 'bad').length} impeditivo(s) na projeção`, '#h-proj') : P.items.some(i => i.sev === 'warn') ? st('warn', 'Pontos de atenção na projeção', '#h-proj') : st('ok', 'Nenhum perigo identificado', '#h-proj')],
+      ['Fases da Lua e luminosidade', nt ? st('ok', `Inserido: ${esc(nt.fase || 'fase n/d')}${nt.ilum ? ', ' + fmt(+nt.ilum) + '%' : ''}`, '#h-astro') : st('warn', 'Inserir valores do Time and Date', '#h-astro')],
+      ['Períodos mais adequados para HALO/HAHO', st(best.length ? 'ok' : 'warn', best.length ? `Janela H a H+5: ${best.map(h => M.hhmm(h.utc, tz)).join(', ')} — no dia: ver "Nuvens e janelas de salto"` : 'Ver "Nuvens e janelas de salto" para outra janela no dia', '#cloudchart')],
+      ['Observação real (METAR/TAF)', ad.length ? st('ok', `${ad.map(a => esc(a.icao)).join(', ')} inseridos`, '#h-opm') : st('warn', 'Inserir METAR/TAF dos aeródromos próximos', '#h-opm')],
+    ];
+    el.innerHTML = `<div class="tbl-wrap"><table class="mini msl"><thead><tr><th class="l">Capacidade do MSL</th><th class="l">Situação</th><th></th></tr></thead><tbody>${rows.map(([n, r]) => `<tr><th scope="row" class="l">${n}</th><td class="l"><span class="pill ${r.s}">${r.s === 'ok' ? 'OK' : r.s === 'warn' ? 'ATENÇÃO' : r.s === 'bad' ? 'IMPEDITIVO' : '—'}</span> ${r.t}</td><td><a href="${r.a}" class="small">ver ↓</a></td></tr>`).join('')}</tbody></table></div>
+      <p class="note">Lista das ferramentas que a meteorologia fornece ao MSL (material de referência). A decisão sobre a atividade é do MSL e do comandante; este painel organiza os dados para apoiá-la.</p>`;
+  }
+
+  function renderDeductions(H) {
+    if (!hasPos()) return;
+    addDed('#hourly', dedHourly(H), 'Deduzida para o salto — evolução horária');
+    addDed('#cloudchart', dedClouds(H), 'Deduzida para o salto — nuvens');
+    addDed('#tempchart', dedTemp(H), 'Deduzida para o salto — temperatura, tempo e precipitação');
+    addDed('#zl', dedWinds(H), 'Deduzida para o salto — vento');
+    addDed('#exit', dedExit(H), 'Deduzida para o salto — altitude de saída');
+    addDed('#astro', dedAstro(H), 'Deduzida para o salto — luminosidade');
+    addDed('#opm', dedOpm(H), 'Deduzida para o salto — METAR/TAF');
+    addDed('#days', dedDays(), 'Deduzida para o salto — situação sinótica e tendência');
+    addDed('#synth-ded', [...dedHourly(H).filter(i => i.s === 'bad'), ...dedClouds(H).filter(i => i.s === 'bad'), ...dedOpm(H).filter(i => i.s === 'bad')].slice(0, 6), 'Impeditivos para o MSL na janela');
   }
 
   /* ---------------- Inicialização ---------------- */
