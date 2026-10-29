@@ -2543,7 +2543,7 @@ const MET = (() => {
     const m = S.mission, ok = hasPos();
     const omUrl = ok ? M.openMeteoUrl(m) : null, sdUrl = ok ? M.soundingUrl(m, 'GFS') : null;
     const icao = (m.icao || '').toUpperCase();
-    $('#src-om-link').innerHTML = ok ? `<a class="btn" href="${esc(omUrl)}" target="_blank" rel="noopener">Abrir Open-Meteo (GFS + ECMWF + ICON)</a><span class="small">Período ${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 1))}, vento em kt, fuso ${esc(m.tz)}</span>` : '<span class="muted">Defina coordenada e data.</span>';
+    $('#src-om-link').innerHTML = ok ? `<a class="btn" href="${esc(omUrl)}" target="_blank" rel="noopener">Abrir Open-Meteo (GFS + ECMWF + ICON)</a><span class="small">Período ${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 7))} (D-1 a D+7), vento em kt, fuso ${esc(m.tz)}</span>` : '<span class="muted">Defina coordenada e data.</span>';
     $('#src-om-state').innerHTML = S.models ? `<span class="st st-prev">CARREGADO</span> ${esc(modelIds().join(', '))} · ${S.models.time.length} horas · ${esc(whenStr(S.models.fetchedAt))}` : `<span class="st st-ind">PENDENTE</span>`;
     $('#src-sd-link').innerHTML = ok ? `<a class="btn" href="${esc(sdUrl)}" target="_blank" rel="noopener">Abrir sondagem NOAA (GFS, formato GSD)</a><span class="small">A página da NOAA usa a rodada mais recente. Para outro horário, ajuste data/hora no formulário da NOAA: <a href="https://rucsoundings.noaa.gov/" target="_blank" rel="noopener">rucsoundings.noaa.gov</a></span>` : '<span class="muted">Defina coordenada e data.</span>';
     $('#src-sd-state').innerHTML = S.sounding ? `<span class="st st-prev">CARREGADA</span> ${S.sounding.levels.length} níveis · ${esc((S.sounding.header || [])[1] || '')}` : `<span class="st st-ind">PENDENTE</span>`;
@@ -2614,11 +2614,19 @@ const MET = (() => {
   }
 
   /* ---------------- Persistência ---------------- */
-  const DOCS = { mission: 'cfg/missao', sys: 'cfg/sistema', models: 'dados/modelos', sounding: 'dados/sondagem', obs: 'dados/obs', analysis: 'dados/analise', history: 'dados/historico', astro: 'dados/astro', oficiais: 'dados/oficiais', aer: 'dados/aerodromos' };
+  const DOCS = { models_GFS: 'dados/modelos_GFS', models_ECMWF: 'dados/modelos_ECMWF', models_ICON: 'dados/modelos_ICON', models_MODELO: 'dados/modelos_MODELO', mission: 'cfg/missao', sys: 'cfg/sistema', models: 'dados/modelos', sounding: 'dados/sondagem', obs: 'dados/obs', analysis: 'dados/analise', history: 'dados/historico', astro: 'dados/astro', oficiais: 'dados/oficiais', aer: 'dados/aerodromos' };
   async function save(name, data) {
     if (APP) { try { await api('/api/doc/' + name, data); return true; } catch (e) { flash('Falha ao gravar: ' + e.message, true); return false; } }
     if (!S.db) { try { const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); all[name] = data; localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) { } return true; }
-    try { await S.db.doc(DOCS[name]).set(data); return true; }
+    try {
+      if (name === 'models' && data && data.models) {
+        const ids = Object.keys(data.models);
+        for (const id of ids) await S.db.doc(DOCS.models + '_' + id).set({ id, vars: data.models[id] });
+        const head = Object.assign({}, data, { parts: ids }); delete head.models;
+        await S.db.doc(DOCS.models).set(head); return true;
+      }
+      await S.db.doc(DOCS[name]).set(data); return true;
+    }
     catch (e) { flash(e.code === 'invalid_argument' ? 'Sem permissão de gravação neste dashboard (somente leitura).' : e.code === 'quota_exceeded' ? 'Limite de armazenamento atingido.' : 'Falha ao gravar (' + e.code + ').', true); return false; }
   }
   async function logHist(what) {
@@ -2654,8 +2662,7 @@ const MET = (() => {
         if (hasPos() && (Math.abs(p.meta.lat - S.mission.lat) > 0.3 || Math.abs(p.meta.lon - S.mission.lon) > 0.3)) throw new Error(`O JSON é de ${fmt(p.meta.lat, 3)}, ${fmt(p.meta.lon, 3)}, distante da coordenada da missão. Gere o link novamente.`);
         if (!p.time.some(t => t.startsWith(S.mission.date))) throw new Error('O JSON não cobre a data da missão. Gere o link novamente após salvar a missão.');
         const doc = Object.assign(p, { fetchedAt: nowIso(), url: hasPos() ? M.openMeteoUrl(S.mission) : null });
-        const size = JSON.stringify(doc).length;
-        if (size > 250000) throw new Error('Resposta grande demais para armazenar (' + Math.round(size / 1024) + ' KB). Use o link gerado, que limita o período a 3 dias.');
+        if (S.db) { const big = Object.values(doc.models).map(o => JSON.stringify(o).length).find(n => n > 250000); if (big) throw new Error(`Um dos modelos excede o limite de armazenamento compartilhado (${Math.round(big / 1024)} KB). Use o aplicativo Windows ou o HTML.`); }
         S.models = doc; await save('models', doc); $('#om-in').value = '';
         out.textContent = `Processado: ${Object.keys(p.models).join(', ')} · ${p.time.length} horas.`; out.className = 'small ok';
         logHist('Modelos carregados (Open-Meteo: ' + Object.keys(p.models).join(', ') + ')');
@@ -3197,7 +3204,16 @@ const MET = (() => {
   }
 
   /* ---------------- Inicialização ---------------- */
+  const MPARTS = {};
   function applyDoc(name, data) {
+    if (name === 'models' || name.startsWith('models_')) {
+      if (name === 'models') MPARTS.head = data || null; else MPARTS[name.slice(7)] = data || null;
+      const h = MPARTS.head;
+      if (!h) { S.models = null; return; }
+      if (!h.parts) { S.models = h; return; } // formato antigo: documento único
+      if (h.parts.every(id => MPARTS[id] && MPARTS[id].vars)) { const models = {}; h.parts.forEach(id => { models[id] = MPARTS[id].vars; }); S.models = Object.assign({}, h, { models }); }
+      return;
+    }
     if (name === 'mission') S.mission = Object.assign(DEFAULT_MISSION(), data || {});
     else if (name === 'history') S.history = (data && data.items) || [];
     else S[name] = data || null;
