@@ -54,7 +54,7 @@ jobs:
           node-version: "20"
 
       - name: Instalar decodificador GRIB2 (ecCodes)
-        run: pip install --quiet eccodes eccodeslib skyfield
+        run: pip install --quiet eccodes eccodeslib skyfield h5py numpy
 
       - name: Coletar Open-Meteo e sondagem NOAA
         env:

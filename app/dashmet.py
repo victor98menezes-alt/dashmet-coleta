@@ -189,6 +189,20 @@ def coletar():
         of["cptec"] = FX.cptec(lat, lon, C.baixar)
     except Exception as e:
         of["cptec"] = {"erro": repr(e)}
+    etapa("Radiossonda observada (Galeão 83746)…")
+    try:
+        of["radiossonda"] = FX.radiossonda(lat, lon, C.baixar)
+        etapa("Radiossonda: " + (of["radiossonda"].get("nominal_utc", "")[:13] + "Z" if "niveis" in of["radiossonda"] else of["radiossonda"].get("erro", "indisponível")), "niveis" in of["radiossonda"])
+    except Exception as e:
+        of["radiossonda"] = {"erro": repr(e)}
+    etapa("Satélite GOES-19 (topos frios) e descargas elétricas GLM…")
+    try:
+        import conveccao as CV
+        of["satelite"] = CV.coletar(lat, lon)
+        ok = "grade" in of["satelite"].get("abi", {})
+        etapa("Satélite e raios: " + ("ok" if ok else of["satelite"].get("abi", {}).get("erro", "indisponível")), ok)
+    except Exception as e:
+        of["satelite"] = {"erro": repr(e)}
     gravar("oficiais", of)
 
     # 6) OPMET — NOAA/AWC (mesmas mensagens OACI)

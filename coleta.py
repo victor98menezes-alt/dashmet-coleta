@@ -270,7 +270,11 @@ def main():
               "redemet": fx.redemet(icao, baixar, os.environ.get("REDEMET_API_KEY", ""))}
     except Exception as e:
         ob = {"coletado_em_utc": agora, "erro": repr(e)}
-    for k, f in (("inmet_prev", lambda: fx.inmet_prev(lat, lon, baixar, os.environ.get("IBGE") or None)), ("cptec", lambda: fx.cptec(lat, lon, baixar))):
+    def _sat():
+        import conveccao
+        return conveccao.coletar(lat, lon)
+    for k, f in (("inmet_prev", lambda: fx.inmet_prev(lat, lon, baixar, os.environ.get("IBGE") or None)), ("cptec", lambda: fx.cptec(lat, lon, baixar)),
+                 ("radiossonda", lambda: fx.radiossonda(lat, lon, baixar)), ("satelite", _sat)):
         try:
             ob[k] = f()
         except Exception as e:

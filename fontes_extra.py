@@ -350,3 +350,51 @@ def cptec(lat, lon, baixar):
     except Exception as e:
         out["erro"] = "leitura: " + repr(e)
     return out
+
+
+# ---------------- Radiossonda observada (University of Wyoming, formato CSV) ----------------
+RADIOSSONDAS = [("83746", "SBGL — Galeão, Rio de Janeiro")]  # estações confirmadas no serviço
+
+
+def radiossonda(lat, lon, baixar, agora=None, raio_km=300):
+    """Sondagem observada mais recente (00Z/12Z) da estação mais próxima dentro do raio. Vento em kt, alturas em m MSL."""
+    import datetime as _dt, math as _m
+    agora = agora or _dt.datetime.now(_dt.timezone.utc)
+    tent = []
+    for d in range(0, 2):
+        dia = (agora - _dt.timedelta(days=d)).date()
+        for hh in (12, 0):
+            t = _dt.datetime(dia.year, dia.month, dia.day, hh, tzinfo=_dt.timezone.utc)
+            if t <= agora: tent.append(t)
+    erros = []
+    for wmo, nome in RADIOSSONDAS:
+        for t in sorted(tent, reverse=True):
+            u = f"https://weather.uwyo.edu/wsgi/sounding?datetime={t:%Y-%m-%d}%20{t:%H}:00:00&id={wmo}&type=TEXT:CSV&src=UNKNOWN"
+            st, txt = baixar(u, tentativas=1, timeout=60)
+            if not st or not str(txt).startswith("time,"):
+                erros.append(f"{wmo} {t:%d/%H}Z: sem dados"); continue
+            linhas = [l.split(",") for l in str(txt).strip().splitlines()[1:]]
+            niv = []
+            for c in linhas:
+                try:
+                    p, z = float(c[3]), float(c[4])
+                    tt = float(c[5]) if c[5].strip() else None; td = float(c[6]) if c[6].strip() else None
+                    dd = float(c[11]) if c[11].strip() else None; ff = float(c[12]) if c[12].strip() else None
+                except (ValueError, IndexError):
+                    continue
+                if p < 300: break
+                niv.append([p, round(z), tt, td, dd, None if ff is None else round(ff * 1.943844, 1)])
+            if not niv: continue
+            # mantém todos os níveis até 3.000 m e um a cada ~250 m acima
+            red, ult = [], -1e9
+            for n in niv:
+                if n[1] <= 3000 or n[1] - ult >= 250: red.append(n); ult = n[1]
+            la, lo = float(linhas[0][2]), float(linhas[0][1])
+            r = _m.pi / 180
+            dist = 6371 * 2 * _m.asin(_m.sqrt(_m.sin((la - lat) * r / 2) ** 2 + _m.cos(lat * r) * _m.cos(la * r) * _m.sin((lo - lon) * r / 2) ** 2))
+            if dist > raio_km:
+                erros.append(f"{wmo}: {dist:.0f} km da ZL (fora do raio)"); break
+            return {"fonte": "University of Wyoming — radiossonda observada", "estacao": wmo, "nome": nome, "lat": la, "lon": lo, "dist_km": round(dist, 1),
+                    "nominal_utc": t.isoformat(), "lancamento_utc": linhas[0][0].strip().replace(" ", "T") + "Z", "url": u,
+                    "colunas": ["p_hPa", "z_m_MSL", "t_C", "td_C", "dir_graus_V", "vel_kt"], "niveis": red}
+    return {"erro": "; ".join(erros) or "nenhuma estação no raio"}

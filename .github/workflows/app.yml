@@ -28,7 +28,7 @@ jobs:
         shell: pwsh
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller skyfield pywebview pillow tzdata
+          pip install pyinstaller skyfield pywebview pillow tzdata h5py numpy
           pip install eccodes eccodeslib
           if ($LASTEXITCODE -ne 0) { Write-Host "ecCodes indisponível no Windows — o app usará rucsoundings"; $global:LASTEXITCODE = 0 }
 
@@ -47,7 +47,7 @@ jobs:
           pyinstaller --noconfirm --onefile --noconsole --name DashMetPrecursores --icon app/icone.ico --paths . `
             --add-data "app/web;web" --add-data "app/de421.bsp;." `
             --collect-data skyfield --collect-data tzdata --collect-all webview `
-            --hidden-import coleta --hidden-import fontes_extra --hidden-import aisweb --hidden-import municipios_br @extra app/dashmet.py
+            --hidden-import coleta --hidden-import fontes_extra --hidden-import aisweb --hidden-import municipios_br --hidden-import conveccao --hidden-import h5py @extra app/dashmet.py
 
       - name: Diagnóstico do executável
         shell: pwsh
