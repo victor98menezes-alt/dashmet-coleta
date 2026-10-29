@@ -15,8 +15,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Testar fontes INMET/IBGE/CPTEC
-        run: python sonda_inmet.py
+      - name: Testar modelos Open-Meteo
+        run: python sonda_modelos.py
       - name: Gravar resultado
         run: |
           git config user.name "coleta-meteorologica"
