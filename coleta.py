@@ -17,7 +17,13 @@ import urllib.request
 from zoneinfo import ZoneInfo
 
 UA = "DashboardMeteorologicoSalto/1.0 (uso institucional nao comercial)"
-MODELOS = ["gfs_seamless", "ecmwf_ifs025", "icon_seamless"]
+# Janela H a H+5: quatro centros; ECMWF com superfície do IFS HRES 9 km (ecmwf_ifs) e níveis do IFS 0,25°
+MODELOS = ["gfs_seamless", "ecmwf_ifs025", "ecmwf_ifs", "icon_seamless", "ukmo_global_deterministic_10km"]
+# Tendência D a D+7: modelos de alcance >= 7 dias, só superfície
+MODELOS7 = ["gfs_seamless", "ecmwf_ifs025", "icon_seamless"]
+SUPERFICIE7 = ["temperature_2m", "precipitation", "showers", "precipitation_probability", "pressure_msl", "wind_speed_10m",
+               "wind_direction_10m", "wind_gusts_10m", "cape", "weather_code", "cloud_cover"]
+META_RODADA = {"GFS": "ncep_gfs013", "ECMWF": "ecmwf_ifs", "ICON": "dwd_icon", "UKMO": "ukmo_global_deterministic_10km"}
 SUPERFICIE = ["temperature_2m", "apparent_temperature", "dew_point_2m", "precipitation_probability", "precipitation", "showers",
               "cloud_cover", "cloud_cover_low", "cloud_cover_mid", "cloud_cover_high",
               "wind_speed_10m", "wind_direction_10m", "wind_gusts_10m", "cape", "pressure_msl", "visibility",
@@ -80,15 +86,30 @@ def baixar(url, tentativas=3, timeout=60, binario=False):
     return None, erro
 
 
-def url_open_meteo(lat, lon, data, fuso):
+def url_open_meteo(lat, lon, data, fuso, tipo="janela"):
+    """tipo 'janela': D-1 a D+1, quatro modelos, superfície + níveis; 'tendencia': D-1 a D+7, três modelos, superfície."""
     d = dt.date.fromisoformat(data)
-    hourly = list(SUPERFICIE) + [f"{v}_{p}hPa" for p in NIVEIS for v in VARS_NIVEL]
+    jan = tipo != "tendencia"
+    hourly = (list(SUPERFICIE) + [f"{v}_{p}hPa" for p in NIVEIS for v in VARS_NIVEL]) if jan else list(SUPERFICIE7)
     q = {
         "latitude": f"{lat:.4f}", "longitude": f"{lon:.4f}", "hourly": ",".join(hourly),
-        "models": ",".join(MODELOS), "wind_speed_unit": "kn", "timezone": fuso,
-        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=7)).isoformat(),
+        "models": ",".join(MODELOS if jan else MODELOS7), "wind_speed_unit": "kn", "timezone": fuso,
+        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=1 if jan else 7)).isoformat(),
     }
     return "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q, safe=",/")
+
+
+def rodadas(baixar_fn):
+    """Hora de inicialização da última rodada de cada modelo da janela (metadados públicos da Open-Meteo)."""
+    out = {}
+    for mid, nome in META_RODADA.items():
+        st, corpo = baixar_fn(f"https://api.open-meteo.com/data/{nome}/static/meta.json", tentativas=2, timeout=30)
+        try:
+            j = json.loads(corpo) if st else {}
+            out[mid] = {"init_utc": j.get("last_run_initialisation_time"), "disponivel_utc": j.get("last_run_availability_time"), "intervalo_s": j.get("update_interval_seconds")}
+        except Exception:
+            out[mid] = {"erro": str(corpo)[:120]}
+    return out
 
 
 def url_sondagem(lat, lon, quando_utc=None):
@@ -185,6 +206,12 @@ def main():
     meta["fontes"]["openmeteo"] = {"url": u, "status": st, "erro": None if st else corpo}
     if st:
         open(os.path.join(pasta, "openmeteo.json"), "w", encoding="utf-8").write(corpo)
+    u7 = url_open_meteo(lat, lon, data, fuso, "tendencia")
+    st7, corpo7 = baixar(u7)
+    meta["fontes"]["openmeteo7"] = {"url": u7, "status": st7, "erro": None if st7 else corpo7}
+    if st7:
+        open(os.path.join(pasta, "openmeteo7.json"), "w", encoding="utf-8").write(corpo7)
+    meta["rodadas"] = rodadas(baixar)
 
     # Sondagem NOAA (GFS, formato GSD): horário H em UTC (arredondado para baixo a múltiplo de 3 h); se vazio, a mais recente
     h_local = dt.datetime.fromisoformat(f"{data}T{hora:02d}:00").replace(tzinfo=ZoneInfo(fuso))

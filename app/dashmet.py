@@ -41,7 +41,7 @@ import coleta as C  # noqa: E402  (reaproveita a coleta do repositório)
 import fontes_extra as FX  # noqa: E402
 import aisweb as AW  # noqa: E402
 
-NOMES = {"mission", "models", "sounding", "models_raw", "sounding_raw", "obs", "analysis", "history", "astro", "oficiais", "aer", "config"}
+NOMES = {"mission", "models", "models7", "models7_raw", "sounding", "models_raw", "sounding_raw", "obs", "analysis", "history", "astro", "oficiais", "aer", "config"}
 _lock = threading.Lock()
 STATUS = {"rodando": False, "etapas": [], "inicio": None, "fim": None, "erro": None}
 
@@ -90,15 +90,28 @@ def coletar():
     cfg = ler("config", {}) or {}
     marca = agora()
 
-    # 1) Modelos — Open-Meteo (GFS, ECMWF, ICON)
-    etapa("Modelos GFS, ECMWF e ICON (Open-Meteo)…")
-    u = C.url_open_meteo(lat, lon, data, fuso)
+    # 1) Modelos — Open-Meteo: janela (GFS, ECMWF 9 km, ICON, UKMO 10 km) e tendência D a D+7 (GFS, ECMWF, ICON)
+    etapa("Rodadas dos modelos (horário de inicialização)…")
+    try:
+        rod = C.rodadas(C.baixar)
+    except Exception as e:
+        rod = {"erro": repr(e)}
+    etapa("Janela H a H+5: GFS, ECMWF 9 km, ICON e UK Met Office 10 km…")
+    u = C.url_open_meteo(lat, lon, data, fuso, "janela")
     st, corpo = C.baixar(u, tentativas=2, timeout=90)
     if st:
-        gravar("models_raw", {"raw": corpo, "url": u, "fetchedAt": marca})
-        etapa("Modelos carregados", True)
+        gravar("models_raw", {"raw": corpo, "url": u, "fetchedAt": marca, "rodadas": rod})
+        etapa("Modelos da janela carregados", True)
     else:
-        etapa("Modelos indisponíveis: " + str(corpo)[:160], False)
+        etapa("Modelos da janela indisponíveis: " + str(corpo)[:160], False)
+    etapa("Tendência D a D+7: GFS, ECMWF e ICON…")
+    u7 = C.url_open_meteo(lat, lon, data, fuso, "tendencia")
+    st7, corpo7 = C.baixar(u7, tentativas=2, timeout=90)
+    if st7:
+        gravar("models7_raw", {"raw": corpo7, "url": u7, "fetchedAt": marca})
+        etapa("Modelos da tendência carregados", True)
+    else:
+        etapa("Modelos da tendência indisponíveis: " + str(corpo7)[:160], False)
 
     # 2) Sondagem NOAA — rucsoundings (GSD); alternativa NOMADS (GRIB2, se ecCodes disponível)
     etapa("Sondagem NOAA…")
