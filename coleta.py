@@ -86,15 +86,16 @@ def baixar(url, tentativas=3, timeout=60, binario=False):
     return None, erro
 
 
-def url_open_meteo(lat, lon, data, fuso, tipo="janela"):
-    """tipo 'janela': D-1 a D+1, quatro modelos, superfície + níveis; 'tendencia': D-1 a D+7, três modelos, superfície."""
+def url_open_meteo(lat, lon, data, fuso, tipo="janela", hora=0):
+    """tipo 'janela': somente o dia D (D+1 só se H+5 passar da meia-noite), quatro modelos, superfície + níveis;
+    'tendencia': D a D+7, três modelos, superfície."""
     d = dt.date.fromisoformat(data)
     jan = tipo != "tendencia"
     hourly = (list(SUPERFICIE) + [f"{v}_{p}hPa" for p in NIVEIS for v in VARS_NIVEL]) if jan else list(SUPERFICIE7)
     q = {
         "latitude": f"{lat:.4f}", "longitude": f"{lon:.4f}", "hourly": ",".join(hourly),
         "models": ",".join(MODELOS if jan else MODELOS7), "wind_speed_unit": "kn", "timezone": fuso,
-        "start_date": (d - dt.timedelta(days=1)).isoformat(), "end_date": (d + dt.timedelta(days=1 if jan else 7)).isoformat(),
+        "start_date": d.isoformat(), "end_date": (d + dt.timedelta(days=(1 if int(hora or 0) + 5 >= 24 else 0) if jan else 7)).isoformat(),
     }
     return "https://api.open-meteo.com/v1/forecast?" + urllib.parse.urlencode(q, safe=",/")
 
@@ -201,7 +202,7 @@ def main():
     meta = {"run_id": run_id, "coletado_em_utc": agora, "lat": lat, "lon": lon, "data": data, "hora_local": hora, "fuso": fuso, "fontes": {}}
 
     # Open-Meteo: GFS + ECMWF + ICON, superfície e níveis de pressão
-    u = url_open_meteo(lat, lon, data, fuso)
+    u = url_open_meteo(lat, lon, data, fuso, "janela", hora)
     st, corpo = baixar(u)
     meta["fontes"]["openmeteo"] = {"url": u, "status": st, "erro": None if st else corpo}
     if st:

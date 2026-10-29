@@ -97,7 +97,7 @@ def coletar():
     except Exception as e:
         rod = {"erro": repr(e)}
     etapa("Janela H a H+5: GFS, ECMWF 9 km, ICON e UK Met Office 10 km…")
-    u = C.url_open_meteo(lat, lon, data, fuso, "janela")
+    u = C.url_open_meteo(lat, lon, data, fuso, "janela", hora)
     st, corpo = C.baixar(u, tentativas=2, timeout=90)
     if st:
         gravar("models_raw", {"raw": corpo, "url": u, "fetchedAt": marca, "rodadas": rod})
