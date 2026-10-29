@@ -94,6 +94,18 @@ const MET = (() => {
     const angle = Math.atan2(Math.cos(s.dec) * Math.sin(s.ra - m.ra), Math.sin(s.dec) * Math.cos(m.dec) - Math.cos(s.dec) * Math.sin(m.dec) * Math.cos(s.ra - m.ra));
     return { fraction: (1 + Math.cos(inc)) / 2, phase: 0.5 + 0.5 * inc * (angle < 0 ? -1 : 1) / PI };
   }
+  /** Nome da fase a partir do ângulo de fase (0° = Nova, 90° = Quarto Crescente, 180° = Cheia, 270° = Quarto Minguante). */
+  function phaseNameDeg(d) {
+    d = ((d % 360) + 360) % 360;
+    if (d < 6 || d >= 354) return 'Lua Nova';
+    if (d < 84) return 'Lua Crescente';
+    if (d < 96) return 'Quarto Crescente';
+    if (d < 174) return 'Crescente Gibosa';
+    if (d < 186) return 'Lua Cheia';
+    if (d < 264) return 'Minguante Gibosa';
+    if (d < 276) return 'Quarto Minguante';
+    return 'Lua Minguante';
+  }
   function phaseName(p) {
     if (p < 0.03 || p > 0.97) return 'Lua Nova';
     if (p < 0.22) return 'Crescente (côncava)';
@@ -128,7 +140,9 @@ const MET = (() => {
     const [a, b] = dayBounds(dateStr, tz);
     const cs = crossings(t => sunAlt(t, lat, lon), NAUT, a, b);
     const icmn = cs.find(c => c.rising), fcvn = [...cs].reverse().find(c => !c.rising);
-    return { icmn: icmn ? icmn.t : null, fcvn: fcvn ? fcvn.t : null };
+    const cv = crossings(t => sunAlt(t, lat, lon), -6, a, b);
+    const icmc = cv.find(c => c.rising), fcvc = [...cv].reverse().find(c => !c.rising);
+    return { icmn: icmn ? icmn.t : null, fcvn: fcvn ? fcvn.t : null, icmc: icmc ? icmc.t : null, fcvc: fcvc ? fcvc.t : null };
   }
   function nightAnalysis(t0, t1, lat, lon) {
     if (t0 == null || t1 == null || t1 <= t0) return null;
@@ -149,11 +163,11 @@ const MET = (() => {
     const rise = mc.find(c => c.rising), set = mc.find(c => !c.rising);
     const noonIllum = moonIllum((a + b) / 2);
     return {
-      icmn: D.icmn, fcvn: D.fcvn,
+      icmn: D.icmn, fcvn: D.fcvn, icmc: D.icmc, fcvc: D.fcvc,
       moonrise: rise ? rise.t : null, moonset: set ? set.t : null,
       illum: noonIllum,
-      nightBefore: nightAnalysis(Dm.fcvn, D.icmn, lat, lon),
-      nightAfter: nightAnalysis(D.fcvn, Dp.icmn, lat, lon),
+      nightBefore: Object.assign(nightAnalysis(Dm.fcvc, D.icmc, lat, lon) || {}, { fcvn: Dm.fcvn, icmn: D.icmn }),
+      nightAfter: Object.assign(nightAnalysis(D.fcvc, Dp.icmc, lat, lon) || {}, { fcvn: D.fcvn, icmn: Dp.icmn }),
     };
   }
 
@@ -198,21 +212,32 @@ const MET = (() => {
   const lclFt = (t, td) => (t == null || td == null) ? null : Math.max(0, Math.round((t - td) * 125 * 3.28084 / 100) * 100);
 
   /* ---------- Open-Meteo ---------- */
+  /** Janela H a H+5 (itens 1 a 3): quatro centros independentes, na maior resolução disponível para o Brasil.
+      ECMWF: superfície do IFS HRES 9 km (ecmwf_ifs) + níveis de pressão do IFS 0,25° (o 9 km não publica níveis). */
   const MODELS = [
-    { key: 'gfs_seamless', id: 'GFS', label: 'GFS (NOAA/NCEP)' },
-    { key: 'ecmwf_ifs025', id: 'ECMWF', label: 'ECMWF IFS 0,25°' },
-    { key: 'icon_seamless', id: 'ICON', label: 'ICON (DWD)' },
+    { key: 'gfs_seamless', id: 'GFS', label: 'GFS (NOAA/NCEP)', meta: 'ncep_gfs013' },
+    { key: 'ecmwf_ifs025', hires: 'ecmwf_ifs', id: 'ECMWF', label: 'ECMWF IFS HRES 9 km + níveis 0,25°', meta: 'ecmwf_ifs' },
+    { key: 'icon_seamless', id: 'ICON', label: 'ICON global (DWD)', meta: 'dwd_icon' },
+    { key: 'ukmo_global_deterministic_10km', id: 'UKMO', label: 'UK Met Office global 10 km', meta: 'ukmo_global_deterministic_10km' },
   ];
-  const SURF = ['temperature_2m', 'dew_point_2m', 'precipitation_probability', 'precipitation', 'showers', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'pressure_msl'];
-  const LEVELS = [1000, 925, 850, 700, 600, 500, 400, 300];
-  const LVARS = ['wind_speed', 'wind_direction', 'geopotential_height', 'temperature'];
-  function openMeteoUrl(m) {
-    const hourly = [...SURF];
-    LEVELS.forEach(p => LVARS.forEach(v => hourly.push(`${v}_${p}hPa`)));
+  /** Tendência D a D+7 (item 4): modelos de alcance de 7 dias ou mais, só variáveis de superfície. */
+  const MODELS7 = [MODELS[0], { key: 'ecmwf_ifs025', id: 'ECMWF', label: 'ECMWF IFS 0,25°' }, MODELS[2]];
+  const SURF7 = ['temperature_2m', 'precipitation', 'showers', 'precipitation_probability', 'pressure_msl', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'weather_code', 'cloud_cover'];
+  const metaUrl = id => { const x = MODELS.find(mm => mm.id === id); return x && x.meta ? `https://api.open-meteo.com/data/${x.meta}/static/meta.json` : null; };
+  const SURF = ['temperature_2m', 'apparent_temperature', 'dew_point_2m', 'precipitation_probability', 'precipitation', 'showers', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'pressure_msl', 'visibility', 'wind_speed_80m', 'wind_direction_80m', 'wind_speed_120m', 'wind_direction_120m', 'wind_speed_180m', 'wind_direction_180m', 'freezing_level_height', 'lifted_index', 'weather_code'];
+  const LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600, 500, 400, 300];
+  const LVARS = ['wind_speed', 'wind_direction', 'geopotential_height', 'temperature', 'relative_humidity', 'cloud_cover'];
+  /** Último dia necessário para a janela: o próprio dia D, ou D+1 só quando H+5 passa da meia-noite. */
+  const janelaFim = m => (+m.hour || 0) + 5 >= 24 ? shiftDate(m.date, 1) : m.date;
+  /** kind 'janela' = somente o dia D (D+1 apenas se H+5 cruzar a meia-noite), quatro modelos, superfície + níveis; 'tendencia' = D-1 a D+7, três modelos, superfície. */
+  function openMeteoUrl(m, kind = 'janela') {
+    const jan = kind !== 'tendencia', hourly = jan ? [...SURF] : [...SURF7];
+    if (jan) LEVELS.forEach(p => LVARS.forEach(v => hourly.push(`${v}_${p}hPa`)));
+    const keys = jan ? MODELS.flatMap(x => x.hires ? [x.key, x.hires] : [x.key]) : MODELS7.map(x => x.key);
     const q = new URLSearchParams({
       latitude: m.lat.toFixed(4), longitude: m.lon.toFixed(4), hourly: hourly.join(','),
-      models: MODELS.map(x => x.key).join(','), wind_speed_unit: 'kn', timezone: m.tz,
-      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, 1),
+      models: keys.join(','), wind_speed_unit: 'kn', timezone: m.tz,
+      start_date: m.date, end_date: jan ? janelaFim(m) : shiftDate(m.date, 7),
     });
     return 'https://api.open-meteo.com/v1/forecast?' + q.toString().replace(/%2C/g, ',');
   }
@@ -228,6 +253,8 @@ const MET = (() => {
       if (!has) return;
       const o = {};
       keys.forEach(k => { if (k.endsWith('_' + M.key)) o[k.slice(0, -(M.key.length + 1))] = h[k]; });
+      // alta resolução (mesmo modelo): substitui as variáveis que ela publica
+      if (M.hires) keys.forEach(k => { if (k.endsWith('_' + M.hires)) { const arr = h[k], v = k.slice(0, -(M.hires.length + 1)); if (Array.isArray(arr) && arr.some(x => x != null)) o[v] = arr; } });
       models[M.id] = o;
     });
     if (!Object.keys(models).length) { // resposta de modelo único (sem sufixo)
@@ -236,7 +263,7 @@ const MET = (() => {
     }
     const units = j.hourly_units || {};
     if (units.wind_speed_10m && !/kn/.test(units.wind_speed_10m)) throw new Error('Unidade de vento diferente de nós (' + units.wind_speed_10m + '). Use o link gerado, que pede wind_speed_unit=kn.');
-    return { time: h.time, models, meta: { lat: j.latitude, lon: j.longitude, elevation: j.elevation, tz: j.timezone, generationtime_ms: j.generationtime_ms } };
+    return { time: h.time, models, kind: h.time.length > 100 ? 'tendencia' : 'janela', meta: { lat: j.latitude, lon: j.longitude, elevation: j.elevation, tz: j.timezone, generationtime_ms: j.generationtime_ms } };
   }
 
   /* ---------- Sondagem NOAA (formato GSD, rucsoundings.noaa.gov) ---------- */
@@ -288,7 +315,7 @@ const MET = (() => {
   }
   function splitMessages(text, kind) {
     const t = String(text).replace(/=/g, ' =').replace(/\r/g, '');
-    const re = kind === 'TAF' ? /TAF\b[\s\S]*?(?==|(?=\bTAF\b)|$)/g : /(METAR|SPECI)\b[\s\S]*?(?==|(?=\b(?:METAR|SPECI)\b)|$)/g;
+    const re = kind === 'TAF' ? /TAF\b[\s\S]*?(?==|(?=\b(?:TAF|METAR|SPECI)\b)|$)/g : /(METAR|SPECI)\b[\s\S]*?(?==|(?=\b(?:METAR|SPECI|TAF)\b)|$)/g;
     const out = (t.match(re) || []).map(x => x.replace(/\s+/g, ' ').trim()).filter(x => x.length > 10);
     return out;
   }
@@ -323,6 +350,135 @@ const MET = (() => {
     return { valid: true, cb: act.some(g => g.cb), tcu: act.some(g => g.tcu), ts: act.some(g => g.ts), groups: act.map(g => (g.kind === 'BASE' ? '' : g.kind === 'PROB' ? 'PROB' + g.prob + ' ' : g.kind + ' ') + g.text) };
   }
 
-  return { tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, SURF, LEVELS, LVARS, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
+
+
+  /* ---------- Tempo presente (código WMO dos modelos → abreviatura METAR) ---------- */
+  const WMO = { 45: 'FG', 48: 'FG', 51: '-DZ', 53: 'DZ', 55: '+DZ', 56: '-FZDZ', 57: 'FZDZ', 61: '-RA', 63: 'RA', 65: '+RA', 66: '-FZRA', 67: 'FZRA', 71: '-SN', 73: 'SN', 75: '+SN', 77: 'SG', 80: '-SHRA', 81: 'SHRA', 82: '+SHRA', 85: '-SHSN', 86: 'SHSN', 95: 'TSRA', 96: 'TSGR', 99: '+TSGR' };
+  const wmoWx = c => c == null ? null : (WMO[Math.round(c)] || null);
+  const WXDESC = { SH: 'pancadas', TSSH: 'trovoada com pancadas', GR: 'granizo', SQ: 'tempestade de vento', NSW: 'sem tempo significativo', BCFG: 'bancos de nevoeiro', MIFG: 'nevoeiro baixo', FG: 'nevoeiro', BR: 'névoa úmida', HZ: 'névoa seca', DZ: 'chuvisco', RA: 'chuva', SHRA: 'pancadas de chuva', TSRA: 'trovoada com chuva', TS: 'trovoada', TSGR: 'trovoada com granizo', SN: 'neve', FZRA: 'chuva congelante', FZDZ: 'chuvisco congelante', SHSN: 'pancadas de neve', SG: 'grãos de neve' };
+  /** Decodificação do tempo presente conforme a Tabela 4678 (qualificador de intensidade/proximidade + descritor + precipitação/obscurecedor/outros). */
+  const WX_DESCR = { MI: 'baixo', BC: 'em bancos', PR: 'parcial', DR: 'flutuante', BL: 'soprada', SH: 'pancada', TS: 'trovoada', FZ: 'congelante' };
+  const WX_FEN = { DZ: 'chuvisco', RA: 'chuva', SN: 'neve', SG: 'grãos de neve', IC: 'cristais de gelo', PE: 'pelotas de gelo', PL: 'pelotas de gelo', GR: 'granizo', GS: 'granizo pequeno e/ou grãos de neve',
+    BR: 'névoa úmida', FG: 'nevoeiro', FU: 'fumaça', VA: 'cinzas vulcânicas', DU: 'poeira extensa', SA: 'areia', HZ: 'névoa seca',
+    PO: 'poeira/areia em redemoinhos', SQ: 'tempestade', FC: 'nuvem funil (tornado ou tromba d\'água)', SS: 'tempestade de areia', DS: 'tempestade de poeira', UP: 'precipitação desconhecida' };
+  const wxDesc = w => {
+    if (!w) return '';
+    if (w === 'NSW') return 'sem tempo significativo';
+    let s = w, q = '';
+    if (s.startsWith('VC')) { q = 'nas vizinhanças'; s = s.slice(2); } else if (s[0] === '-') { q = 'leve'; s = s.slice(1); } else if (s[0] === '+') { q = 'forte'; s = s.slice(1); }
+    const d = (s.match(/^(MI|BC|PR|DR|BL|SH|TS|FZ)/) || [])[1]; if (d) s = s.slice(2);
+    const f = (s.match(/.{2}/g) || []).map(x => WX_FEN[x] || x);
+    const fen = f.join(' e ');
+    let txt;
+    if (d === 'TS') txt = fen ? `trovoada com ${fen}` : 'trovoada';
+    else if (d === 'SH') txt = fen ? `pancada de ${fen}` : 'pancadas';
+    else if (d) txt = `${fen} ${WX_DESCR[d]}`;
+    else txt = fen;
+    if (w.startsWith('+') && /FC/.test(w)) return 'tornado ou tromba d\'água';
+    return q ? `${txt} ${q}` : txt;
+  };
+  const COVDESC = { FEW: 'poucas nuvens', SCT: 'nuvens esparsas', BKN: 'nuvens fragmentadas', OVC: 'céu encoberto' };
+  /** Camadas no formato METAR a partir de [{zAgl (m), cover (%)}] ordenado; até 3 camadas; base em centenas de pés. */
+  function layersFrom(levels, nclFt) {
+    const out = []; let cur = null, prevClear = 0;
+    levels.forEach(l => {
+      if (l.cover != null && l.cover >= 6) {
+        if (!cur) { let baseFt = l.zAgl / 0.3048; if (nclFt != null && nclFt > prevClear / 0.3048 && nclFt < baseFt) baseFt = nclFt; cur = { baseFt, max: l.cover }; }
+        else cur.max = Math.max(cur.max, l.cover);
+      } else { if (cur) { out.push(cur); cur = null; } prevClear = l.zAgl; }
+    });
+    if (cur) out.push(cur);
+    return out.slice(0, 3).map(x => ({ cov: coverCode(x.max), baseFt: Math.max(100, Math.round(x.baseFt / 100) * 100), pct: x.max }))
+      .filter(x => x.cov && x.cov !== 'NSC')
+      .map(x => Object.assign(x, { code: x.cov + String(Math.min(999, Math.round(x.baseFt / 100))).padStart(3, '0') }));
+  }
+
+  /* ---------- Vento por altura (interpolação linear em u/v na vertical, altitude MSL) ---------- */
+  const toUV = (kt, dir) => (kt == null || dir == null) ? null : { u: -kt * Math.sin(dir * Math.PI / 180), v: -kt * Math.cos(dir * Math.PI / 180) };
+  const fromUV = (u, v) => ({ kt: Math.hypot(u, v), dir: (Math.atan2(-u, -v) * 180 / Math.PI + 360) % 360 });
+  /** pts: [{z (m MSL), kt, dir, tag}] ; devolve vento interpolado em zt (m MSL) e os dois níveis usados. */
+  function windAt(pts, zt) {
+    const a = pts.filter(p => p.z != null && p.kt != null && p.dir != null).sort((x, y) => x.z - y.z);
+    if (!a.length) return null;
+    if (zt <= a[0].z) return Object.assign({ below: true, from: a[0], to: a[0] }, { kt: a[0].kt, dir: a[0].dir });
+    for (let i = 1; i < a.length; i++) {
+      if (zt <= a[i].z) {
+        const f = (zt - a[i - 1].z) / (a[i].z - a[i - 1].z), p = toUV(a[i - 1].kt, a[i - 1].dir), q = toUV(a[i].kt, a[i].dir);
+        return Object.assign({ from: a[i - 1], to: a[i] }, fromUV(p.u + f * (q.u - p.u), p.v + f * (q.v - p.v)));
+      }
+    }
+    return null;
+  }
+  /** Componentes do vento (vento de onde sopra, graus verdadeiros) para uma pista de rumo verdadeiro rwy. */
+  function components(kt, dir, rwy) {
+    if (kt == null || dir == null || rwy == null) return null;
+    const a = (dir - rwy) * Math.PI / 180;
+    return { head: kt * Math.cos(a), cross: kt * Math.sin(a) };
+  }
+  /** Vento previsto pelo TAF num instante: grupo base/BECMG/FM mais recente; TEMPO/PROB como variação. */
+  function tafWind(taf, utcMs) {
+    if (!taf || taf.validFrom == null || utcMs < taf.validFrom || utcMs >= taf.validTo) return null;
+    const wind = txt => { const m = txt.match(/(?:^|\s)(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?KT\b/); return m ? { dir: m[1] === 'VRB' ? null : +m[1], vrb: m[1] === 'VRB', kt: +m[2], gust: m[3] ? +m[3] : null } : null; };
+    let prev = wind(taf.groups[0].tokens.join(' ')), vari = [];
+    taf.groups.slice(1).forEach(g => {
+      if (g.from == null) return;
+      const w = wind(g.tokens.join(' '));
+      if (!w) return;
+      if ((g.kind === 'BECMG' && utcMs >= g.from) || (g.kind === 'FM' && utcMs >= g.from && utcMs < g.to)) prev = w;
+      else if ((g.kind === 'TEMPO' || g.kind === 'PROB') && utcMs >= g.from && utcMs < g.to) vari.push(Object.assign({ tipo: g.kind === 'PROB' ? 'PROB' + g.prob : 'TEMPO' }, w));
+    });
+    return { prev, vari };
+  }
+  /** Teto adotado para o salto (ft) = base da camada mais baixa, de FEW a OVC (ou VV), de um METAR já interpretado. */
+  const ceilingFt = m => { const c = (m && m.clouds || []).filter(x => /FEW|SCT|BKN|OVC|VV/.test(x.cov) && x.base != null).map(x => x.base); return c.length ? Math.min(...c) : null; };
+
+
+  /* ---------- Atmosfera padrão e altitude-densidade ---------- */
+  /** Altitude-pressão (ft) a partir da elevação (ft) e do QNH (hPa): 1 hPa ≈ 27 ft próximo ao nível do mar (fórmula barométrica ISA). */
+  function pressureAlt(elevFt, qnh) {
+    if (elevFt == null || qnh == null) return null;
+    // pressão na estação pela ISA a partir do QNH, depois altitude-pressão exata pela ISA
+    const h = elevFt * 0.3048, p = qnh * Math.pow(1 - 2.25577e-5 * h, 5.25588);
+    return (1 - Math.pow(p / 1013.25, 0.190263)) * 145366.45;
+  }
+  /** Altitude-densidade (ft): DA ≈ PA + 118,8 × (OAT − T_ISA), T_ISA = 15 − 1,98 °C/1000 ft. */
+  function densityAlt(pa, oat) { if (pa == null || oat == null) return null; const isa = 15 - 1.98 * pa / 1000; return pa + 118.8 * (oat - isa); }
+  /** Interpolação linear de um escalar em altitude MSL. pts: [{z, v}] */
+  function scalarAt(pts, zt) {
+    const a = pts.filter(p => p.z != null && p.v != null).sort((x, y) => x.z - y.z);
+    if (!a.length) return null;
+    if (zt <= a[0].z) return a[0].v;
+    for (let i = 1; i < a.length; i++) if (zt <= a[i].z) { const f = (zt - a[i - 1].z) / (a[i].z - a[i - 1].z); return a[i - 1].v + f * (a[i].v - a[i - 1].v); }
+    return null;
+  }
+  /** Condições previstas no TAF num instante: visibilidade (m) e teto (ft) do grupo predominante; TEMPO/PROB como variação. */
+  function tafCond(taf, utcMs) {
+    if (!taf || taf.validFrom == null || utcMs < taf.validFrom || utcMs >= taf.validTo) return null;
+    const parse = txt => {
+      const tk = txt.split(' '), o = {};
+      tk.forEach(x => {
+        let m;
+        if (x === 'CAVOK') { o.vis = 9999; o.ceil = null; o.cavok = true; o.cl = true; }
+        else if (/^\d{4}$/.test(x) && !/\//.test(x) && o.vis == null) o.vis = +x;
+        else if ((m = x.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3})/))) { o.cl = true; o.ceil = o.ceil == null ? +m[2] * 100 : Math.min(o.ceil, +m[2] * 100); (o.clouds = o.clouds || []).push(x); }
+        else if (/^NSC$|^SKC$|^NCD$/.test(x)) { o.cl = true; (o.clouds = o.clouds || []).push(x); }
+        else if (/^(\+|-|VC)?(TS|SH|FZ|MI|BC|DR|BL)?(RA|DZ|SN|GR|GS|BR|FG|HZ|FU|SQ|PL)+$|^(\+|-|VC)?TS$|^NSW$/.test(x)) (o.wx = o.wx || []).push(x);
+      });
+      return o;
+    };
+    const tokensNoTime = g => g.tokens.filter(x => !/^\d{4}\/\d{4}$/.test(x) && !/^\d{6}Z$/.test(x) && !/^T[XN]/.test(x)).join(' ');
+    const base = parse(tokensNoTime(taf.groups[0]).replace(/^TAF (AMD |COR )?[A-Z]{4} /, ''));
+    let prev = { vis: base.vis ?? null, ceil: base.cl ? base.ceil ?? null : null, clouds: base.clouds || (base.cavok ? ['CAVOK'] : []), wx: base.wx || [] };
+    const vari = [];
+    taf.groups.slice(1).forEach(g => {
+      if (g.from == null) return;
+      const p = parse(tokensNoTime(g));
+      if ((g.kind === 'BECMG' && utcMs >= g.from) || (g.kind === 'FM' && utcMs >= g.from && utcMs < g.to)) { if (p.vis != null) prev.vis = p.vis; if (p.cl) { prev.ceil = p.ceil ?? null; prev.clouds = p.clouds || []; } if (p.wx) prev.wx = p.wx.filter(w => w !== 'NSW'); }
+      else if ((g.kind === 'TEMPO' || g.kind === 'PROB') && utcMs >= g.from && utcMs < g.to && (p.vis != null || p.cl || p.wx)) vari.push({ tipo: g.kind === 'PROB' ? 'PROB' + g.prob : 'TEMPO', vis: p.vis ?? null, ceil: p.cl ? p.ceil ?? null : undefined, clouds: p.clouds || [], wx: p.wx || [] });
+    });
+    return { prev, vari };
+  }
+
+  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, janelaFim, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
 })();
 if (typeof module !== 'undefined') module.exports = MET;
