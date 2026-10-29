@@ -15,8 +15,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Testar modelos Open-Meteo
-        run: python sonda_modelos.py
+      - name: Testar radiossonda, radar e GOES
+        run: |
+          pip install --quiet h5py numpy
+          python sonda_fontes2.py
       - name: Gravar resultado
         run: |
           git config user.name "coleta-meteorologica"
