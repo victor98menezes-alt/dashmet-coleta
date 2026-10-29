@@ -1,0 +1,287 @@
+{
+ "uwyo_wsgi_list_12": {
+  "status": 200,
+  "bytes": 14649,
+  "s": 8.3,
+  "ctype": "text/html; charset=UTF-8",
+  "texto": "<!DOCTYPE html>\n<HTML>\n<HEAD>\n<TITLE>Wyoming Weather Web</TITLE>\n\n<link rel=\"stylesheet\" href=\"/resources/weather.css\" type=\"text/css\">\n\n</HEAD>\n\n<BODY>\n<link rel=\"stylesheet\" href=\"/resources/weather.css\" type=\"text/css\">\n<div id=\"masthead\">\n<table style=\"min-width:1005px; max-width:2400px;\" width=\"100%\" border=\"0\" \n  cellpadding=\"0\" cellspacing=\"0\">\n <tr>\n  <td><div id=\"logo-container\">\n   <img src=\"/images/uwlogo.png\" border=\"0\"></div></td>\n  <td valign=\"top\" align=\"right\">\n   <table>\n    <tr>\n     <td valign=\"top\" align=\"right\"><div id=\"wywx\"><a href=\"/index.shtml\">\n      Wyoming Weather Web</A></div></td>\n    </tr>\n    <tr>\n     <td valign=\"top\" align=\"right\" width=\"600\">\n     <div id=\"depts\">\n      <a href=\"http://www.uwyo.edu/atsc\">Atmospheric Science</A> |\n      <a href=\"http://www.uwyo.edu/ceas\">Engineering and Applied Science</A> |\n      <a href=\"http://www.uwyo.edu/\">UWyo Home</A>\n     </div>\n     </td>\n    </tr>\n   </table>\n  </td>\n </tr>\n</table>\n</div>\n\n<!-- left menu -->\n<!-- #include virtual=\"/resources/leftmenu.html\" -->\n\n<div id=\"leftmenu\">\n<p>Other data for Station 83746</p>\n<ul>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=TEXT:LIST&src=BUFR\">00Z Oct 29 </a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=INDICES&src=BUFR\">\n              Thermodyamic Indices</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=TEXT:AVIATION&src=BUFR\">\n              Aviation Units</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=TEXT:CSV&src=BUFR\">\n              Comma Separated Values</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=PNG:SKEWT&src=BUFR\">\n              Skew-T PNG image</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=PDF:SKEWT&src=BUFR\">\n              Skew-T PDF file</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=PNG:STUVE&src=BUFR\">\n              Stuve PNG image</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=PDF:STUVE&src=BUFR\">\n              Stuve PDF file</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=PNG:STUVE10&src=BUFR\">\n              Stuve PNG image to 10 hPa</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=PDF:STUVE10&src=BUFR\">\n              Stuve PDF file to 10 hPa</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=INVENTORY&src=BUFR\">\n              Inventory for year</a></li>\n</ul>\n</div>\n<div id=\"maincolumn\">\n<H1>Observations for Station 83746 at 12 UTC 29 Oct 2026</H1>\n<H3>GALEAO, Brazil</H3>\n\n<style>\n.collapsible {\n  background-color: #777;\n  color: white;\n  cursor: pointer;\n  padding: 8px;\n  width: 100%;\n  border: none;\n  text-align: left;\n  outline: none;\n  font-size: 15px;\n}\n\n.active, .collapsible:hover {\n  background-color: #555;\n}\n\n.collapsible:before {\n  content: \"\\2212 \";\n  color: white;\n  font-weight: bold;\n  float: left;\n  margin-left: 5px;\n}\n\n.active:before {\n  content: '\\002B ';\n}\n\n.content {\n  padding: 0 18px;\n  max-height: 0;\n  overflow: hidden;\n  transition: max-height 0.2s ease-out;\n  background-color: #f1f1f1;\n}\n</style>\n<BR/><I>Latitude: -22.809 Longitude: -43.250</I>\n<BR/><BR/>\n<button class=\"collapsible\">Profile</button><div class=\"content\">\n<PRE>\n-----------------------------------------------------------------------------\n   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SPED   THTA   THTE   THTV\n    hPa      m      C      C      %   g/kg    deg    m/s      K      K      K \n-----------------------------------------------------------------------------\n 1016.6      8   22.8   18.8     78  13.56     20    1.0  294.6  333.5  297.0\n 1000.0    152   20.9   18.8     88  13.73    189    0.8  294.0  333.4  296.4\n  982.1    308   19.8   18.1     90  13.45    146    1.9  294.4  333.1  296.8\n  972.0    398   20.7   15.9     74  11.76    136    2.9  296.3  330.4  298.4\n  925.0    825   18.6   15.2     81  11.85    356    3.8  298.3  333.0  300.4\n  892.9   1128   16.8   14.6     87  11.80    358    5.1  299.5  334.2  301.6\n  882.6   1227   16.3   14.3     88  11.72      7    3.3  300.0  334.5  302.1\n  871.3   1338   17.5   13.9     79  11.55    334    4.3  302.3  336.7  304.4\n  851.7   1534   16.4   13.8     84  11.69    311    6.3  303.2  338.1  305.3\n  850.0   1548   16.3   13.9     85  11.80    310    6.3  303.2  338.5  305.4\n  831.6   1736   14.9   13.3     91  11.65    309    5.0  303.6  338.5  305.7\n  798.5   2080   12.8   12.3     96  11.31    268    3.8  305.0  339.0  307.0\n  784.0   2234   12.6   11.5     93  10.94    245    5.6  306.3  339.5  308.3\n  763.1   2460   11.1   11.1    100  10.93    247    7.9  307.0  340.3  309.1\n  721.5   2928    9.1    7.9     92   9.30    251   13.0  309.8  338.5  311.5\n  700.0   3179    7.6    6.4     92   8.64    256   11.8  310.8  337.7  312.5\n  675.2   3475    5.2    5.2    100   8.26    258   12.1  311.4  337.2  313.0\n  667.5   3569    4.8    4.6     99   8.01    264   10.9  312.0  337.0  313.5\n  657.1   3699    7.1   -0.0     61   5.82    278   10.7  315.9  334.6  317.0\n  619.5   4180    3.2    0.6     83   6.46    296   12.4  316.9  337.6  318.1\n  598.0   4466    1.1   -0.7     88   6.09    292   10.4  317.6  337.3  318.8\n  593.3   4528    1.1   -1.2     85   5.93    295   10.1  318.3  337.5  319.4\n  554.0   5077   -2.1   -4.5     83   4.95    284   10.4  320.9  337.2  321.9\n  514.9   5658   -5.4   -6.3     93   4.63    312   15.8  323.6  339.1  324.5\n  500.0   5889   -6.4   -6.5    100   4.72    312   16.5  325.1  341.0  326.1\n  496.9   5936   -6.7   -6.7    100   4.67    311   16.2  325.4  341.1  326.3\n  400.0   7603  -16.7  -16.9     99   2.56    294   18.7  333.2  342.3  333.7\n  391.9   7756  -17.6  -17.9     98   2.39    289   19.3  333.9  342.5  334.4\n  365.6   8273  -20.6  -24.8     69   1.40    280   22.6  336.7  341.8  336.9\n  348.1   8633  -23.1  -26.9     71   1."
+ },
+ "uwyo_wsgi_csv_12": {
+  "status": 200,
+  "bytes": 8403,
+  "s": 8.1,
+  "ctype": "text/csv",
+  "texto": "time,longitude,latitude,pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,ice point temperature_C,relative humidity_%,humidity wrt ice_%,mixing ratio_g/kg,wind direction_degree,wind speed_m/s\n2026-10-29 11:30:54,-43.2499,-22.8090,1016.6,    8, 22.8, 18.8, 18.8, 78, 78,13.56, 20, 1.0\n2026-10-29 11:31:24,-43.2498,-22.8086,1000.0,  152, 20.9, 18.8, 18.8, 88, 88,13.73,189, 0.8\n2026-10-29 11:31:40,-43.2502,-22.8084, 982.1,  308, 19.8, 18.1, 18.1, 90, 90,13.45,146, 1.9\n2026-10-29 11:32:55,-43.2508,-22.8079, 972.0,  398, 20.7, 15.9, 15.9, 74, 74,11.76,136, 2.9\n2026-10-29 11:33:47,-43.2506,-22.8110, 925.0,  825, 18.6, 15.2, 15.2, 81, 81,11.85,356, 3.8\n2026-10-29 11:34:05,-43.2507,-22.8116, 892.9, 1128, 16.8, 14.6, 14.6, 87, 87,11.80,358, 5.1\n2026-10-29 11:34:24,-43.2506,-22.8122, 882.6, 1227, 16.3, 14.3, 14.3, 88, 88,11.72,  7, 3.3\n2026-10-29 11:34:58,-43.2494,-22.8135, 871.3, 1338, 17.5, 13.9, 13.9, 79, 79,11.55,334, 4.3\n2026-10-29 11:35:01,-43.2493,-22.8136, 851.7, 1534, 16.4, 13.8, 13.8, 84, 84,11.69,311, 6.3\n2026-10-29 11:35:32,-43.2480,-22.8147, 850.0, 1548, 16.3, 13.9, 13.9, 85, 85,11.80,310, 6.3\n2026-10-29 11:36:30,-43.2458,-22.8155, 831.6, 1736, 14.9, 13.3, 13.3, 91, 91,11.65,309, 5.0\n2026-10-29 11:36:56,-43.2447,-22.8152, 798.5, 2080, 12.8, 12.3, 12.3, 96, 96,11.31,268, 3.8\n2026-10-29 11:37:34,-43.2424,-22.8141, 784.0, 2234, 12.6, 11.5, 11.5, 93, 93,10.94,245, 5.6\n2026-10-29 11:38:54,-43.2347,-22.8113, 763.1, 2460, 11.1, 11.1, 11.1,100,100,10.93,247, 7.9\n2026-10-29 11:39:36,-43.2300,-22.8100, 721.5, 2928,  9.1,  7.9,  7.9, 92, 92, 9.30,251,13.0\n2026-10-29 11:40:25,-43.2243,-22.8088, 700.0, 3179,  7.6,  6.4,  6.4, 92, 92, 8.64,256,11.8\n2026-10-29 11:40:41,-43.2224,-22.8084, 675.2, 3475,  5.2,  5.2,  5.2,100,100, 8.26,258,12.1\n2026-10-29 11:41:02,-43.2204,-22.8087, 667.5, 3569,  4.8,  4.6,  4.6, 99, 99, 8.01,264,10.9\n2026-10-29 11:42:21,-43.2118,-22.8108, 657.1, 3699,  7.1, -0.0, -0.0, 61, 61, 5.82,278,10.7\n2026-10-29 11:43:08,-43.2068,-22.8128, 619.5, 4180,  3.2,  0.6,  0.6, 83, 83, 6.46,296,12.4\n2026-10-29 11:43:19,-43.2058,-22.8133, 598.0, 4466,  1.1, -0.7, -0.6, 88, 88, 6.09,292,10.4\n2026-10-29 11:44:50,-43.1968,-22.8164, 593.3, 4528,  1.1, -1.2, -1.1, 85, 85, 5.93,295,10.1\n2026-10-29 11:46:25,-43.1876,-22.8216, 554.0, 5077, -2.1, -4.5, -4.0, 83, 85, 4.95,284,10.4\n2026-10-29 11:47:02,-43.1832,-22.8254, 514.9, 5658, -5.4, -6.3, -5.6, 93, 98, 4.63,312,15.8\n2026-10-29 11:47:10,-43.1823,-22.8262, 500.0, 5889, -6.4, -6.5, -5.8,100,106, 4.72,312,16.5\n2026-10-29 11:51:30,-43.1448,-22.8490, 496.9, 5936, -6.7, -6.7, -6.0,100,107, 4.67,311,16.2\n2026-10-29 11:51:51,-43.1412,-22.8504, 400.0, 7603,-16.7,-16.9,-15.1, 99,116, 2.56,294,18.7\n2026-10-29 11:53:15,-43.1240,-22.8536, 391.9, 7756,-17.6,-17.9,-16.0, 98,116, 2.39,289,19.3\n2026-10-29 11:54:21,-43.1097,-22.8551, 365.6, 8273,-20.6,-24.8,-22.4, 69, 84, 1.40,280,22.6\n2026-10-29 11:55:14,-43.0987,-22.8559, 348.1, 8633,-23.1,-26.9,-24.3, 71, 89, 1.21,272,22.2\n2026-10-29 11:57:01,-43.0760,-22.8613, 333.8, 8939,-25.2,-29.4,-26.6, 68, 87, 1.01,279,21.2\n2026-10-29 11:57:05,-43.0751,-22.8616, 307.6, 9527,-29.9,-35.6,-32.4, 58, 77, 0.60,292,23.4\n2026-10-29 11:57:35,-43.0688,-22.8639, 306.8, 9547,-30.0,-35.6,-32.3, 59, 79, 0.60,292,23.4\n2026-10-29 12:00:58,-43.0220,-22.8834, 300.0, 9705,-31.4,-36.2,-32.9, 63, 85, 0.58,291,24.1\n2026-10-29 12:01:08,-43.0196,-22.8847, 256.9,10782,-40.3,-43.1,-39.5, 74,110, 0.33,301,28.1\n2026-10-29 12:01:35,-43.0132,-22.8881, 255.2,10828,-40.7,-44.7,-40.9, 65, 97, 0.28,301,28.0\n2026-10-29 12:01:38,-43.0125,-22.8885, 250.5,10954,-41.7,-46.3,-42.5, 61, 92, 0.24,299,28.3\n2026-10-29 12:03:29,-42.9838,-22.9014, 250.0,10967,-41.8,-46.8,-42.9, 59, 88, 0.23,299,28.2\n2026-10-29 12:05:14,-42.9537,-22.9129, 230.0,11527,-45.9,-55.1,-50.9, 35, 54, 0.09,291,30.2\n2026-10-29 12:06:16,-42.9352,-22.9191, 211.2,12088,-50.4,-56.3,-52.0, 50, 82, 0.09,292,32.9\n2026-10-29 12:06:21,-42.9339,-22.9194, 200.8,12416,-53.2,-58.1,-53.8, 56, 93, 0.08,286,32.5\n2026-10-29 12:08:58,-42.8866,-22.9278, 200.0,12442,-53.4,-58.4,-54.1, 55, 93, 0.07,285,32.3\n2026-10-29 12:10:18,-42.8616,-22.9317, 176.2,13246,-60.2,-65.6,-61.0, 50, 89, 0.03,282,30.5\n2026-10-29 12:10:36,-42.8555,-22.9318, 163.9,13692,-62.3,-71.2,-66.6, 30, 55, 0.02,273,35.0\n2026-10-29 12:11:26,-42.8394,-22.9310, 161.4,13788,-62.7,-72.7,-68.0, 26, 47, 0.01,270,33.4\n2026-10-29 12:12:00,-42.8285,-22.9303, 154.7,14050,-64.6,-72.0,-67.3, 36, 67, 0.02,266,33.0\n2026-10-29 12:15:09,-42.7771,-22.9277, 150.0,14237,-65.6,-74.0,-69.3, 31, 58, 0.01,266,32.8\n2026-10-29 12:15:25,-42.7736,-22.9276, 126.8,15246,-70.2,-81.2,-76.4, 20, 38, 0.00,269,23.5\n2026-10-29 12:16:22,-42.7635,-22.9280, 125.0,15329,-70.6,-81.5,-76.7, 20, 39, 0.00,268,21.5\n2026-10-29 12:19:13,-42.7369,-22.9411, 118.2,15661,-72.6,-81.2,-76.4, 27, 55, 0.01,275,16.0\n2026-10-29 12:19:28,-42.7340,-22.9430, 100.0,16622,-80.5,-85.0,-80.3, 48,104, 0.00,307,22.2\n2026-10-29 12:19:55,-42.7283,-22.9452,  98.4,16712,-81.1,-85.7,-80.9, 47,103, 0.00,302,23.5\n2026-10-29 12:20:02,-42.7270,-22.9455,  95.8,16864,-77.1,-84.5,-79.7, 31, 65, 0.00,284,21.0\n2026-10-29 12:20:38,-42.7219,-22.9463,  95.1,16908,-77.0,-84.3,-79.5, 32, 67, 0.00,282,19.3\n2026-10-29 12:20:52,-42.7201,-22.9470,  91.5,17125,-77.2,-84.5,-79.8, 31, 66, 0.00,286,13.3\n2026-10-29 12:21:30,-42.7147,-22.9484,  90.3,17206,-76.5,-84.4,-79.6, 29, 60, 0.00,289,13.9\n2026-10-29 12:22:09,-42.7083,-22.9482,  86.9,17422,-77.3,-84.9,-80.1, 30, 64, 0.00,280,16.4\n2026-10-29 12:22:11,-42.7079,-22.9481,  83.5,17652,-77.8,-85.3,-80.6, 30, 64, 0.00,255,17.1\n2026-10-29 12:22:37,-42.7049,-22.9463,  83.3,17663,-77.8,-85.5,-80.7, 30, 62, 0.00,253,17.0\n2026-10-29 12:22:39,-42.7047,-22.9462,  81.2,17818,-73.6,-84.2,-79.4, 19, 39, 0.00,227,10.2\n2026-10-29 12:22:55,-42.7041,-22.9455,  81.0,17830,-73.3,-84.0,-79.3, 19, 39, 0.00,226, 9.5\n2026-10-29 12:23:04,-42.7038,-22.9453,  79.8,17918,-72.8,-83.8,-79.0, 19, 38, 0.00,227, 5.1\n2026-10-29 12:23:27,-42.7033,-22.9452,  79.1,17973,-72.8,-84.0,-79.2, 18, 36, 0.0"
+ },
+ "uwyo_cgi_12": {
+  "status": 404,
+  "erro": "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n</body></html>\n"
+ },
+ "uwyo_wsgi_list_00": {
+  "status": 200,
+  "bytes": 15465,
+  "s": 4.1,
+  "ctype": "text/html; charset=UTF-8",
+  "texto": "<!DOCTYPE html>\n<HTML>\n<HEAD>\n<TITLE>Wyoming Weather Web</TITLE>\n\n<link rel=\"stylesheet\" href=\"/resources/weather.css\" type=\"text/css\">\n\n</HEAD>\n\n<BODY>\n<link rel=\"stylesheet\" href=\"/resources/weather.css\" type=\"text/css\">\n<div id=\"masthead\">\n<table style=\"min-width:1005px; max-width:2400px;\" width=\"100%\" border=\"0\" \n  cellpadding=\"0\" cellspacing=\"0\">\n <tr>\n  <td><div id=\"logo-container\">\n   <img src=\"/images/uwlogo.png\" border=\"0\"></div></td>\n  <td valign=\"top\" align=\"right\">\n   <table>\n    <tr>\n     <td valign=\"top\" align=\"right\"><div id=\"wywx\"><a href=\"/index.shtml\">\n      Wyoming Weather Web</A></div></td>\n    </tr>\n    <tr>\n     <td valign=\"top\" align=\"right\" width=\"600\">\n     <div id=\"depts\">\n      <a href=\"http://www.uwyo.edu/atsc\">Atmospheric Science</A> |\n      <a href=\"http://www.uwyo.edu/ceas\">Engineering and Applied Science</A> |\n      <a href=\"http://www.uwyo.edu/\">UWyo Home</A>\n     </div>\n     </td>\n    </tr>\n   </table>\n  </td>\n </tr>\n</table>\n</div>\n\n<!-- left menu -->\n<!-- #include virtual=\"/resources/leftmenu.html\" -->\n\n<div id=\"leftmenu\">\n<p>Other data for Station 83746</p>\n<ul>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-28 12:00:00&id=83746&type=TEXT:LIST&src=BUFR\">12Z Oct 28 </a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 12:00:00&id=83746&type=TEXT:LIST&src=BUFR\">12Z Oct 29 </a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=INDICES&src=BUFR\">\n              Thermodyamic Indices</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=TEXT:AVIATION&src=BUFR\">\n              Aviation Units</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=TEXT:CSV&src=BUFR\">\n              Comma Separated Values</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=PNG:SKEWT&src=BUFR\">\n              Skew-T PNG image</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=PDF:SKEWT&src=BUFR\">\n              Skew-T PDF file</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=PNG:STUVE&src=BUFR\">\n              Stuve PNG image</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=PDF:STUVE&src=BUFR\">\n              Stuve PDF file</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=PNG:STUVE10&src=BUFR\">\n              Stuve PNG image to 10 hPa</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=PDF:STUVE10&src=BUFR\">\n              Stuve PDF file to 10 hPa</a></li>\n<li><a href=\"/wsgi/sounding?datetime=2026-10-29 00:00:00&id=83746&type=INVENTORY&src=BUFR\">\n              Inventory for year</a></li>\n</ul>\n</div>\n<div id=\"maincolumn\">\n<H1>Observations for Station 83746 at 00 UTC 29 Oct 2026</H1>\n<H3>GALEAO, Brazil</H3>\n\n<style>\n.collapsible {\n  background-color: #777;\n  color: white;\n  cursor: pointer;\n  padding: 8px;\n  width: 100%;\n  border: none;\n  text-align: left;\n  outline: none;\n  font-size: 15px;\n}\n\n.active, .collapsible:hover {\n  background-color: #555;\n}\n\n.collapsible:before {\n  content: \"\\2212 \";\n  color: white;\n  font-weight: bold;\n  float: left;\n  margin-left: 5px;\n}\n\n.active:before {\n  content: '\\002B ';\n}\n\n.content {\n  padding: 0 18px;\n  max-height: 0;\n  overflow: hidden;\n  transition: max-height 0.2s ease-out;\n  background-color: #f1f1f1;\n}\n</style>\n<BR/><I>Latitude: -22.809 Longitude: -43.251</I>\n<BR/><BR/>\n<button class=\"collapsible\">Profile</button><div class=\"content\">\n<PRE>\n-----------------------------------------------------------------------------\n   PRES   HGHT   TEMP   DWPT   RELH   MIXR   DRCT   SPED   THTA   THTE   THTV\n    hPa      m      C      C      %   g/kg    deg    m/s      K      K      K \n-----------------------------------------------------------------------------\n 1018.1      8   22.8   17.8     73  12.70     80    2.6  294.4  330.9  296.7\n 1000.0    166   21.7   17.5     77  12.64     99    4.6  294.8  331.2  297.0\n  926.5    824   17.9   15.6     86  12.09     44    0.3  297.4  332.7  299.6\n  925.0    838   17.9   15.6     87  12.14      3    0.5  297.6  333.0  299.7\n  862.4   1435   13.8   13.5     98  11.31    325    6.2  299.3  332.6  301.4\n  859.9   1459   14.1   13.4     96  11.29    323    6.3  299.9  333.1  301.9\n  855.7   1499   14.4   13.5     94  11.45    318    6.2  300.6  334.5  302.7\n  850.0   1557   14.2   13.4     95  11.46    312    5.6  301.0  334.9  303.1\n  837.1   1687   14.1   13.0     93  11.28    297    5.6  302.2  335.8  304.2\n  826.1   1799   13.8   12.2     90  10.87    306    5.0  303.1  335.6  305.1\n  780.3   2280   12.3    6.2     66   7.64    316    0.5  306.4  329.8  307.8\n  779.1   2293   12.2    6.5     68   7.80    292    0.6  306.5  330.4  307.9\n  769.5   2396   11.7    4.6     62   6.94    263    2.4  307.0  328.4  308.3\n  760.8   2492   11.1    7.6     79   8.65    265    5.1  307.3  333.8  308.9\n  748.8   2622   10.3   10.0     98  10.37    263    6.9  307.9  339.6  309.8\n  700.0   3185    7.3    6.8     97   8.92    267    6.7  310.5  338.2  312.2\n  651.6   3771    3.7    3.7    100   7.71    257   10.3  312.9  337.2  314.4\n  643.3   3876    3.2    3.2    100   7.52    263   12.1  313.5  337.2  314.9\n  628.3   4064    0.9   -7.7     53   3.42    269   15.0  313.0  324.1  313.7\n  627.9   4070    1.0   -7.9     51   3.36    269   15.0  313.1  324.1  313.8\n  618.7   4190    3.5  -10.3     36   2.83    265   14.6  317.4  326.8  317.9\n  613.4   4261    4.6   -3.2     57   4.92    262   14.8  319.4  335.5  320.3\n  609.5   4312    4.9   -9.3     35   3.10    261   14.9  320.3  330.8  320.9\n  602.5   4406    4.8  -12.9     26   2.35    263   14.3  321.2  329.3  321.7\n  595.1   4508    4.2   -6.4     46   4.00    267   14.0  321.7  335.0  322.4\n  585.7   4638    3.6  -10.2     36   3.01    272   13.2  322.5  332.7  323.1\n  550.4   5138   -0.6   -7.4     60   3.97    270   14.1  323.2  336.6  324.0\n  546.3   5198   -1.0   -9.4     53   3.44    269   14.0  323.5  335.2  324.2\n  503."
+ },
+ "uwyo_wsgi_csv_00": {
+  "status": 200,
+  "bytes": 9322,
+  "s": 3.6,
+  "ctype": "text/csv",
+  "texto": "time,longitude,latitude,pressure_hPa,geopotential height_m,temperature_C,dew point temperature_C,ice point temperature_C,relative humidity_%,humidity wrt ice_%,mixing ratio_g/kg,wind direction_degree,wind speed_m/s\n2026-10-28 23:31:02,-43.2511,-22.8090,1018.1,    8, 22.8, 17.8, 17.8, 73, 73,12.70, 80, 2.6\n2026-10-28 23:32:58,-43.2541,-22.8093,1000.0,  166, 21.7, 17.5, 17.5, 77, 77,12.64, 99, 4.6\n2026-10-28 23:33:01,-43.2541,-22.8093, 926.5,  824, 17.9, 15.6, 15.6, 86, 86,12.09, 44, 0.3\n2026-10-28 23:34:39,-43.2522,-22.8114, 925.0,  838, 17.9, 15.6, 15.6, 87, 87,12.14,  3, 0.5\n2026-10-28 23:34:43,-43.2521,-22.8116, 862.4, 1435, 13.8, 13.5, 13.5, 98, 98,11.31,325, 6.2\n2026-10-28 23:34:50,-43.2517,-22.8119, 859.9, 1459, 14.1, 13.4, 13.4, 96, 96,11.29,323, 6.3\n2026-10-28 23:35:00,-43.2514,-22.8122, 855.7, 1499, 14.4, 13.5, 13.5, 94, 94,11.45,318, 6.2\n2026-10-28 23:35:20,-43.2505,-22.8128, 850.0, 1557, 14.2, 13.4, 13.4, 95, 95,11.46,312, 5.6\n2026-10-28 23:35:39,-43.2495,-22.8133, 837.1, 1687, 14.1, 13.0, 13.0, 93, 93,11.28,297, 5.6\n2026-10-28 23:36:58,-43.2496,-22.8140, 826.1, 1799, 13.8, 12.2, 12.2, 90, 90,10.87,306, 5.0\n2026-10-28 23:37:00,-43.2496,-22.8140, 780.3, 2280, 12.3,  6.2,  6.2, 66, 66, 7.64,316, 0.5\n2026-10-28 23:37:14,-43.2495,-22.8139, 779.1, 2293, 12.2,  6.5,  6.5, 68, 68, 7.80,292, 0.6\n2026-10-28 23:37:29,-43.2490,-22.8140, 769.5, 2396, 11.7,  4.6,  4.6, 62, 62, 6.94,263, 2.4\n2026-10-28 23:37:52,-43.2474,-22.8137, 760.8, 2492, 11.1,  7.6,  7.6, 79, 79, 8.65,265, 5.1\n2026-10-28 23:39:22,-43.2420,-22.8133, 748.8, 2622, 10.3, 10.0, 10.0, 98, 98,10.37,263, 6.9\n2026-10-28 23:40:57,-43.2329,-22.8123, 700.0, 3185,  7.3,  6.8,  6.8, 97, 97, 8.92,267, 6.7\n2026-10-28 23:41:13,-43.2313,-22.8119, 651.6, 3771,  3.7,  3.7,  3.7,100,100, 7.71,257,10.3\n2026-10-28 23:41:47,-43.2266,-22.8120, 643.3, 3876,  3.2,  3.2,  3.2,100,100, 7.52,263,12.1\n2026-10-28 23:41:48,-43.2264,-22.8120, 628.3, 4064,  0.9, -7.7, -6.8, 53, 53, 3.42,269,15.0\n2026-10-28 23:42:08,-43.2236,-22.8119, 627.9, 4070,  1.0, -7.9, -7.0, 51, 51, 3.36,269,15.0\n2026-10-28 23:42:20,-43.2219,-22.8117, 618.7, 4190,  3.5,-10.3, -9.1, 36, 36, 2.83,265,14.6\n2026-10-28 23:42:29,-43.2205,-22.8115, 613.4, 4261,  4.6, -3.2, -2.9, 57, 57, 4.92,262,14.8\n2026-10-28 23:42:45,-43.2182,-22.8112, 609.5, 4312,  4.9, -9.3, -8.3, 35, 35, 3.10,261,14.9\n2026-10-28 23:43:01,-43.2161,-22.8110, 602.5, 4406,  4.8,-12.9,-11.5, 26, 26, 2.35,263,14.3\n2026-10-28 23:43:22,-43.2135,-22.8109, 595.1, 4508,  4.2, -6.4, -5.6, 46, 46, 4.00,267,14.0\n2026-10-28 23:44:43,-43.2022,-22.8120, 585.7, 4638,  3.6,-10.2, -9.1, 36, 36, 3.01,272,13.2\n2026-10-28 23:44:53,-43.2010,-22.8119, 550.4, 5138, -0.6, -7.4, -6.6, 60, 60, 3.97,270,14.1\n2026-10-28 23:46:32,-43.1878,-22.8132, 546.3, 5198, -1.0, -9.4, -8.3, 53, 53, 3.44,269,14.0\n2026-10-28 23:46:42,-43.1866,-22.8132, 503.8, 5840, -4.4,-23.7,-21.4, 21, 21, 1.12,277,13.4\n2026-10-28 23:46:53,-43.1849,-22.8135, 500.0, 5897, -5.0,-14.0,-12.5, 49, 52, 2.59,279,13.8\n2026-10-28 23:47:10,-43.1828,-22.8142, 495.5, 5971, -5.6,-12.9,-11.5, 57, 60, 2.87,284,14.2\n2026-10-28 23:47:55,-43.1768,-22.8161, 488.4, 6085, -6.3,-14.3,-12.8, 53, 56, 2.59,288,14.1\n2026-10-28 23:48:11,-43.1745,-22.8166, 470.6, 6375, -8.9,-13.9,-12.5, 67, 73, 2.77,286,14.8\n2026-10-28 23:49:12,-43.1651,-22.8183, 464.4, 6474, -9.5,-14.3,-12.8, 68, 74, 2.72,285,15.9\n2026-10-28 23:50:08,-43.1559,-22.8192, 442.6, 6844,-11.7,-20.4,-18.3, 49, 55, 1.71,277,15.7\n2026-10-28 23:50:12,-43.1553,-22.8193, 423.0, 7190,-13.9,-18.8,-16.8, 67, 77, 2.06,273,17.0\n2026-10-28 23:50:45,-43.1494,-22.8194, 421.6, 7216,-13.9,-22.3,-20.0, 49, 56, 1.52,272,17.2\n2026-10-28 23:51:15,-43.1443,-22.8194, 410.2, 7423,-15.3,-22.4,-20.1, 55, 64, 1.55,270,18.1\n2026-10-28 23:51:38,-43.1400,-22.8190, 400.0, 7614,-16.7,-29.3,-26.5, 33, 39, 0.84,267,18.5\n2026-10-28 23:52:05,-43.1349,-22.8192, 391.8, 7768,-17.4,-35.0,-31.8, 20, 24, 0.50,268,19.1\n2026-10-28 23:53:03,-43.1227,-22.8182, 383.0, 7935,-18.3,-22.6,-20.3, 69, 83, 1.63,269,20.2\n2026-10-28 23:54:35,-43.1016,-22.8203, 364.1, 8316,-21.0,-24.3,-21.9, 75, 92, 1.48,261,23.7\n2026-10-28 23:54:41,-43.1003,-22.8208, 334.6, 8934,-24.4,-28.0,-25.3, 72, 92, 1.15,291,25.4\n2026-10-28 23:56:35,-43.0743,-22.8325, 332.7, 8975,-24.7,-28.4,-25.7, 71, 91, 1.11,292,25.7\n2026-10-28 23:59:45,-43.0303,-22.8456, 300.0, 9720,-30.7,-34.4,-31.2, 70, 95, 0.69,296,25.1\n2026-10-28 23:59:48,-43.0297,-22.8458, 250.5,10971,-41.7,-45.8,-42.0, 64, 97, 0.25,287,27.8\n2026-10-29 00:00:06,-43.0247,-22.8471, 250.0,10984,-41.8,-46.5,-42.7, 60, 90, 0.24,287,28.1\n2026-10-29 00:01:05,-43.0094,-22.8516, 245.7,11100,-42.4,-47.9,-43.9, 55, 84, 0.21,286,28.7\n2026-10-29 00:03:04,-42.9766,-22.8609, 232.5,11472,-45.5,-47.2,-43.3, 83,130, 0.24,288,27.8\n2026-10-29 00:03:10,-42.9748,-22.8614, 207.9,12205,-51.4,-60.0,-55.6, 35, 58, 0.06,286,30.8\n2026-10-29 00:03:32,-42.9684,-22.8630, 206.8,12243,-51.7,-59.1,-54.8, 41, 68, 0.06,286,31.0\n2026-10-29 00:03:43,-42.9652,-22.8636, 202.6,12376,-52.8,-56.1,-51.9, 67,112, 0.10,284,30.9\n2026-10-29 00:03:46,-42.9644,-22.8638, 200.5,12440,-52.8,-62.4,-57.9, 31, 52, 0.04,282,31.0\n2026-10-29 00:04:04,-42.9589,-22.8648, 200.0,12457,-53.0,-62.8,-58.3, 30, 50, 0.04,282,31.1\n2026-10-29 00:05:52,-42.9253,-22.8673, 195.9,12592,-54.1,-68.5,-63.9, 16, 27, 0.02,279,31.8\n2026-10-29 00:06:40,-42.9104,-22.8673, 175.3,13291,-60.6,-66.9,-62.3, 44, 80, 0.03,273,31.4\n2026-10-29 00:06:42,-42.9098,-22.8673, 166.9,13595,-61.9,-67.5,-63.0, 47, 86, 0.03,268,33.4\n2026-10-29 00:07:45,-42.8908,-22.8667, 166.6,13610,-61.9,-67.5,-62.9, 48, 87, 0.03,268,33.4\n2026-10-29 00:08:18,-42.8821,-22.8651, 155.5,14032,-63.9,-76.7,-72.0, 17, 31, 0.01,263,27.7\n2026-10-29 00:08:19,-42.8817,-22.8650, 150.0,14252,-65.8,-76.3,-71.6, 23, 43, 0.01,256,29.1\n2026-10-29 00:11:23,-42.8310,-22.8568, 149.7,14262,-65.9,-76.3,-71.6, 23, 44, 0.01,256,29.1\n2026-10-29 00:11:44,-42.8249,-22.8562, 121.4,15507,-74.2,-82.9,-78.2, 26, 53, 0.00,264,28.0\n2026-10-29 00:13:26,-42.8041,-22.8520, 118.4,15654,-73.5,-82.8,-78.1, 24, 49, 0.0"
+ },
+ "uwyo_cgi_00": {
+  "status": 404,
+  "erro": "<!DOCTYPE HTML PUBLIC \"-//IETF//DTD HTML 2.0//EN\">\n<html><head>\n<title>404 Not Found</title>\n</head><body>\n<h1>Not Found</h1>\n<p>The requested URL was not found on this server.</p>\n</body></html>\n"
+ },
+ "igra_y2d": {
+  "status": 200,
+  "bytes": 4000,
+  "s": 0.5,
+  "ctype": "text/html; charset=UTF-8",
+  "texto": "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 3.2 Final//EN\">\n<html>\n<head>\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">\n<title>Index of /data/integrated-global-radiosonde-archive/access/data-y2d/</title>\n</head>\n<body>\n<h1>Index of /data/integrated-global-radiosonde-archive/access/data-y2d/</h1>\n<table><tbody>\n<tr>\n<th>Name</th>\n<th>Last modified</th>\n<th>Size</th>\n<th>Description</th>\n</tr>\n<tr><th colspan=\"4\"><hr></th></tr>\n<tr>\n<td><a href=\"..\">Parent Directory</a></td>\n<td> </td>\n<td align=\"right\">-</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"AEM00041217-data-beg2026.txt.zip\">AEM00041217-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">111841</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"AGM00060390-data-beg2026.txt.zip\">AGM00060390-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">680329</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"AGM00060680-data-beg2026.txt.zip\">AGM00060680-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">284200</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"AOM00066160-data-beg2026.txt.zip\">AOM00066160-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">248093</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"AQM00091765-data-beg2026.txt.zip\">AQM00091765-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">3286376</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087155-data-beg2026.txt.zip\">ARM00087155-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">425580</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087344-data-beg2026.txt.zip\">ARM00087344-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">260763</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087418-data-beg2026.txt.zip\">ARM00087418-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">254085</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087585-data-beg2026.txt.zip\">ARM00087585-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">440055</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087623-data-beg2026.txt.zip\">ARM00087623-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">251300</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087715-data-beg2026.txt.zip\">ARM00087715-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">226172</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ARM00087860-data-beg2026.txt.zip\">ARM00087860-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">433582</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094155-data-beg2026.txt.zip\">ASM00094155-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">193342</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094170-data-beg2026.txt.zip\">ASM00094170-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">262448</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094203-data-beg2026.txt.zip\">ASM00094203-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">478948</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094299-data-beg2026.txt.zip\">ASM00094299-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">889601</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094302-data-beg2026.txt.zip\">ASM00094302-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">793483</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094312-data-beg2026.txt.zip\">ASM00094312-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">267730</td>\n<td> </td>\n</tr>\n<tr>\n<td><a href=\"ASM00094326-data-beg2026.txt.zip\">ASM00094326-data-beg2026.txt.zip</a></td>\n<td align=\"right\">2026-10-28 21:40</td>\n<td align=\"right\">348895</td>\n<td> </"
+ },
+ "rainviewer_maps": {
+  "status": 200,
+  "bytes": 818,
+  "s": 0.5,
+  "ctype": "application/json",
+  "texto": "{\"version\":\"2.0\",\"generated\":1793302221,\"host\":\"https://tilecache.rainviewer.com\",\"radar\":{\"past\":[{\"time\":1793295000,\"path\":\"/v2/radar/2a78fbb0e3c3\"},{\"time\":1793295600,\"path\":\"/v2/radar/46d4018e039b\"},{\"time\":1793296200,\"path\":\"/v2/radar/61afb1b29a1b\"},{\"time\":1793296800,\"path\":\"/v2/radar/8fd6e4dce1f7\"},{\"time\":1793297400,\"path\":\"/v2/radar/10ea2ecf9c21\"},{\"time\":1793298000,\"path\":\"/v2/radar/14bf0aef5252\"},{\"time\":1793298600,\"path\":\"/v2/radar/c90f52bd2afb\"},{\"time\":1793299200,\"path\":\"/v2/radar/859336f7efc5\"},{\"time\":1793299800,\"path\":\"/v2/radar/48372658066c\"},{\"time\":1793300400,\"path\":\"/v2/radar/3a1dba3ee1ec\"},{\"time\":1793301000,\"path\":\"/v2/radar/81e66c7473fa\"},{\"time\":1793301600,\"path\":\"/v2/radar/3733cea3a622\"},{\"time\":1793302200,\"path\":\"/v2/radar/de4201178f0d\"}],\"nowcast\":[]},\"satellite\":{\"infrared\":[]}}"
+ },
+ "rainviewer_tile_c0": {
+  "status": 200,
+  "bytes": 11681,
+  "s": 0.5,
+  "ctype": "image/png"
+ },
+ "rainviewer_tile_c2": {
+  "status": 200,
+  "bytes": 11681,
+  "s": 0.4,
+  "ctype": "image/png"
+ },
+ "rainviewer_512": {
+  "status": 200,
+  "bytes": 27231,
+  "s": 0.5,
+  "ctype": "image/png"
+ },
+ "abi_c13_19": {
+  "status": 200,
+  "n": 3,
+  "ex": [
+   [
+    "ABI-L2-CMIPF/2026/302/19/OR_ABI-L2-CMIPF-M6C13_G19_s20263021900205_e20263021909526_c20263021909595.nc",
+    24298598
+   ],
+   [
+    "ABI-L2-CMIPF/2026/302/19/OR_ABI-L2-CMIPF-M6C13_G19_s20263021910205_e20263021919526_c20263021919584.nc",
+    24283228
+   ],
+   [
+    "ABI-L2-CMIPF/2026/302/19/OR_ABI-L2-CMIPF-M6C13_G19_s20263021920205_e20263021929525_c20263021929586.nc",
+    24267730
+   ]
+  ]
+ },
+ "abi_c13_download": {
+  "status": 200,
+  "bytes": 24267730,
+  "s": 0.8,
+  "ctype": "binary/octet-stream"
+ },
+ "abi_vars": [
+  "t",
+  "y",
+  "x",
+  "number_of_time_bounds",
+  "band",
+  "number_of_image_bounds",
+  "time_bounds",
+  "goes_imager_projection",
+  "y_image",
+  "y_image_bounds",
+  "x_image",
+  "x_image_bounds",
+  "nominal_satellite_subpoint_lat",
+  "nominal_satellite_subpoint_lon",
+  "nominal_satellite_height",
+  "geospatial_lat_lon_extent",
+  "CMI",
+  "band_wavelength",
+  "band_id",
+  "total_number_of_points",
+  "valid_pixel_count",
+  "outlier_pixel_count",
+  "min_brightness_temperature",
+  "max_brightness_temperature",
+  "mean_brightness_temperature",
+  "std_dev_brightness_temperature",
+  "planck_fk1",
+  "planck_fk2",
+  "planck_bc1",
+  "planck_bc2",
+  "algorithm_dynamic_input_data_container",
+  "DQF",
+  "percent_uncorrectable_GRB_errors",
+  "percent_uncorrectable_L0_errors",
+  "earth_sun_distance_anomaly_in_AU",
+  "processing_parm_version_container",
+  "algorithm_product_version_container",
+  "esun",
+  "kappa0",
+  "focal_plane_temperature_threshold_exceeded_count"
+ ],
+ "abi_cmi": {
+  "shape": [
+   5424,
+   5424
+  ],
+  "attrs": {
+   "_Netcdf4Coordinates": "[0 1]",
+   "_FillValue": "[-1]",
+   "sensor_band_bit_depth": "[12]",
+   "valid_range": "[   0 4095]",
+   "scale_factor": "[0.06145332]",
+   "add_offset": "[89.62]",
+   "DIMENSION_LIST": "[array([<HDF5 object reference>], dtype=object)\n array([<HDF5 object reference>], dtype=object)]",
+   "long_name": "b'ABI L2+ Cloud and Moisture Imagery brightness temperature'",
+   "standard_name": "b'toa_brightness_temperature'",
+   "_Unsigned": "b'true'",
+   "units": "b'K'",
+   "resolution": "b'y: 0.000056 rad x: 0.000056 rad'",
+   "coordinates": "b'band_id band_wavelength t y x'",
+   "grid_mapping": "b'goes_imager_projection'",
+   "cell_methods": "b't: point area: point'",
+   "ancillary_variables": "b'DQF'"
+  }
+ },
+ "abi_proj": {
+  "perspective_point_height": "[35786023.]",
+  "semi_major_axis": "[6378137.]",
+  "semi_minor_axis": "[6356752.31414]",
+  "inverse_flattening": "[298.2572221]",
+  "latitude_of_projection_origin": "[0.]",
+  "longitude_of_projection_origin": "[-75.]",
+  "long_name": "b'GOES-R ABI fixed grid projection'",
+  "grid_mapping_name": "b'geostationary'",
+  "sweep_angle_axis": "b'x'"
+ },
+ "abi_x": {
+  "_Netcdf4Coordinates": "[1]",
+  "CLASS": "b'DIMENSION_SCALE'",
+  "NAME": "b'x'",
+  "_Netcdf4Dimid": "1",
+  "scale_factor": "[5.6e-05]",
+  "add_offset": "[-0.151844]",
+  "REFERENCE_LIST": "[(<HDF5 object reference>, 1) (<HDF5 object reference>, 1)]",
+  "units": "b'rad'",
+  "axis": "b'X'",
+  "long_name": "b'GOES fixed grid projection x-coordinate'",
+  "standard_name": "b'projection_x_coordinate'"
+ },
+ "abi_y": {
+  "_Netcdf4Coordinates": "[0]",
+  "CLASS": "b'DIMENSION_SCALE'",
+  "NAME": "b'y'",
+  "_Netcdf4Dimid": "0",
+  "scale_factor": "[-5.6e-05]",
+  "add_offset": "[0.151844]",
+  "REFERENCE_LIST": "[(<HDF5 object reference>, 0) (<HDF5 object reference>, 0)]",
+  "units": "b'rad'",
+  "axis": "b'Y'",
+  "long_name": "b'GOES fixed grid projection y-coordinate'",
+  "standard_name": "b'projection_y_coordinate'"
+ },
+ "glm_list": {
+  "status": 200,
+  "n": 95,
+  "sz_med": 387034.65263157897,
+  "ex": [
+   [
+    "GLM-L2-LCFA/2026/302/19/OR_GLM-L2-LCFA_G19_s20263021931000_e20263021931200_c20263021931215.nc",
+    387024
+   ],
+   [
+    "GLM-L2-LCFA/2026/302/19/OR_GLM-L2-LCFA_G19_s20263021931200_e20263021931400_c20263021931415.nc",
+    387801
+   ]
+  ]
+ },
+ "glm_download": {
+  "status": 200,
+  "bytes": 387801,
+  "s": 0.4,
+  "ctype": "binary/octet-stream"
+ },
+ "glm_vars": [
+  "number_of_events",
+  "number_of_groups",
+  "number_of_flashes",
+  "number_of_time_bounds",
+  "number_of_field_of_view_bounds",
+  "number_of_wavelength_bounds",
+  "event_lat",
+  "group_lat",
+  "group_lon",
+  "flash_lat",
+  "flash_lon",
+  "product_time",
+  "product_time_bounds",
+  "event_time_offset",
+  "group_time_offset",
+  "group_frame_time_offset",
+  "flash_time_offset_of_first_event",
+  "flash_time_offset_of_last_event",
+  "flash_frame_time_offset_of_first_event",
+  "flash_frame_time_offset_of_last_event",
+  "lightning_wavelength",
+  "lightning_wavelength_bounds",
+  "group_time_threshold",
+  "flash_time_threshold",
+  "lat_field_of_view",
+  "lat_field_of_view_bounds",
+  "event_id",
+  "group_id",
+  "flash_id",
+  "event_parent_group_id",
+  "group_parent_flash_id",
+  "goes_lat_lon_projection",
+  "event_energy",
+  "group_area",
+  "group_energy",
+  "group_quality_flag",
+  "flash_area",
+  "flash_energy",
+  "flash_quality_flag",
+  "event_count",
+  "group_count",
+  "flash_count",
+  "percent_navigated_L1b_events",
+  "yaw_flip_flag",
+  "nominal_satellite_subpoint_lat",
+  "nominal_satellite_height",
+  "event_lon",
+  "nominal_satellite_subpoint_lon",
+  "lon_field_of_view",
+  "lon_field_of_view_bounds",
+  "percent_uncorrectable_L0_errors",
+  "algorithm_dynamic_input_data_container",
+  "processing_parm_version_container",
+  "algorithm_product_version_container"
+ ],
+ "glm_flash_lat": {
+  "shape": [
+   654
+  ],
+  "attrs": {
+   "_Netcdf4Coordinates": "[2]",
+   "DIMENSION_LIST": "[array([<HDF5 object reference>], dtype=object)]",
+   "long_name": "b'GLM L2+ Lightning Detection: flash centroid (mean constituent event latitude weighted by their energies) latitude coordinate'",
+   "standard_name": "b'latitude'",
+   "units": "b'degrees_north'",
+   "axis": "b'Y'"
+  }
+ }
+}
