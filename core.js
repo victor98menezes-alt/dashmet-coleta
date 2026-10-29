@@ -314,7 +314,8 @@ const MET = (() => {
     return r;
   }
   function splitMessages(text, kind) {
-    const t = String(text).replace(/=/g, ' =').replace(/\r/g, '');
+    // linhas coladas sem o prefixo (ex.: "SBAF 291300Z 26002KT ...") são tratadas como METAR
+    const t = String(text).replace(/\r/g, '').split('\n').map(l => l.replace(/^\s*\d{10}\s*-\s*/, '')).map(l => /\b(METAR|SPECI|TAF)\b/.test(l) ? l : l.replace(/^(\s*)([A-Z]{4}\s+\d{6}Z\s)/, '$1METAR $2')).join('\n').replace(/=/g, ' =');
     const re = kind === 'TAF' ? /TAF\b[\s\S]*?(?==|(?=\b(?:TAF|METAR|SPECI)\b)|$)/g : /(METAR|SPECI)\b[\s\S]*?(?==|(?=\b(?:METAR|SPECI|TAF)\b)|$)/g;
     const out = (t.match(re) || []).map(x => x.replace(/\s+/g, ' ').trim()).filter(x => x.length > 10);
     return out;

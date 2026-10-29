@@ -294,6 +294,7 @@ svg .cc-b.ok{fill:var(--ok-bg)} svg .cc-b.bad{fill:var(--bad-bg)} svg .cc-b.na{f
 svg .cc-bv{fill:var(--fg);font:600 10.5px var(--f-data)}
 /* METAR/TAF inseridos */
 svg .wmed{fill:none;stroke:var(--fg);stroke-width:1.6} .legend .lg-med{display:inline-block;width:9px;height:9px;border:1.6px solid var(--fg);transform:rotate(45deg);background:none!important}
+.obsday{margin:6px 0;padding:6px 10px;border-left:3px solid var(--obs);background:var(--sunk);border-radius:6px} .obsday p{margin:3px 0}
 .opm-zl{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 10px} .opm-zl h4{margin:6px 0 8px;font-size:.88rem} .opm-zl h4 small{font-weight:400;color:var(--muted)}
 .opm-zlg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px;margin-bottom:6px} .opm-zlg label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
 .opm-use{margin:8px 0} .opm-use h4{margin:4px 0;font-size:.88rem} .opm-use ul{margin:0;padding-left:18px} .opm-use li.ok::marker{color:var(--ok)} .opm-use li.warn::marker{color:var(--warn)}
@@ -966,7 +967,8 @@ const MET = (() => {
     return r;
   }
   function splitMessages(text, kind) {
-    const t = String(text).replace(/=/g, ' =').replace(/\r/g, '');
+    // linhas coladas sem o prefixo (ex.: "SBAF 291300Z 26002KT ...") são tratadas como METAR
+    const t = String(text).replace(/\r/g, '').split('\n').map(l => l.replace(/^\s*\d{10}\s*-\s*/, '')).map(l => /\b(METAR|SPECI|TAF)\b/.test(l) ? l : l.replace(/^(\s*)([A-Z]{4}\s+\d{6}Z\s)/, '$1METAR $2')).join('\n').replace(/=/g, ' =');
     const re = kind === 'TAF' ? /TAF\b[\s\S]*?(?==|(?=\b(?:TAF|METAR|SPECI)\b)|$)/g : /(METAR|SPECI)\b[\s\S]*?(?==|(?=\b(?:METAR|SPECI|TAF)\b)|$)/g;
     const out = (t.match(re) || []).map(x => x.replace(/\s+/g, ' ').trim()).filter(x => x.length > 10);
     return out;
@@ -1281,7 +1283,13 @@ const MET = (() => {
     });
     // INMET: avisos vigentes no horário e previsão textual do período (manhã/tarde/noite)
     r.inmet = FULL ? inmetAt(utc) : null;
-    if (r.inmet && r.inmet.ts) { if (conv.level < 2) { conv.level = 2; conv.text = 'TCU/CB possível (INMET)'; } conv.src.push(`INMET ${r.inmet.periodo}: ${r.inmet.texto}`); }
+    if (r.inmet && r.inmet.ts) {
+      // cruzamento: a previsão textual do INMET (município, período inteiro) só eleva o alerta quando modelos ou TAF dão suporte nesta hora
+      const sup = conv.level >= 1 || (c.cape != null && c.cape >= capeM / 2) || (c.sh || 0) > 0.1 || r.tafU.some(x => x.at && (x.at.cb || x.at.tcu || x.at.ts));
+      if (sup) { if (conv.level < 2) { conv.level = 2; conv.text = 'TCU/CB possível (INMET + modelos/TAF)'; } }
+      else if (conv.level < 1) { conv.level = 1; conv.text = 'TCU/CB citado pelo INMET para o período'; conv.inmetOnly = true; }
+      conv.src.push(`INMET ${r.inmet.periodo}: ${r.inmet.texto}${sup ? '' : ' — sem indício nos modelos (CAPE ' + fmt(c.cape) + ' J/kg, sem pancadas) nem no TAF nesta hora'}`);
+    }
     // vento na ZL (ZL + 750 ft), 1ª camada acima e altura de lançamento
     r.zl = zlWinds(r);
     // observação (METAR / medição na ZL) e TAF corrigem os valores dos modelos
@@ -1446,7 +1454,11 @@ const MET = (() => {
       { const q = daCat(h.daZl); if (q && q.k >= 2) out.push({ sev: 'warn', t, txt: `Altitude-densidade na ZL com efeito ${q.txt.toLowerCase()}: semiautomático — ${q.sa}; salto livre — ${q.sl}` }); }
     });
     if (S.obs && S.obs.sigmets && S.obs.sigmets.length) S.obs.sigmets.forEach(sg => out.push({ sev: 'bad', t: 'SIGMET', txt: sg }));
-    return out;
+    // agrupa o mesmo alerta em horários consecutivos (texto sem o detalhe numérico da hora)
+    const key = x => x.sev + '|' + x.txt.replace(/\(CAPE [^)]*\)|CAPE [\d.,]+ J\/kg/g, '').replace(/INMET (manhã|tarde|noite):/, 'INMET:');
+    const merged = [];
+    out.forEach(x => { const g = merged.find(y => key(y) === key(x) && y.t1 != null); if (g && /^\d\d:\d\d$/.test(x.t)) { g.t1 = x.t; g.n++; } else merged.push(Object.assign({}, x, { t1: /^\d\d:\d\d$/.test(x.t) ? x.t : null, n: 1 })); });
+    return merged.map(x => Object.assign(x, { t: x.n > 1 ? `${x.t}–${x.t1}` : x.t }));
   }
 
   /* ---------------- METAR/TAF inseridos pelo usuário (dois aeródromos mais próximos) ---------------- */
@@ -1531,6 +1543,16 @@ const MET = (() => {
     const utc = hmMs(S.mission.date, z.hm, S.mission.tz); if (utc == null) return null;
     return { utc, kt: +z.kt, dir: numOrNull(z.dir), alt: z.alt === '750' ? '750' : 'SFC', src: 'medição na ZL ' + z.hm };
   }
+  /** Última observação da estação automática do INMET mais próxima (coletada pelo aplicativo). */
+  function inmetObs() {
+    const O = S.oficiais, EP = O && O.inmet_prev && O.inmet_prev.estacao; if (!EP || !EP.dados || !EP.estacao || !hasPos()) return null;
+    if (O.lat != null && (Math.abs(O.lat - S.mission.lat) > 0.05 || Math.abs(O.lon - S.mission.lon) > 0.05)) return null;
+    const d = EP.dados, e = EP.estacao, f = k => (d[k] == null || d[k] === '' || isNaN(+d[k]) ? null : +d[k]);
+    const hr = String(d.HR_MEDICAO || '').padStart(4, '0'), utc = d.DT_MEDICAO ? Date.parse(`${d.DT_MEDICAO}T${hr.slice(0, 2)}:${hr.slice(2)}:00Z`) : NaN;
+    if (isNaN(utc)) return null;
+    const la = +e.LATITUDE, lo = +e.LONGITUDE;
+    return { utc, cod: e.CODIGO, nome: e.NOME, dist: isNaN(la) ? null : haversine(S.mission.lat, S.mission.lon, la, lo), kt: f('VEN_VEL') != null ? f('VEN_VEL') * 1.943844 : null, dir: f('VEN_DIR'), t: f('TEM_INS'), td: f('PTO_INS'), chuva: f('CHUVA') };
+  }
   const OKMID = { FEW: 2, SCT: 4, BKN: 6, OVC: 8 };
   const covOf = o => o <= 0 ? null : o <= 2 ? 'FEW' : o <= 4 ? 'SCT' : o < 8 ? 'BKN' : 'OVC';
   const zlFtOf = () => numOrNull(S.mission.zlElevFt) != null ? +S.mission.zlElevFt : S.models && S.models.meta ? (S.models.meta.elevation || 0) / FT : 0;
@@ -1550,7 +1572,7 @@ const MET = (() => {
   const sAng = (a, b) => ((b - a + 540) % 360) - 180;
   function assimilate(r) {
     const P = ASSIM(), c = r.c, A = r.assim = { cloud: 'MOD', wind: null, z750: null, temp: null, vis: null, taf: null, obs: null };
-    r.cm = { wind: c.wind, dir: c.dir, gust: c.gust, temp: c.temp, vis: c.vis, ccl: c.ccl, cc: c.cc, layers: r.layers ? r.layers.cons.slice() : [], c750: r.zl && r.zl.c750 ? Object.assign({}, r.zl.c750) : null };
+    r.cm = { wind: c.wind, dir: c.dir, gust: c.gust, temp: c.temp, vis: c.vis, pr: c.pr, pp: c.pp, ccl: c.ccl, cc: c.cc, layers: r.layers ? r.layers.cons.slice() : [], c750: r.zl && r.zl.c750 ? Object.assign({}, r.zl.c750) : null };
     const alphaOf = lead => lead < -0.5 ? 0 : Math.max(0, Math.min(1, 1 - Math.max(0, lead) / P.hz));
     const ads = obsAds();
     let ob = null;
@@ -1563,7 +1585,10 @@ const MET = (() => {
     // ---- vento a 10 m (e rajada)
     const zm = zlMed();
     const zmS = zm && zm.alt === 'SFC' && zm.utc <= r.utc + 30 * 60e3 && (r.utc - zm.utc) / 3600e3 < P.hz && (!ob || zm.utc >= ob.m.utc - 30 * 60e3) ? zm : null;
-    const wo = zmS ? { kt: zmS.kt, dir: zmS.dir, vrb: zmS.dir == null, gust: null, utc: zmS.utc, src: zmS.src } : ob && ob.m.wind ? Object.assign({ utc: ob.m.utc, src: `METAR ${ob.ad.icao} ${M.hhmm(ob.m.utc, 'UTC')}Z` }, ob.m.wind) : null;
+    let wo = zmS ? { kt: zmS.kt, dir: zmS.dir, vrb: zmS.dir == null, gust: null, utc: zmS.utc, src: zmS.src } : ob && ob.m.wind ? Object.assign({ utc: ob.m.utc, src: `METAR ${ob.ad.icao} ${M.hhmm(ob.m.utc, 'UTC')}Z` }, ob.m.wind) : null;
+    const io = inmetObs(), ioOk = !!(io && (io.dist == null || io.dist <= P.rad) && io.utc <= r.utc + 30 * 60e3 && (r.utc - io.utc) / 3600e3 < P.hz);
+    // sem METAR nem medição na ZL: estação automática do INMET (10 m) no raio
+    if (!wo && ioOk && io.kt != null) wo = { kt: io.kt, dir: io.dir, vrb: io.dir == null || io.kt < 1, gust: null, utc: io.utc, src: `INMET ${io.cod}` };
     const tw = tf && tf.wind && tf.wind.prev ? tf.wind.prev : null;
     if (c.wind != null) {
       const ge0 = c.gust != null ? Math.max(0, c.gust - c.wind) : null;
@@ -1618,19 +1643,29 @@ const MET = (() => {
           const dOk = m0.c.ccl != null && r.cm.ccl != null ? Math.max(-2, Math.min(2, Math.round((r.cm.ccl - m0.c.ccl) / 12.5))) : 0;
           // tendência da base só quando o modelo "enxerga" a mesma camada observada (base a ±1.500 ft do METAR);
           // variação limitada a 1.000 ft por hora de antecedência. Caso contrário, persistência da base observada.
-          const same = b0 != null && b1 != null && ob0 != null && Math.abs(b0 - ob0) <= 1500;
+          const L0m = m0.layers ? m0.layers.cons : [];
+          // o modelo só é "crível" para a tendência se, na hora do METAR, acertou a camada mais baixa (base ±1.500 ft e cobertura ±3/8)
+          const cred = (!L0m[0] && !OL[0]) || (L0m[0] && OL[0] && Math.abs(L0m[0].baseFt - OL[0].baseFt) <= 1500 && Math.abs(oktaN(L0m[0]) - oktaN(OL[0])) <= 3);
+          A.cred = !!cred;
+          const same = cred && b0 != null && b1 != null && ob0 != null;
           const dB = same ? Math.max(-1000 * Math.max(1, ob.lead), Math.min(1000 * Math.max(1, ob.lead), b1 - b0)) : 0;
           if (dB) lay.forEach(x => { if (x.baseFt < 6500) x.baseFt = Math.max(100, Math.round((x.baseFt + dB) / 100) * 100); });
-          if (lay[0] && lay[0].baseFt < 6500 && dOk) { const o = Math.max(0, Math.min(8, OKMID[lay[0].cov] + dOk)), cv = covOf(o); if (cv) Object.assign(lay[0], { cov: cv, pct: o * 12.5 - 1, src: 'obs+mod' }); else lay.shift(); }
+          if (cred && lay[0] && lay[0].baseFt < 6500 && dOk) { const o = Math.max(0, Math.min(8, OKMID[lay[0].cov] + dOk)), cv = covOf(o); if (cv) Object.assign(lay[0], { cov: cv, pct: o * 12.5 - 1, src: 'obs+mod' }); else lay.shift(); }
           lay = lay.map(x => mkLayer(x.cov, x.baseFt, x.type, x.pct, x.src));
           // modelo indicando nova camada abaixo da observada
           const nl = r.cm.layers[0];
-          if (nl && (b0 == null || b0 - nl.baseFt >= 1000) && (!lay[0] || lay[0].baseFt - nl.baseFt >= 1000)) lay.unshift(mkLayer(nl.cov, nl.baseFt, '', nl.pct, 'mod'));
+          if (cred && nl && (b0 == null || b0 - nl.baseFt >= 1000) && (!lay[0] || lay[0].baseFt - nl.baseFt >= 1000)) lay.unshift(mkLayer(nl.cov, nl.baseFt, '', nl.pct, 'mod'));
         }
         A.cloud = 'OBS+MOD';
       }
     }
-    if (!lay && tf && tf.cond.prev.clouds) { lay = msgLayers(tf.cond.prev.clouds, tf.ad.elev, 'taf'); A.cloud = 'TAF'; A.cavok = tf.cond.prev.clouds.includes('CAVOK'); }
+    if (!lay && tf && tf.cond.prev.clouds) {
+      lay = msgLayers(tf.cond.prev.clouds, tf.ad.elev, 'taf'); A.cloud = 'TAF'; A.cavok = tf.cond.prev.clouds.includes('CAVOK');
+      // o TAF descreve só as camadas significativas: acima delas, mantém as camadas médias/altas do último METAR (ou dos modelos)
+      const top = lay.length ? lay[lay.length - 1].baseFt : A.cavok ? 5000 : 0;
+      const up = (ob ? msgLayers(ob.m.cavok ? [] : ob.m.clouds, ob.ad.elev, 'obs') : r.cm.layers.map(x => mkLayer(x.cov, x.baseFt, '', x.pct, 'mod'))).filter(x => x.baseFt >= top + 1000 && x.baseFt >= 5000);
+      lay = lay.concat(up).slice(0, 4);
+    }
     if (!lay && ob && okM0 && r.cm.layers.length) {
       const a = alphaOf(ob.lead), OL = msgLayers(ob.m.cavok ? [] : ob.m.clouds, ob.ad.elev, 'obs'), L0 = m0.layers ? m0.layers.cons : [];
       lay = r.cm.layers.map(x => Object.assign({}, x));
@@ -1658,8 +1693,46 @@ const MET = (() => {
       if (ob.m.ts || ob.m.cb) { if (r.conv.level < 3) { r.conv.level = 3; r.conv.text = `${ob.m.ts ? 'Trovoada' : 'CB'} observado (${tag})`; } r.conv.src.push(`${tag}: ${[...ob.m.wx, ...ob.m.clouds.filter(q => q.type).map(q => q.cov + String(q.base / 100).padStart(3, '0') + q.type)].join(' ')}`); }
       else if (ob.m.tcu) { if (r.conv.level < 2) { r.conv.level = 2; r.conv.text = `TCU observado (${tag})`; } r.conv.src.push(`${tag}: TCU`); }
     }
+    // ---- precipitação e tempo presente: METAR + estação automática do INMET × modelos × TAF
+    const PRE = /RA|DZ|SN|GR|GS|PL|UP/;
+    let wet = null, aP = 0; const wetSrc = [];
+    if (ob && alphaOf(ob.lead) > 0) { aP = alphaOf(ob.lead); const pw = ob.m.wx.filter(w => PRE.test(w)); wet = pw.length > 0; wetSrc.push(`METAR ${ob.ad.icao} ${M.hhmm(ob.m.utc, 'UTC')}Z ${wet ? pw.join(' ') : 'sem precipitação'}`); }
+    if (ioOk && io.chuva != null && (!ob || Math.abs(io.utc - ob.m.utc) <= 90 * 60e3)) { if (io.chuva > 0) wet = true; else if (wet == null) wet = false; if (!aP) aP = alphaOf((r.utc - io.utc) / 3600e3); wetSrc.push(`INMET ${io.cod} ${fmt(io.chuva, 1)} mm/h`); }
+    let ppRef = c.pp, prRef = c.pr, shRef = c.sh;
+    if (tf) {
+      const wP = (tf.cond.prev.wx || []).some(w => PRE.test(w)), wV = tf.cond.vari.some(v => (v.wx || []).some(w => PRE.test(w)));
+      if (!wP && !wV) { const k = 1 - P.wTaf; if (ppRef != null) ppRef *= k; if (prRef != null) prRef *= k; if (shRef != null) shRef *= k; A.tafDry = tf.ad.icao; }
+    }
+    if (wet != null && aP > 0) {
+      const inten = w => /RA|SN|GR|GS|PL/.test(w) ? (w[0] === '-' ? 1 : w[0] === '+' ? 10 : 4) : /DZ/.test(w) ? 0.2 : 1; // mm/h aproximados pela intensidade do METAR
+      const obsPr = wet ? Math.max(0.2, ...ob ? ob.m.wx.filter(w => PRE.test(w)).map(inten) : [io.chuva || 0.2]) : 0;
+      if (c.pp != null) c.pp = aP * (wet ? 100 : 0) + (1 - aP) * (ppRef ?? 0);
+      if (c.pr != null) c.pr = aP * obsPr + (1 - aP) * (prRef ?? 0);
+      if (c.sh != null) c.sh = wet && ob && ob.m.wx.some(w => /SH|TS/.test(w)) ? Math.max(c.sh, c.pr) : (1 - aP) * (shRef ?? 0);
+      A.precip = { wet, a: aP, src: wetSrc };
+    } else if (A.tafDry) { c.pp = ppRef; c.pr = prRef; c.sh = shRef; }
+    // tempo presente dos modelos: descartado quando contraria a observação ou a física da nebulosidade adotada
+    const lowStrat = (r.layers ? r.layers.cons : []).some(x => x.baseFt < 3000 && (x.cov === 'BKN' || x.cov === 'OVC'));
+    r.wxDisc = {};
+    Object.keys(r.wx).forEach(w => {
+      let why = null;
+      if (/DZ/.test(w) && !/RA|SH|TS/.test(w) && !lowStrat) why = 'chuvisco exige camada estratiforme baixa (BKN/OVC), ausente na nebulosidade adotada';
+      else if (wet === false && aP >= 0.5 && !/TS/.test(w)) why = `não observado (${wetSrc.join('; ')})`;
+      if (why) { r.wxDisc[w] = { ids: r.wx[w], why }; delete r.wx[w]; }
+    });
+    // registro do cruzamento (exibido no painel de observação)
+    const X = r.xchk = [];
+    if (ob && A.cred === false) { const L0m = m0 && m0.layers ? m0.layers.cons : []; X.push(`Nuvens: às ${M.hhmm(ob.m.utc, 'UTC')}Z os modelos indicavam ${L0m.length ? L0m.map(y => y.code).join(' ') : 'céu claro'} e o METAR ${ob.ad.icao} observou ${ob.m.clouds.length ? ob.m.clouds.map(q => q.cov + String(q.base / 100).padStart(3, '0') + q.type).join(' ') : ob.m.cavok ? 'CAVOK' : 'sem nuvens'} — tendência dos modelos não aplicada às nuvens (mantida a camada observada).`); }
+    { const dz = Object.keys(r.wxDisc).filter(w => /chuvisco/.test(r.wxDisc[w].why)), no = Object.keys(r.wxDisc).filter(w => !dz.includes(w));
+      if (dz.length) X.push('Chuvisco (DZ) previsto pelos modelos descartado: exige camada estratiforme baixa (BKN/OVC), ausente na nebulosidade observada/adotada.');
+      if (no.length) X.push(`Tempo presente previsto pelos modelos (${no.join(', ')}) descartado: ${r.wxDisc[no[0]].why}.`); }
+    if (A.precip && A.precip.wet === false) X.push(`Precipitação: ${wetSrc.join('; ')} — probabilidade e quantidade dos modelos reduzidas pelo peso da observação.`);
+    if (A.tafDry) X.push(`TAF ${A.tafDry} sem precipitação neste horário — probabilidade dos modelos reduzida em ${fmt(P.wTaf * 100)}%.`);
+    if (r.conv.inmetOnly) X.push('Trovoada citada na previsão do INMET para o período, sem indício nos modelos, no TAF ou no METAR nesta hora — mantida como atenção.');
+    if (ioOk) A.inmetSt = io;
     // ---- confiança: a observação recente reduz a incerteza das variáveis assimiladas
     const byA = a => a >= 0.66 ? 'ALTA' : a >= 0.33 ? 'MÉDIA' : null, best = (x, y) => y == null ? x : x == null ? y : rank[x] <= rank[y] ? x : y;
+    if (A.precip) { const q = byA(A.precip.a); r.conf.pp = best(r.conf.pp, q); r.conf.pr = best(r.conf.pr, q); }
     if (A.wind && A.wind.a != null) { r.conf.wind = best(r.conf.wind, byA(A.wind.a)); r.conf.dir = best(r.conf.dir, byA(A.wind.a)); if (A.wind.obs && A.wind.obs.gust == null && A.wind.a >= 0.66) r.conf.gust = best(r.conf.gust, 'MÉDIA'); }
     if (A.cloud === 'OBS') { r.conf.base = 'ALTA'; r.conf.cover = 'ALTA'; }
     else if (A.cloud === 'OBS+MOD') { const q = byA(A.obs.a); r.conf.base = best(r.conf.base, q); r.conf.cover = best(r.conf.cover, q); }
@@ -1707,6 +1780,8 @@ const MET = (() => {
         ${used && used.obs ? `<li class="ok">Observação: <b>METAR ${esc(used.obs.icao)}</b> de ${M.hhmm(used.obs.utc, tz)} (${M.hhmm(used.obs.utc, 'UTC')}Z) — peso em H (${M.hhmm(h0.utc, tz)}): <b>${fmt(used.obs.a * 100)}%</b>, caindo a 0% ${fmt(P.hz)} h após o METAR.</li>` : `<li class="warn">Nenhum METAR com menos de ${fmt(P.hz)} h em relação a H: a janela usa ${used && used.taf ? 'TAF e modelos' : 'só os modelos'}.</li>`}
         ${used && used.wind && used.wind.obs && /medição/.test(used.wind.src) ? `<li class="ok">Vento de superfície: ${esc(used.wind.src)} (prioridade sobre o METAR).</li>` : ''}
         ${used && used.taf ? `<li class="ok">TAF de referência: <b>${esc(used.taf.icao)}</b> — peso ${fmt(P.wTaf * 100)}% junto aos modelos após o alcance da observação.</li>` : U.some(a => a.tafs.length) ? '<li class="warn">Nenhum TAF válido em H dentro do raio.</li>' : ''}
+        ${(() => { const io = inmetObs(); return io ? `<li class="${io.dist != null && io.dist > P.rad ? 'warn' : 'ok'}">Estação automática INMET <b>${esc(io.cod)}</b> ${esc(io.nome || '')} (${io.dist != null ? fmt(io.dist, 1) + ' km da ZL' : 'distância n/d'}) — ${M.hhmm(io.utc, tz)}: ${io.kt != null ? dir3(io.dir) + '°/' + fmt(io.kt) + ' kt, ' : ''}${fmt(io.t, 1)} °C, chuva ${fmt(io.chuva, 1)} mm${io.dist != null && io.dist > P.rad ? ' — fora do raio, só referência' : ' — usada no cruzamento (precipitação; vento se faltar METAR)'}.</li>` : ''; })()}
+        ${(() => { const X = [...new Set(H.flatMap(h => (h.xchk || []).map(t => t.replace(/ às \d\d:\d\dZ/, ''))))]; return X.length ? `<li class="ok">Resultado do cruzamento na janela:<ul>${X.map(t => `<li>${esc(t)}</li>`).join('')}</ul></li>` : ''; })()}
         ${outR.length ? `<li class="warn">Fora do raio de ${fmt(P.rad)} km (não entram na previsão, só na verificação): ${outR.map(a => esc(a.icao) + ' ' + fmt(a.dist, 1) + ' km').join(', ')}.</li>` : ''}
       </ul></div>`;
     el.innerHTML = `<div class="opm-g">${card(0)}${card(1)}</div>
@@ -2121,6 +2196,7 @@ const MET = (() => {
   function sigWx(h) {
     const items = [];
     if (h.conv.level > 0) items.push(`<span class="conv c${h.conv.level}">${esc(h.conv.text)}</span>`);
+    { const dk = Object.keys(h.wxDisc || {}); if (dk.length) items.push(`<span class="conv c0 disc" title="${esc(dk.map(w => w + ': ' + h.wxDisc[w].why).join('\n'))}">modelos: ${esc(dk.join(' '))} — descartado pelo cruzamento</span>`); }
     if (h.obsWx) items.push(h.obsWx.wx.length ? `<span class="conv ${h.obsWx.wx.some(w => /TS|\+/.test(w)) ? 'c3' : 'c2'}">${esc(h.obsWx.tag)}: ${esc(h.obsWx.wx.map(M.wxDesc).join(', '))}</span>` : `<span class="conv c0">${esc(h.obsWx.tag)}: sem tempo significativo</span>`);
     Object.entries(h.wx || {}).forEach(([w, ids]) => items.push(`<span class="conv ${/TS|\+/.test(w) ? 'c3' : 'c1'}" title="${esc(M.wxDesc(w))}">${esc(w)} <small>${ids.length}/${h.n} mod.</small></span>`));
     (h.tafU || []).forEach(x => { [...(x.cond.prev.wx || []).filter(w => w !== 'NSW').map(w => [w, '']), ...x.cond.vari.flatMap(v => (v.wx || []).map(w => [w, v.tipo + ' ']))].forEach(([w, t]) => items.push(`<span class="conv ${/TS|\+/.test(w) ? 'c3' : 'c2'}">TAF ${esc(x.icao)} ${esc(t + w)}</span>`)); });
@@ -2142,7 +2218,7 @@ const MET = (() => {
     const P = ASSIM();
     const body = [
       row('Origem dos valores', 'observação · TAF · modelos', H.map(h => cell(h, h => { const A = h.assim || { cloud: 'MOD' }, w = A.wind;
-            return `<span class="st st-${SRC_CLS[A.cloud]}">${SRC_LBL[A.cloud]}</span><small>nuvens: ${A.cloud === 'TAF' ? 'TAF ' + esc(A.taf.icao) : A.cloud.startsWith('OBS') ? 'METAR ' + esc(A.obs.icao) + (A.cloud === 'OBS+MOD' ? ' + tendência' : '') : A.cloud === 'MOD*' ? 'modelos corrigidos pelo METAR ' + esc(A.obs.icao) : 'modelos'}</small><small>vento: ${w && w.obs ? `${esc(/medição/.test(w.src) ? 'medição ZL' : 'METAR ' + A.obs.icao)} ${fmt(w.a * 100)}% + ${A.taf ? 'TAF/mod.' : 'mod.'} ${fmt(100 - w.a * 100)}%` : A.taf ? 'TAF ' + esc(A.taf.icao) + ' + mod.' : 'modelos'}</small>`; }))),
+            return `<span class="st st-${SRC_CLS[A.cloud]}">${SRC_LBL[A.cloud]}</span><small>nuvens: ${A.cloud === 'TAF' ? 'TAF ' + esc(A.taf.icao) : A.cloud.startsWith('OBS') ? 'METAR ' + esc(A.obs.icao) + (A.cloud === 'OBS+MOD' ? ' + tendência' : '') : A.cloud === 'MOD*' ? 'modelos corrigidos pelo METAR ' + esc(A.obs.icao) : 'modelos'}</small><small>vento: ${w && w.obs ? `${esc(/medição/.test(w.src) ? 'medição ZL' : w.src.replace(/ \d\d:\d\dZ$/, ''))} ${fmt(w.a * 100)}% + ${A.taf ? 'TAF/mod.' : 'mod.'} ${fmt(100 - w.a * 100)}%` : A.taf ? 'TAF ' + esc(A.taf.icao) + ' + mod.' : 'modelos'}</small>`; }))),
       row('Vento solo — direção', '° verdadeiro · 10 m', H.map(h => cell(h, h => `${h.c.wind != null && Math.round(h.c.wind) < 1 ? 'calmo' : dir3(h.c.dir) + '°'} <small>${M.cardinal(h.c.dir)}${h.c.wind != null && Math.round(h.c.wind) < 3 ? ' · fraco, direção pouco definida' : ''}</small>${h.cm && h.cm.dir != null && h.c.dir != null && h.c.wind >= 3 && M.angDiff(h.cm.dir, h.c.dir) >= 30 ? `<small class="mdl">mod. ${dir3(h.cm.dir)}°</small>` : ''}`))),
       row('Vento solo — intensidade', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.wind > lim ? 'tbad' : h.c.wind >= 0.8 * lim ? 'twarn' : ''}">${fmt(h.c.wind)}</span>${i ? trendArrow(H[i - 1].c.wind, h.c.wind, 1) : ''}${md(h, 'wind', h.c.wind)}`))),
       row('Rajadas', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.gust > lim ? 'tbad' : ''}">${fmt(h.c.gust)}</span>${i ? trendArrow(H[i - 1].c.gust, h.c.gust, 1) : ''}${md(h, 'gust', h.c.gust)}`))),
@@ -2290,7 +2366,7 @@ const MET = (() => {
     // precipitação e convecção
     cols.forEach(c => { const h = c.h; if (!h || !h.n) return;
       if (h.c.pr != null && h.c.pr >= 0.1) { const ph = Math.min(50, 6 + h.c.pr * 7); s += `<rect x="${xc(c.i) - 3}" y="${B - ph}" width="6" height="${ph}" rx="2" class="cc-pr ${h.c.sh > 0 ? 'cv' : ''}"/>`; }
-      if (h.conv && h.conv.level >= 1) s += `<text x="${xc(c.i)}" y="${T + 11}" text-anchor="middle" class="cc-cv l${Math.min(3, h.conv.level)}">${h.conv.level >= 3 ? '⚡CB' : 'TCU'}</text>`; });
+      if (h.conv && h.conv.level >= 1) s += h.conv.inmetOnly ? `<text x="${xc(c.i)}" y="${T + 11}" text-anchor="middle" class="cc-ax"><title>${esc(h.conv.src.join('; '))}</title>INMET</text>` : `<text x="${xc(c.i)}" y="${T + 11}" text-anchor="middle" class="cc-cv l${Math.min(3, h.conv.level)}"><title>${esc(h.conv.src.join('; '))}</title>${h.conv.level >= 3 ? '⚡CB' : 'TCU'}</text>`; });
     // teto mínimo e saída
     if (bmin != null && zlFt + bmin < TOP) { const yy = y(zlFt + bmin); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-min"/><text x="${W - R - 4}" y="${yy - 4}" text-anchor="end" class="cc-mt">teto mínimo ${fmt(bmin)} ft AGL</text>`; }
     if (m.activity === 'SLOP' && numOrNull(m.exitFtMSL) != null && +m.exitFtMSL < TOP) { const yy = y(+m.exitFtMSL); s += `<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" class="cc-exit"/><text x="${W - R - 4}" y="${yy - 4}" text-anchor="end" class="cc-xt">saída ${fmt(+m.exitFtMSL)} ft MSL</text>`; }
@@ -2318,7 +2394,7 @@ const MET = (() => {
     const span = g => `${M.pad(g.from)}h–${M.pad(g.to + 1 === 24 ? 0 : g.to + 1)}h`;
     const lst = v => groups.filter(g => g.v === v).map(span).join(', ');
     el.innerHTML = `<h3 class="sub cc-title">Nuvens e janelas de salto — ${esc(m.date.split('-').reverse().join('/'))}</h3>
-      <div class="cc-sum"><span class="pill ok">✓ Favorável</span> ${lst('ok') || 'nenhuma'} <span class="pill warn">! Com restrições</span> ${lst('warn') || 'nenhuma'} <span class="pill bad">✕ Desfavorável</span> ${lst('bad') || 'nenhuma'}</div>
+      <div class="cc-sum"><span class="pill ok">✓ Favorável</span> ${lst('ok') || 'nenhuma'} <span class="pill warn">! Com restrições</span> ${lst('warn') || 'nenhuma'} <span class="pill bad">✕ Desfavorável</span> ${lst('bad') || 'nenhuma'}${cols.some(c => c.h && c.h.conv && c.h.conv.inmetOnly) ? ' · <span class="small muted">“INMET” no topo = trovoada citada pelo INMET para o período, sem indício nos modelos/TAF/METAR na hora</span>' : ''}</div>
       <div class="cc-wrap">${s}</div>
       <p class="note"><b>Origem</b> (linha inferior): <b>OBS</b> = camadas do METAR da hora · <b>O+M</b> = último METAR + tendência dos modelos · <b>TAF</b> = grupo predominante do TAF válido · <b>M*</b> = modelos corrigidos pelo erro medido no METAR · <b>MOD</b> = só modelos (sem observação ou TAF no alcance). Nas horas OBS, O+M e TAF a nuvem é desenhada a partir da base informada; METAR e TAF não informam o topo, e a espessura desenhada é apenas ilustrativa. <span class="st st-est">ESTIMADO</span> nas horas M*/MOD: cruzamento GFS/ECMWF/ICON/UKMO (cobertura por nível de pressão, interpolada no tempo e na altitude): quanto mais forte o tom da nuvem, mais oitavos; contorno claro = poucas nuvens. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5; o parecer de todas as horas usa observação, TAF e modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
   }
@@ -2387,7 +2463,8 @@ const MET = (() => {
     const W = 1000, L = 96, R = 52, T = 58, PH = 240, B = T + PH;
     const pw = W - L - R, cw = pw / 24, xc = i => L + (i + 0.5) * cw, y = t => B - (t - lo) / (hi - lo) * PH;
     // precipitação: mediana (consolidado) e máximo entre os modelos, em mm/h, eixo à direita
-    const prOf = h => { if (!h || !h.n) return null; const v = Object.values(h.per).map(p => p.pr).filter(x => x != null); return { med: h.c.pr, max: v.length ? Math.max(...v) : null, pp: h.c.pp, sh: h.c.sh, n: v.length }; };
+    // máximo entre modelos escalado pelo mesmo fator que a observação/TAF aplicaram à mediana
+    const prOf = h => { if (!h || !h.n) return null; const v = Object.values(h.per).map(p => p.pr).filter(x => x != null); const k = h.cm && h.cm.pr > 0 && h.c.pr != null ? Math.min(1, h.c.pr / h.cm.pr) : 1; return { med: h.c.pr, max: v.length ? Math.max(...v) * k : null, pp: h.c.pp, sh: h.c.sh, n: v.length }; };
     const PR = cols.map(c => prOf(c.h));
     const prMaxAll = Math.max(0, ...PR.filter(Boolean).map(p => Math.max(p.med || 0, p.max || 0)));
     const pTop = Math.max(5, Math.ceil(prMaxAll)), pStep = pTop <= 6 ? 1 : pTop <= 12 ? 2 : 5;
@@ -2453,7 +2530,7 @@ const MET = (() => {
       <div class="cc-sum">Máx. <b>${fmt(mx.h.c.temp)} °C</b> às ${M.pad(mx.i)}h · mín. <b>${fmt(mn.h.c.temp)} °C</b> às ${M.pad(mn.i)}h · precipitação no dia <b>${fmt(prTot, 1)} mm</b>${prPk != null && PR[prPk].med >= 0.1 ? ` (pico ${fmt(PR[prPk].med, 1)} mm/h às ${M.pad(prPk)}h)` : ''} · horas com chuva ≥ 0,1 mm/h: ${rainH.length ? rainH.map(i => M.pad(i) + 'h').join(', ') : 'nenhuma'}</div>
       <div class="tc-sums">${sum}</div>
       <div class="cc-wrap">${s}</div>
-      <p class="note"><span class="st st-prev">PREVISTO</span> temperatura e sensação térmica: mediana GFS/ECMWF/ICON/UKMO. Precipitação (eixo à direita, mm/h): barra azul-escura = mediana dos modelos; barra azul-clara = valor do modelo mais chuvoso (indica o que pode ocorrer); roxa = componente convectiva (pancadas); probabilidade de chuva sob cada hora. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
+      <p class="note"><span class="st st-obs">OBS. + PREVISÃO</span> temperatura, precipitação, probabilidade e ícones: valores adotados — METAR/estação INMET e TAF corrigem a mediana GFS/ECMWF/ICON/UKMO (método na tabela horária); nas horas sem observação nem TAF, só modelos. Precipitação (eixo à direita, mm/h): barra azul-escura = mediana dos modelos; barra azul-clara = valor do modelo mais chuvoso (indica o que pode ocorrer); roxa = componente convectiva (pancadas); probabilidade de chuva sob cada hora. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
   }
 
   /* ---------------- Gráfico de vento ---------------- */
@@ -2600,6 +2677,20 @@ const MET = (() => {
     });
     return res;
   }
+  /** Resumo das observações (METAR inseridos) de um dia local. */
+  function obsDay(ds) {
+    const tz = S.mission.tz;
+    return userOpmet().map(ad => {
+      const L = ad.metars.filter(m => { const p = M.localParts(m.utc, tz); return M.isoDate(p.y, p.mo, p.d) === ds; }).sort((x, y) => x.utc - y.utc);
+      if (!L.length) return null;
+      const lows = L.map(m => ({ m, b: M.ceilingFt(m) })).filter(x => x.b != null).sort((x, y) => x.b - y.b);
+      const lw = lows[0] ? lows[0].m.clouds.find(q => q.base === lows[0].b) : null;
+      const T = L.map(m => m.t).filter(v => v != null), G = L.map(m => m.wind && m.wind.gust).filter(Boolean);
+      return { icao: ad.icao, n: L.length, h0: M.hhmm(L[0].utc, tz), h1: M.hhmm(L[L.length - 1].utc, tz), wmax: Math.max(...L.map(m => m.wind ? m.wind.kt : 0)), gmax: G.length ? Math.max(...G) : null,
+        low: lw ? lw.cov + String(lw.base / 100).padStart(3, '0') + lw.type : null, wx: [...new Set(L.flatMap(m => m.wx))], conv: L.some(m => m.cb || m.ts) ? 'CB/TS observado' : L.some(m => m.tcu) ? 'TCU observado' : '',
+        tmin: T.length ? Math.min(...T) : null, tmax: T.length ? Math.max(...T) : null };
+    }).filter(Boolean);
+  }
   function renderDays() {
     const el = $('#days');
     if (!hasPos()) { el.innerHTML = ''; return; }
@@ -2610,8 +2701,10 @@ const MET = (() => {
       const tbl = st ? `<div class="tbl-wrap"><table class="mini"><thead><tr><th></th>${Object.keys(st).map(i => `<th>${i}</th>`).join('')}</tr></thead><tbody>
         ${[['Vento máx.', 'wmax', 0, 'kt'], ['Rajada máx.', 'gmax', 0, 'kt'], ['Precip. total', 'pr', 1, 'mm'], ['Pancadas', 'sh', 1, 'mm'], ['CAPE máx.', 'cape', 0, 'J/kg'], ['T mín/máx', 'tt', 0, '°C'], ['PNMM mín/máx', 'pp', 0, 'hPa']].map(([n, k, dd, u]) => `<tr><th scope="row">${n}<small>${u}</small></th>${Object.keys(st).map(i => `<td>${k === 'tt' ? fmt(st[i].tmin) + '/' + fmt(st[i].tmax) : k === 'pp' ? fmt(st[i].pmin) + '/' + fmt(st[i].pmax) : fmt(st[i][k], dd)}</td>`).join('')}</tr>`).join('')}
       </tbody></table></div>` : `<p class="muted small">${lab === 'D-1' ? 'Sem estatística de modelo: a busca começa no dia D (D-1 não é consultado). Use a análise sinótica e as observações.' : 'Sem dados de modelo para este dia.'}</p>`;
+      const od = obsDay(ds);
+      const otx = od.length ? `<div class="obsday"><b>Observado (METAR inseridos)</b>${od.map(o => `<p class="small"><span class="st st-obs">${esc(o.icao)}</span> ${o.n} METAR de ${o.h0} a ${o.h1} · vento máx. ${fmt(o.wmax)} kt${o.gmax ? ' (rajada ' + o.gmax + ' kt)' : ''} · nuvem mais baixa ${o.low || 'sem nuvens'} · ${o.wx.length ? 'tempo: ' + esc(o.wx.map(M.wxDesc).join(', ')) : 'sem precipitação/tempo significativo'}${o.conv ? ' · <b>' + esc(o.conv) + '</b>' : ''}${o.tmin != null ? ` · T ${fmt(o.tmin)}–${fmt(o.tmax)} °C` : ''}</p>`).join('')}</div>` : '';
       const txt = A[key] ? `<div class="syn">${esc(A[key]).replace(/\n/g, '<br>')}</div>` : `<p class="muted small">Análise sinótica pendente — preenchida pela atualização agendada.</p>`;
-      return `<article class="day"><header><b>${lab}</b><span>${d}/${mo}/${y}</span></header>${txt}${tbl}<p class="note">${lab === 'D-1' ? 'Valores de modelo para o dia anterior: não substituem observação.' : 'Valores de modelo (Open-Meteo).'}</p></article>`;
+      return `<article class="day"><header><b>${lab}</b><span>${d}/${mo}/${y}</span></header>${txt}${otx}${tbl}<p class="note">${lab === 'D-1' ? 'Valores de modelo para o dia anterior: não substituem observação.' : 'Valores de modelo (Open-Meteo).'}</p></article>`;
     }).join('') + (A.sources && A.sources.length ? `<div class="srcs"><b>Fontes da análise sinótica</b> (${esc(whenStr(A.writtenAt))}): ${A.sources.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || s.url)}</a>`).join(' · ')}</div>` : '')
       + `<details class="tad noexport srcs"><summary>Editar análise sinótica (D-1 · D0 · D+1)</summary>
         <p class="small">Cole aqui a análise sinótica (por exemplo, a que eu redigir no chat com fontes). Ela substitui o texto atual de cada dia.</p>
@@ -2647,6 +2740,9 @@ const MET = (() => {
     const v = H.filter(h => h.n), first = v[0], last = v[v.length - 1];
     if (!first) { el.textContent = 'Sem dados de modelo para a janela H a H+5.'; return; }
     const parts = [];
+    const A0 = first.assim;
+    if (A0 && A0.obs) { const ad = userOpmet().find(a => a.icao === A0.obs.icao), mm = ad && ad.metars.find(x => x.utc === A0.obs.utc);
+      parts.push(`Observado (METAR ${A0.obs.icao} ${M.hhmm(A0.obs.utc, S.mission.tz)}): ${mm ? [windTxt(mm.wind), mm.cavok ? 'CAVOK' : mm.clouds.map(q => q.cov + String(q.base / 100).padStart(3, '0') + q.type).join(' ') || 'sem nuvens', mm.wx.length ? mm.wx.map(M.wxDesc).join(', ') : 'sem tempo significativo', mm.t != null ? mm.t + ' °C' : ''].filter(Boolean).join(', ') : '—'}; a previsão abaixo parte dessa observação.`); }
     const dirs = v.map(h => h.c.dir).filter(x => x != null);
     const wTrend = last.c.wind - first.c.wind;
     parts.push(`Entre H (${M.hhmm(first.utc, S.mission.tz)}) e ${last.label} (${M.hhmm(last.utc, S.mission.tz)}), vento predominante de ${M.cardinal(first.c.dir)}${dirs.length > 1 && M.angDiff(dirs[0], dirs[dirs.length - 1]) >= 45 ? ` girando para ${M.cardinal(last.c.dir)}` : ''}, de ${fmt(first.c.wind)} a ${fmt(last.c.wind)} kt${Math.abs(wTrend) >= 2 ? (wTrend > 0 ? ' (intensificação)' : ' (enfraquecimento)') : ''}, rajadas até ${fmt(Math.max(...v.map(h => h.c.gust ?? 0)))} kt.`);
@@ -2654,11 +2750,12 @@ const MET = (() => {
     const ppMax = Math.max(...v.map(h => h.c.pp ?? 0)), prSum = v.reduce((s, h) => s + (h.c.pr || 0), 0);
     parts.push(ppMax >= 30 || prSum >= 0.5 ? `Probabilidade de precipitação até ${fmt(ppMax)}%, acumulado previsto ${fmt(prSum, 1)} mm${v.some(h => h.c.sh > 0) ? ', com componente convectiva' : ''}.` : 'Precipitação pouco provável na janela.');
     const lw = v.map(h => h.c.lowest).filter(Boolean);
-    parts.push(lw.length ? `Nebulosidade mais baixa entre ${lw.map(x => x.code).filter((x, i, s) => s.indexOf(x) === i).join(', ')} (base em centenas de pés sobre a ZL).` : 'Sem nebulosidade significativa prevista pelos modelos.');
+    parts.push(lw.length ? `Nebulosidade mais baixa entre ${lw.map(x => x.code).filter((x, i, s) => s.indexOf(x) === i).join(', ')} (base em centenas de pés sobre a ZL; origem: ${[...new Set(v.map(h => SRC_LBL[h.assim ? h.assim.cloud : 'MOD'].toLowerCase()))].join(' → ')}).` : 'Sem nebulosidade significativa.');
     const conv = v.filter(h => h.conv.level > 0);
-    if (conv.length) parts.push(`Atenção: ${conv.map(h => h.label + ' ' + h.conv.text).join('; ')}.`);
+    if (conv.length) { const g = {}; conv.forEach(h => (g[h.conv.text] = g[h.conv.text] || []).push(h)); parts.push(`Atenção: ${Object.entries(g).map(([t, hs]) => `${t} ${hrs(hs, S.mission.tz)}`).join('; ')}.`); }
     const lows = v.filter(h => h.overall === 'BAIXA').map(h => h.label);
-    parts.push(lows.length ? `Confiança baixa em ${lows.join(', ')}, por divergência entre modelos.` : `Confiança predominante ${worst(v.map(h => h.overall)) === 'ALTA' ? 'alta' : 'média'} entre os modelos.`);
+    const lowVars = [...new Set(v.flatMap(h => Object.entries(h.conf).filter(([k, q]) => q === 'BAIXA' && ['wind', 'gust', 'dir', 'pp', 'base'].includes(k)).map(([k]) => ({ wind: 'vento', gust: 'rajadas', dir: 'direção', pp: 'probabilidade de chuva', base: 'base das nuvens' }[k]))))];
+    parts.push(lows.length ? `Confiança baixa em ${lows.join(', ')} (${lowVars.join(', ')}: divergência entre modelos não resolvida pela observação).` : `Confiança predominante ${worst(v.map(h => h.overall)) === 'ALTA' ? 'alta' : 'média'}.`);
     const verd = v.map(h => h.verdict); const worstV = verd.includes('DESFAVORÁVEL') ? 'DESFAVORÁVEL em ' + v.filter(h => h.verdict === 'DESFAVORÁVEL').map(h => h.label).join(', ') : verd.includes('FAVORÁVEL COM RESTRIÇÕES') ? 'FAVORÁVEL COM RESTRIÇÕES' : 'FAVORÁVEL';
     parts.push(`Avaliação meteorológica da janela (${actLabel()}, limite ${limitKt()} kt): ${worstV}.`);
     el.textContent = parts.join(' ');
@@ -2677,7 +2774,7 @@ const MET = (() => {
     const shear = h => { const a = h.zl && h.zl.c750, b = h.zl && h.zl.cLayer; if (!a || !b) return '<span class="na">—</span>'; const dk = b.kt - a.kt, dd = M.angDiff(a.dir, b.dir); return `${Math.abs(dk) < 0.5 ? '' : dk > 0 ? '+' : '−'}${fmt(Math.abs(dk))} kt · ${fmt(dd)}°`; };
     const launchLbl = m.activity === 'SLOP' ? (m.exitFtMSL ? `Saída ${fmt(+m.exitFtMSL)} ft MSL` : 'Saída (informe a altitude)') : `Lançamento ZL + ${fmt(+m.launchFtAGL || 1000)} ft`;
     const rows = [
-      ['Vento 10 m', 'modelo · superfície', H.map(h => h.n ? `${dir3(h.c.dir)}°/${fmt(h.c.wind)} kt` : '—')],
+      ['Vento 10 m', 'adotado · observação + modelos', H.map(h => h.n ? `${dir3(h.c.dir)}°/${fmt(h.c.wind)} kt` : '—')],
       ['Vento ZL + 750 ft', `${ftMsl(z0.zl.t750)} ft MSL`, H.map(h => wv(h.zl && h.zl.c750, true))],
       ...ids.map(id => [`↳ ${id}`, 'ZL + 750 ft', H.map(h => { const p = h.zl && h.zl.per[id] && h.zl.per[id].w750; return p ? `${dir3(p.dir)}°/${fmt(p.kt)}` : '—'; })]),
       ['1ª camada acima', 'nível padrão', H.map(h => { const l = h.zl && h.zl.cLayer; return l ? `${wv(l, true)}<small>${fmt(l.p)} hPa · ${ftMsl(l.z)} ft MSL · ${ftAgl(l.z)} ft AGL</small>` : '<span class="na">—</span>'; })],
