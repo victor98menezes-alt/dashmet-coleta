@@ -1,0 +1,33 @@
+{
+ "redemet_doc": {
+  "status": 404,
+  "erro": "<!DOCTYPE html><html lang=\"pt-BR\"> <head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"/favicon.png\" type=\"image/png\" sizes=\"96x96\"><link rel=\"shortcut icon\" href=\"/favicon.ic"
+ },
+ "redemet_doc_lista": {
+  "status": 404,
+  "erro": "<!DOCTYPE html><html lang=\"pt-BR\"> <head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><link rel=\"icon\" href=\"/favicon.svg\" type=\"image/svg+xml\"><link rel=\"icon\" href=\"/favicon.png\" type=\"image/png\" sizes=\"96x96\"><link rel=\"shortcut icon\" href=\"/favicon.ic"
+ },
+ "redemet_radar_semchave": {
+  "status": 401,
+  "erro": "{\n  \"message\":\"No API key found in request\",\n  \"request_id\":\"6449a771f9e3916c2a9b8d487edad64e\"\n}"
+ },
+ "alertario_radar000": {
+  "status": 200,
+  "bytes": 248,
+  "ctype": "text/html; charset=utf-8",
+  "texto": " Request Rejected The requested URL was rejected. Please consult with your administrator. Your support ID is: w18005000303698345769 [Go Back] ",
+  "links": []
+ },
+ "alertario_radar_pagina": {
+  "status": 403,
+  "erro": "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex,nofollow\"><meta http-equiv=\"refresh\" content=\"30\"><link rel=\"preconnect\" href=\"https"
+ },
+ "cptec_radar": {
+  "status": 410,
+  "erro": "<html><body><h1>410 Gone</h1>\nThe resource is no longer available and will not be available again.\n</body></html>\n"
+ },
+ "cemaden_radar": {
+  "status": 404,
+  "erro": "{\"error_type\": \"NotFound\"}"
+ }
+}
