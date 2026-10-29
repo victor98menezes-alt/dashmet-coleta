@@ -8,7 +8,7 @@
 :root{
   --bg:#eef1f4; --surface:#ffffff; --sunk:#e6eaef; --fg:#13202b; --muted:#5b6876; --line:#d6dde5; --accent:#9a7414; --accent-2:#1d7fb8; --cloud:#2e3843; --cloud-lo:#a3adb8;
   --ok:#1f7a4a; --ok-bg:#dff1e6; --warn:#946200; --warn-bg:#fbefcf; --bad:#b3261e; --bad-bg:#fbe1de; --na:#76818d; --na-bg:#e9edf1;
-  --m1:#1d7fb8; --m2:#7b4fb0; --m3:#c2551f; --obs:#127a72;
+  --m1:#1d7fb8; --m2:#7b4fb0; --m3:#c2551f; --m4:#1f8a5b; --obs:#127a72;
   --shadow:0 1px 2px rgba(19,32,43,.06),0 8px 24px -12px rgba(19,32,43,.18);
   --cmd-bg:#8c1512; --cmd-bg2:#d32a23; --cmd-fg:#fff8ec; --cmd-muted:#f6d7cf; --cmd-gold:#f2c230; --cmd-red:#c8231f; --cmd-blue:#1e9ad6; --cmd-line:rgba(242,194,48,.55);
   --f-disp:"Barlow Condensed","Arial Narrow",Arial,sans-serif; --f-body:"IBM Plex Sans","Segoe UI",Arial,sans-serif; --f-data:"IBM Plex Mono",ui-monospace,Consolas,monospace;
@@ -16,12 +16,12 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#081018; --surface:#0f1a25; --sunk:#16232f; --fg:#e6ecf2; --muted:#93a3b4; --line:#223242; --accent:#e9b92f; --accent-2:#4fb3e8; --cloud:#f4f7fa; --cloud-lo:#6c7a89;
   --ok:#5fcf8f; --ok-bg:#12301f; --warn:#f0bf4c; --warn-bg:#33280e; --bad:#ff7b70; --bad-bg:#3a1714; --na:#8796a6; --na-bg:#18242f;
-  --m1:#4fb3e8; --m2:#b48ce6; --m3:#f08a52; --obs:#4fd1c2;
+  --m1:#4fb3e8; --m2:#b48ce6; --m3:#f08a52; --m4:#5fcf8f; --obs:#4fd1c2;
   --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#081018; --surface:#0f1a25; --sunk:#16232f; --fg:#e6ecf2; --muted:#93a3b4; --line:#223242; --accent:#e9b92f; --accent-2:#4fb3e8; --cloud:#f4f7fa; --cloud-lo:#6c7a89;
   --ok:#5fcf8f; --ok-bg:#12301f; --warn:#f0bf4c; --warn-bg:#33280e; --bad:#ff7b70; --bad-bg:#3a1714; --na:#8796a6; --na-bg:#18242f;
-  --m1:#4fb3e8; --m2:#b48ce6; --m3:#f08a52; --obs:#4fd1c2;
+  --m1:#4fb3e8; --m2:#b48ce6; --m3:#f08a52; --m4:#5fcf8f; --obs:#4fd1c2;
   --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 10px 30px -14px rgba(0,0,0,.6); color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -463,6 +463,7 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
         <div class="fld"><label for="f-w-gfs">GFS</label><input id="f-w-gfs" inputmode="decimal"></div>
         <div class="fld"><label for="f-w-ecmwf">ECMWF</label><input id="f-w-ecmwf" inputmode="decimal"></div>
         <div class="fld"><label for="f-w-icon">ICON</label><input id="f-w-icon" inputmode="decimal"></div>
+        <div class="fld"><label for="f-w-ukmo">UK Met Office</label><input id="f-w-ukmo" inputmode="decimal"></div>
       </fieldset>
       <div class="form-foot"><button class="btn" type="submit">Salvar missão</button><span id="form-err" class="small err" role="alert"></span><span class="small">Rajadas acima do limite e vento entre 80% e 100% do limite geram restrição; vento médio acima do limite gera parecer desfavorável.</span></div>
     </form>
@@ -857,21 +858,30 @@ const MET = (() => {
   const lclFt = (t, td) => (t == null || td == null) ? null : Math.max(0, Math.round((t - td) * 125 * 3.28084 / 100) * 100);
 
   /* ---------- Open-Meteo ---------- */
+  /** Janela H a H+5 (itens 1 a 3): quatro centros independentes, na maior resolução disponível para o Brasil.
+      ECMWF: superfície do IFS HRES 9 km (ecmwf_ifs) + níveis de pressão do IFS 0,25° (o 9 km não publica níveis). */
   const MODELS = [
-    { key: 'gfs_seamless', id: 'GFS', label: 'GFS (NOAA/NCEP)' },
-    { key: 'ecmwf_ifs025', id: 'ECMWF', label: 'ECMWF IFS 0,25°' },
-    { key: 'icon_seamless', id: 'ICON', label: 'ICON (DWD)' },
+    { key: 'gfs_seamless', id: 'GFS', label: 'GFS (NOAA/NCEP)', meta: 'ncep_gfs013' },
+    { key: 'ecmwf_ifs025', hires: 'ecmwf_ifs', id: 'ECMWF', label: 'ECMWF IFS HRES 9 km + níveis 0,25°', meta: 'ecmwf_ifs' },
+    { key: 'icon_seamless', id: 'ICON', label: 'ICON global (DWD)', meta: 'dwd_icon' },
+    { key: 'ukmo_global_deterministic_10km', id: 'UKMO', label: 'UK Met Office global 10 km', meta: 'ukmo_global_deterministic_10km' },
   ];
+  /** Tendência D a D+7 (item 4): modelos de alcance de 7 dias ou mais, só variáveis de superfície. */
+  const MODELS7 = [MODELS[0], { key: 'ecmwf_ifs025', id: 'ECMWF', label: 'ECMWF IFS 0,25°' }, MODELS[2]];
+  const SURF7 = ['temperature_2m', 'precipitation', 'showers', 'precipitation_probability', 'pressure_msl', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'weather_code', 'cloud_cover'];
+  const metaUrl = id => { const x = MODELS.find(mm => mm.id === id); return x && x.meta ? `https://api.open-meteo.com/data/${x.meta}/static/meta.json` : null; };
   const SURF = ['temperature_2m', 'apparent_temperature', 'dew_point_2m', 'precipitation_probability', 'precipitation', 'showers', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'pressure_msl', 'visibility', 'wind_speed_80m', 'wind_direction_80m', 'wind_speed_120m', 'wind_direction_120m', 'wind_speed_180m', 'wind_direction_180m', 'freezing_level_height', 'lifted_index', 'weather_code'];
   const LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600, 500, 400, 300];
   const LVARS = ['wind_speed', 'wind_direction', 'geopotential_height', 'temperature', 'relative_humidity', 'cloud_cover'];
-  function openMeteoUrl(m) {
-    const hourly = [...SURF];
-    LEVELS.forEach(p => LVARS.forEach(v => hourly.push(`${v}_${p}hPa`)));
+  /** kind 'janela' = D-1 a D+1, quatro modelos, superfície + níveis; 'tendencia' = D-1 a D+7, três modelos, superfície. */
+  function openMeteoUrl(m, kind = 'janela') {
+    const jan = kind !== 'tendencia', hourly = jan ? [...SURF] : [...SURF7];
+    if (jan) LEVELS.forEach(p => LVARS.forEach(v => hourly.push(`${v}_${p}hPa`)));
+    const keys = jan ? MODELS.flatMap(x => x.hires ? [x.key, x.hires] : [x.key]) : MODELS7.map(x => x.key);
     const q = new URLSearchParams({
       latitude: m.lat.toFixed(4), longitude: m.lon.toFixed(4), hourly: hourly.join(','),
-      models: MODELS.map(x => x.key).join(','), wind_speed_unit: 'kn', timezone: m.tz,
-      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, 7),
+      models: keys.join(','), wind_speed_unit: 'kn', timezone: m.tz,
+      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, jan ? 1 : 7),
     });
     return 'https://api.open-meteo.com/v1/forecast?' + q.toString().replace(/%2C/g, ',');
   }
@@ -887,6 +897,8 @@ const MET = (() => {
       if (!has) return;
       const o = {};
       keys.forEach(k => { if (k.endsWith('_' + M.key)) o[k.slice(0, -(M.key.length + 1))] = h[k]; });
+      // alta resolução (mesmo modelo): substitui as variáveis que ela publica
+      if (M.hires) keys.forEach(k => { if (k.endsWith('_' + M.hires)) { const arr = h[k], v = k.slice(0, -(M.hires.length + 1)); if (Array.isArray(arr) && arr.some(x => x != null)) o[v] = arr; } });
       models[M.id] = o;
     });
     if (!Object.keys(models).length) { // resposta de modelo único (sem sufixo)
@@ -895,7 +907,7 @@ const MET = (() => {
     }
     const units = j.hourly_units || {};
     if (units.wind_speed_10m && !/kn/.test(units.wind_speed_10m)) throw new Error('Unidade de vento diferente de nós (' + units.wind_speed_10m + '). Use o link gerado, que pede wind_speed_unit=kn.');
-    return { time: h.time, models, meta: { lat: j.latitude, lon: j.longitude, elevation: j.elevation, tz: j.timezone, generationtime_ms: j.generationtime_ms } };
+    return { time: h.time, models, kind: h.time.length > 100 ? 'tendencia' : 'janela', meta: { lat: j.latitude, lon: j.longitude, elevation: j.elevation, tz: j.timezone, generationtime_ms: j.generationtime_ms } };
   }
 
   /* ---------- Sondagem NOAA (formato GSD, rucsoundings.noaa.gov) ---------- */
@@ -1111,7 +1123,7 @@ const MET = (() => {
     return { prev, vari };
   }
 
-  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, SURF, LEVELS, LVARS, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
+  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
 })();
 
 
@@ -1135,7 +1147,7 @@ const MET = (() => {
   const DEFAULT_MISSION = () => ({
     name: '', latStr: '', lonStr: '', lat: null, lon: null, date: tomorrow('America/Sao_Paulo'), hour: 10, tz: 'America/Sao_Paulo',
     activity: 'ENG', launchFtAGL: 1000, exitFtMSL: null, windLimitEng: 13, windLimitSlop: 18, baseMinFt: 1000, icao: '', ibge: '', zlElevFt: null, windRef: 'ZL750', aerodromos: '', xwLimit: null, ceilMin: null, visMin: null,
-    weights: { GFS: 1, ECMWF: 1, ICON: 1 }, capeMod: 1000, capeStrong: 2500, updatedAt: null,
+    weights: { GFS: 1, ECMWF: 1, ICON: 1, UKMO: 1 }, capeMod: 1000, capeStrong: 2500, updatedAt: null,
   });
   const S = { mission: DEFAULT_MISSION(), models: null, sounding: null, obs: null, analysis: null, astro: null, oficiais: null, aer: null, sys: null, history: [], db: null, user: null, mcp: null, downloads: null, canWrite: true, selHour: 0, upperSrc: 'auto', tab: 'modelos' };
 
@@ -1638,7 +1650,7 @@ const MET = (() => {
       <div class="tbl-wrap"><table class="pmx"><thead><tr><th></th>${H.map(h => `<th>${h.label}<small>${M.hhmm(h.utc, tz)}</small></th>`).join('')}</tr></thead>
       <tbody>${P.matrix.map(r => `<tr><th scope="row">${r.n}</th>${r.cells.map(c => `<td class="pm-${c.s}">${esc(c.t)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
       <ul class="proj">${P.items.map(i => `<li class="${i.sev}"><span class="pi" aria-hidden="true">${icon[i.sev]}</span><b>${esc(i.cat)}</b><span class="pw">${i.w ? esc(winTxt(i.w)) : 'toda a janela'}</span><span class="pt">${esc(i.txt)}</span></li>`).join('')}</ul>
-      <p class="note"><span class="st st-prev">PREVISTO</span> projeção pelo cruzamento GFS/ECMWF/ICON (mediana ponderada)${userOpmet().length ? ' + METAR/TAF inseridos por você' : ''}. ⛔ impeditivo pelos limites da missão · ⚠ atenção · ℹ referência. Limites: vento ${limitKt()} kt (parecer pelo ${esc(H[0].c.wrefLbl || '')})${numOrNull(S.mission.baseMinFt) != null ? `, teto/base mínima ${fmt(+S.mission.baseMinFt)} ft` : ''}${numOrNull(S.mission.visMin) != null ? `, visibilidade mínima ${fmt(+S.mission.visMin)} m` : ''} — configuráveis em Missão.</p>`;
+      <p class="note"><span class="st st-prev">PREVISTO</span> projeção pelo cruzamento GFS/ECMWF/ICON/UKMO (mediana ponderada)${userOpmet().length ? ' + METAR/TAF inseridos por você' : ''}. ⛔ impeditivo pelos limites da missão · ⚠ atenção · ℹ referência. Limites: vento ${limitKt()} kt (parecer pelo ${esc(H[0].c.wrefLbl || '')})${numOrNull(S.mission.baseMinFt) != null ? `, teto/base mínima ${fmt(+S.mission.baseMinFt)} ft` : ''}${numOrNull(S.mission.visMin) != null ? `, visibilidade mínima ${fmt(+S.mission.visMin)} m` : ''} — configuráveis em Missão.</p>`;
   }
 
   /* ---------------- Render: cabeçalho e missão ---------------- */
@@ -1667,7 +1679,7 @@ const MET = (() => {
     $('#f-date').value = m.date || ''; $('#f-hour').value = String(m.hour); $('#f-tz').value = m.tz; $('#f-act').value = m.activity;
     $('#f-lim-eng').value = m.windLimitEng; $('#f-lim-slop').value = m.windLimitSlop; $('#f-launch').value = m.launchFtAGL ?? ''; $('#f-exit').value = m.exitFtMSL ?? '';
     $('#f-base').value = m.baseMinFt ?? ''; $('#f-icao').value = m.icao || ''; if ($('#f-ibge')) $('#f-ibge').value = m.ibge || '';
-    $('#f-w-gfs').value = m.weights.GFS; $('#f-w-ecmwf').value = m.weights.ECMWF; $('#f-w-icon').value = m.weights.ICON;
+    $('#f-w-gfs').value = m.weights.GFS; $('#f-w-ecmwf').value = m.weights.ECMWF; $('#f-w-icon').value = m.weights.ICON; if ($('#f-w-ukmo')) $('#f-w-ukmo').value = m.weights.UKMO ?? 1;
     $('#f-cape-m').value = m.capeMod; $('#f-cape-s').value = m.capeStrong;
     $('#f-zl').value = m.zlElevFt ?? ''; $('#f-wref').value = m.windRef || 'ZL750'; $('#f-ad').value = m.aerodromos || ''; $('#f-vis').value = m.visMin ?? '';
     toggleActFields();
@@ -1686,7 +1698,7 @@ const MET = (() => {
       name: $('#f-name').value.trim(), latStr: $('#f-lat').value.trim(), lonStr: $('#f-lon').value.trim(), lat, lon, date: $('#f-date').value, hour: +$('#f-hour').value, tz,
       activity: $('#f-act').value, windLimitEng: num('#f-lim-eng', 13), windLimitSlop: num('#f-lim-slop', 18), launchFtAGL: num('#f-launch', null), exitFtMSL: num('#f-exit', null),
       baseMinFt: num('#f-base', null), icao: $('#f-icao').value.trim().toUpperCase(), ibge: ($('#f-ibge') ? $('#f-ibge').value.trim().replace(/\D/g, '') : ''),
-      weights: { GFS: num('#f-w-gfs', 1), ECMWF: num('#f-w-ecmwf', 1), ICON: num('#f-w-icon', 1) }, capeMod: num('#f-cape-m', 1000), capeStrong: num('#f-cape-s', 2500), updatedAt: nowIso(),
+      weights: { GFS: num('#f-w-gfs', 1), ECMWF: num('#f-w-ecmwf', 1), ICON: num('#f-w-icon', 1), UKMO: num('#f-w-ukmo', 1) }, capeMod: num('#f-cape-m', 1000), capeStrong: num('#f-cape-s', 2500), updatedAt: nowIso(),
       zlElevFt: num('#f-zl', null), windRef: $('#f-wref').value, aerodromos: $('#f-ad').value.toUpperCase().split(/[\s,;]+/).filter(x => /^[A-Z0-9]{4}$/.test(x)).slice(0, 4).join(','), visMin: num('#f-vis', null),
     };
     return { m, err };
@@ -1949,10 +1961,10 @@ const MET = (() => {
     ].join('');
     const daPresent = [...new Set(H.map(h => daCat(h.daZl)).filter(Boolean).map(q => q.k))].sort();
     el.innerHTML = `<div class="tbl-wrap"><table class="hourly"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-      <p class="note">${tag(mod, S.models ? 'prev' : 'ind')} valores de modelo consolidados por mediana ponderada (direção: valor que minimiza a diferença angular entre modelos). Fontes: ${esc(modelIds().join(', ') || 'nenhuma')}. Vento solo = 10 m; vento ZL + 750 ft interpolado nos níveis dos modelos (detalhe no painel “Vento na zona de lançamento”).</p>
+      <p class="note">${tag(mod, S.models ? 'prev' : 'ind')} valores de modelo consolidados por mediana ponderada (direção: valor que minimiza a diferença angular entre modelos). Fontes: ${esc(modelIds().join(', ') || 'nenhuma')}. ${rodadasInfo() ? 'Rodadas: ' + esc(rodadasInfo().txt) + '. ' : ''}Vento solo = 10 m; vento ZL + 750 ft interpolado nos níveis dos modelos (detalhe no painel “Vento na zona de lançamento”).</p>
       <details class="howto" open><summary>Como ler esta tabela</summary><dl>
         <dt>Teto</dt><dd>Critério adotado nesta ferramenta: base da camada mais baixa, de <b>FEW</b> (1–2/8) a <b>OVC</b> (8/8), em pés sobre a ZL. (Na meteorologia aeronáutica, “teto” é a 1ª camada BKN/OVC; aqui qualquer camada conta.)${bmin != null ? ` Em vermelho quando abaixo do teto mínimo de ${fmt(bmin)} ft.` : ''}</dd>
-        <dt>Base das nuvens</dt><dd>Todas as camadas: oitavos do céu + código com a base em centenas de pés. Ex.: <b>6/8 BKN030</b> = 6 oitavos, fragmentadas, base 3.000 ft. FEW 1–2/8 · SCT 3–4/8 · BKN 5–7/8 · OVC 8/8. ${tag('ESTIMADO', 'est')} cruzamento GFS/ECMWF/ICON da cobertura por nível de pressão, base convectiva refinada pelo nível de condensação; resolução vertical de ~700 ft nos níveis baixos.</dd>
+        <dt>Base das nuvens</dt><dd>Todas as camadas: oitavos do céu + código com a base em centenas de pés. Ex.: <b>6/8 BKN030</b> = 6 oitavos, fragmentadas, base 3.000 ft. FEW 1–2/8 · SCT 3–4/8 · BKN 5–7/8 · OVC 8/8. ${tag('ESTIMADO', 'est')} cruzamento GFS/ECMWF/ICON/UKMO da cobertura por nível de pressão, base convectiva refinada pelo nível de condensação; resolução vertical de ~700 ft nos níveis baixos.</dd>
         <dt>Sensação térmica</dt><dd>Temperatura percebida pelo corpo (temperatura, umidade, vento e radiação solar).</dd>
         <dt>Potencial de tempestade (CAPE)</dt><dd>Energia disponível para correntes ascendentes: quanto maior, maior o potencial de <b>TCU</b>/<b>CB</b>, trovoada, rajadas e turbulência, se houver umidade e mecanismo de disparo. Faixas pelos limiares da missão.</dd>
         <dt>Altitude-densidade na ZL</dt><dd>Indica o quanto o ar na ZL está mais rarefeito que o padrão (calor, pressão baixa, ZL elevada). Escala qualitativa: Desprezível · Leve · Moderado · Acentuado. Efeitos na navegação e no pouso:${daPresent.length ? '' : ' —'}<ul class="da-eff">${(daPresent.length ? daPresent : [0, 1, 2, 3]).map(k => `<li><b>${DA_EFF[k].txt}</b> — <i>Semiautomático:</i> ${DA_EFF[k].saL} <i>Salto livre:</i> ${DA_EFF[k].slL}</li>`).join('')}</ul></dd>
@@ -2079,7 +2091,7 @@ const MET = (() => {
     el.innerHTML = `<h3 class="sub cc-title">Nuvens e janelas de salto — ${esc(m.date.split('-').reverse().join('/'))}</h3>
       <div class="cc-sum"><span class="pill ok">✓ Favorável</span> ${lst('ok') || 'nenhuma'} <span class="pill warn">! Com restrições</span> ${lst('warn') || 'nenhuma'} <span class="pill bad">✕ Desfavorável</span> ${lst('bad') || 'nenhuma'}</div>
       <div class="cc-wrap">${s}</div>
-      <p class="note"><span class="st st-est">ESTIMADO</span> nuvens pelo cruzamento GFS/ECMWF/ICON (cobertura por nível de pressão, interpolada no tempo e na altitude): quanto mais forte o tom da nuvem, mais oitavos; contorno claro = poucas nuvens. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5 (parecer completo, com o TAF inserido); demais horas: parecer pelos modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
+      <p class="note"><span class="st st-est">ESTIMADO</span> nuvens pelo cruzamento GFS/ECMWF/ICON/UKMO (cobertura por nível de pressão, interpolada no tempo e na altitude): quanto mais forte o tom da nuvem, mais oitavos; contorno claro = poucas nuvens. Linha com pontos = base da camada mais baixa (vermelho abaixo do teto mínimo). Barras ao solo = precipitação (roxa = convectiva). Faixa destacada = janela H a H+5 (parecer completo, com o TAF inserido); demais horas: parecer pelos modelos. ${icmn != null || fcvc != null ? 'Áreas azuladas = noite (ICMN/FCVC inseridos do Time and Date). ' : ''}Passe o cursor sobre uma hora para ver camadas e motivos.</p>`;
   }
 
   /* ---------------- Temperatura e tempo (meteograma do dia D) ---------------- */
@@ -2212,7 +2224,7 @@ const MET = (() => {
       <div class="cc-sum">Máx. <b>${fmt(mx.h.c.temp)} °C</b> às ${M.pad(mx.i)}h · mín. <b>${fmt(mn.h.c.temp)} °C</b> às ${M.pad(mn.i)}h · precipitação no dia <b>${fmt(prTot, 1)} mm</b>${prPk != null && PR[prPk].med >= 0.1 ? ` (pico ${fmt(PR[prPk].med, 1)} mm/h às ${M.pad(prPk)}h)` : ''} · horas com chuva ≥ 0,1 mm/h: ${rainH.length ? rainH.map(i => M.pad(i) + 'h').join(', ') : 'nenhuma'}</div>
       <div class="tc-sums">${sum}</div>
       <div class="cc-wrap">${s}</div>
-      <p class="note"><span class="st st-prev">PREVISTO</span> temperatura e sensação térmica: mediana GFS/ECMWF/ICON. Precipitação (eixo à direita, mm/h): barra azul-escura = mediana dos modelos; barra azul-clara = valor do modelo mais chuvoso (indica o que pode ocorrer); roxa = componente convectiva (pancadas); probabilidade de chuva sob cada hora. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
+      <p class="note"><span class="st st-prev">PREVISTO</span> temperatura e sensação térmica: mediana GFS/ECMWF/ICON/UKMO. Precipitação (eixo à direita, mm/h): barra azul-escura = mediana dos modelos; barra azul-clara = valor do modelo mais chuvoso (indica o que pode ocorrer); roxa = componente convectiva (pancadas); probabilidade de chuva sob cada hora. Ícones pelo cruzamento dos modelos: trovoada (CB/TS), nevoeiro, chuva ou pancadas (≥ 0,2 mm/h), e nebulosidade total — sol/céu claro &lt; 20%, sol entre nuvens 20–50%, parcialmente nublado 50–85%, nublado ≥ 85%. Noite pelo ${esc(dSrc)}. Faixa destacada = janela H a H+5.</p>`;
   }
 
   /* ---------------- Gráfico de vento ---------------- */
@@ -2224,7 +2236,7 @@ const MET = (() => {
     const max = Math.ceil(Math.max(lim + 2, ...all.filter(v => v != null)) + 1);
     const y = v => T + (Hh - T - B) * (1 - v / max), cw = (W - L - R) / Math.max(1, H.length), x = i => L + cw * i + cw / 2;
     const ticks = []; const step = max > 40 ? 2 : 1; for (let v = 0; v <= max; v += step) ticks.push(v);
-    const colors = { GFS: 'var(--m1)', ECMWF: 'var(--m2)', ICON: 'var(--m3)', MODELO: 'var(--m1)' };
+    const colors = { GFS: 'var(--m1)', ECMWF: 'var(--m2)', ICON: 'var(--m3)', UKMO: 'var(--m4)', MODELO: 'var(--m1)' };
     let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Vento e rajadas por horário">`;
     ticks.forEach(v => { const k5 = v % 5 === 0; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid${k5 ? '' : ' g1'}"/><text x="${L - 6}" y="${y(v) + 3.5}" class="ax${k5 ? '' : ' ax1'}" text-anchor="end">${v}</text>`; });
     s += `<text x="${L - 6}" y="${T - 6}" class="ax1" text-anchor="end">kt</text>`;
@@ -2346,12 +2358,13 @@ const MET = (() => {
 
   /* ---------------- D-1 / D0 / D+1 ---------------- */
   function dayStats(dateStr) {
-    if (!S.models) return null;
-    const idxs = S.models.time.map((t, i) => t.startsWith(dateStr) ? i : -1).filter(i => i >= 0);
+    const SM = [S.models, S.models7].find(x => x && x.time.some(t => t.startsWith(dateStr)));
+    if (!SM) return null;
+    const idxs = SM.time.map((t, i) => t.startsWith(dateStr) ? i : -1).filter(i => i >= 0);
     if (!idxs.length) return null;
     const res = {};
-    modelIds().forEach(id => {
-      const o = S.models.models[id], arr = v => idxs.map(i => o[v] ? o[v][i] : null).filter(x => x != null);
+    Object.keys(SM.models).forEach(id => {
+      const o = SM.models[id], arr = v => idxs.map(i => o[v] ? o[v][i] : null).filter(x => x != null);
       const mx = v => { const a = arr(v); return a.length ? Math.max(...a) : null; }, mn = v => { const a = arr(v); return a.length ? Math.min(...a) : null; }, sm = v => { const a = arr(v); return a.length ? a.reduce((s, x) => s + x, 0) : null; };
       res[id] = { wmax: mx('wind_speed_10m'), gmax: mx('wind_gusts_10m'), pr: sm('precipitation'), sh: sm('showers'), ppmax: mx('precipitation_probability'), cape: mx('cape'), tmin: mn('temperature_2m'), tmax: mx('temperature_2m'), pmin: mn('pressure_msl'), pmax: mx('pressure_msl') };
     });
@@ -2388,7 +2401,7 @@ const MET = (() => {
     if (!S.models) { el.innerHTML = `<p class="muted">Disponível após carregar os modelos.</p>`; return; }
     const vars = [['Vento médio', 'wind'], ['Rajadas', 'gust'], ['Direção', 'dir'], ['Temperatura', 'temp'], ['Prob. precip.', 'pp'], ['Precipitação', 'pr'], ['CAPE', 'cape']];
     el.innerHTML = `<div class="tbl-wrap"><table class="conf"><thead><tr><th></th>${H.map(h => `<th>${h.label}</th>`).join('')}</tr></thead><tbody>${vars.map(([n, k]) => `<tr><th scope="row">${n}</th>${H.map(h => { const c = h.conf[k], sp = h.spreads[k]; return `<td><span class="pill ${cClass(c)}" title="Dispersão entre modelos: ${sp == null ? 'n/d' : fmt(sp, k === 'pr' ? 1 : 0) + ' ' + CONF_RULES[k][2]}">${c || 'N/D'}</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
-      <p class="note">ALTA / MÉDIA / BAIXA pela dispersão (máx − mín) entre modelos: vento ≤ 4 / ≤ 8 kt; rajadas ≤ 6 / ≤ 12 kt; direção ≤ 45° / ≤ 90° (vento &lt; 4 kt: direção pouco definida); temperatura ≤ 2 / ≤ 4 °C; prob. ≤ 20 / ≤ 40 p.p.; precipitação ≤ 1 / ≤ 3 mm; base ≤ 1.000 / ≤ 2.500 ft; cobertura ≤ 25 / ≤ 50 p.p. Uma única fonte = BAIXA. Critério de concordância, não probabilidade estatística. GFS, ECMWF e ICON não são observações independentes.</p>`;
+      <p class="note">ALTA / MÉDIA / BAIXA pela dispersão (máx − mín) entre modelos: vento ≤ 4 / ≤ 8 kt; rajadas ≤ 6 / ≤ 12 kt; direção ≤ 45° / ≤ 90° (vento &lt; 4 kt: direção pouco definida); temperatura ≤ 2 / ≤ 4 °C; prob. ≤ 20 / ≤ 40 p.p.; precipitação ≤ 1 / ≤ 3 mm; base ≤ 1.000 / ≤ 2.500 ft; cobertura ≤ 25 / ≤ 50 p.p. Uma única fonte = BAIXA. Critério de concordância, não probabilidade estatística. GFS, ECMWF, ICON e UKMO não são observações independentes.</p>`;
   }
 
   /* ---------------- Alertas e síntese ---------------- */
@@ -2543,8 +2556,12 @@ const MET = (() => {
     const m = S.mission, ok = hasPos();
     const omUrl = ok ? M.openMeteoUrl(m) : null, sdUrl = ok ? M.soundingUrl(m, 'GFS') : null;
     const icao = (m.icao || '').toUpperCase();
-    $('#src-om-link').innerHTML = ok ? `<a class="btn" href="${esc(omUrl)}" target="_blank" rel="noopener">Abrir Open-Meteo (GFS + ECMWF + ICON)</a><span class="small">Período ${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 7))} (D-1 a D+7), vento em kt, fuso ${esc(m.tz)}</span>` : '<span class="muted">Defina coordenada e data.</span>';
-    $('#src-om-state').innerHTML = S.models ? `<span class="st st-prev">CARREGADO</span> ${esc(modelIds().join(', '))} · ${S.models.time.length} horas · ${esc(whenStr(S.models.fetchedAt))}` : `<span class="st st-ind">PENDENTE</span>`;
+    $('#src-om-link').innerHTML = ok ? `<a class="btn" href="${esc(M.openMeteoUrl(m, 'janela'))}" target="_blank" rel="noopener">1 · Janela H a H+5 (GFS · ECMWF 9 km · ICON · UKMO)</a><span class="small">${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 1))} · superfície e níveis</span>
+      <a class="btn" href="${esc(M.openMeteoUrl(m, 'tendencia'))}" target="_blank" rel="noopener">2 · Tendência D a D+7 (GFS · ECMWF · ICON)</a><span class="small">${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 7))} · superfície</span><span class="small">Cole uma resposta de cada vez; o dashboard identifica qual é.</span>` : '<span class="muted">Defina coordenada e data.</span>';
+    const per = x => `${x.time[0].slice(8, 10)}/${x.time[0].slice(5, 7)} a ${x.time[x.time.length - 1].slice(8, 10)}/${x.time[x.time.length - 1].slice(5, 7)}`;
+    $('#src-om-state').innerHTML = (S.models ? `<div><span class="st st-prev">JANELA</span> ${esc(Object.keys(S.models.models).join(', '))} · previsão horária ${per(S.models)} · coletado ${esc(whenStr(S.models.fetchedAt))}</div>` : `<div><span class="st st-ind">JANELA PENDENTE</span></div>`)
+      + (S.models7 ? `<div><span class="st st-prev">TENDÊNCIA</span> ${esc(Object.keys(S.models7.models).join(', '))} · previsão horária ${per(S.models7)} · coletado ${esc(whenStr(S.models7.fetchedAt))}</div>` : `<div><span class="st st-ind">TENDÊNCIA PENDENTE</span> D a D+7 usa a janela até atualizar</div>`)
+      + (rodadasInfo() ? `<div class="small">Rodadas: ${rodadasInfo().txt}</div>` : '');
     $('#src-sd-link').innerHTML = ok ? `<a class="btn" href="${esc(sdUrl)}" target="_blank" rel="noopener">Abrir sondagem NOAA (GFS, formato GSD)</a><span class="small">A página da NOAA usa a rodada mais recente. Para outro horário, ajuste data/hora no formulário da NOAA: <a href="https://rucsoundings.noaa.gov/" target="_blank" rel="noopener">rucsoundings.noaa.gov</a></span>` : '<span class="muted">Defina coordenada e data.</span>';
     $('#src-sd-state').innerHTML = S.sounding ? `<span class="st st-prev">CARREGADA</span> ${S.sounding.levels.length} níveis · ${esc((S.sounding.header || [])[1] || '')}` : `<span class="st st-ind">PENDENTE</span>`;
     $('#src-obs-links').innerHTML = (icao ? `<a class="btn ghost" href="https://aviationweather.gov/api/data/metar?ids=${esc(icao)}&format=raw&hours=6" target="_blank" rel="noopener">METAR ${esc(icao)} (NOAA/AWC)</a><a class="btn ghost" href="https://aviationweather.gov/api/data/taf?ids=${esc(icao)}&format=raw" target="_blank" rel="noopener">TAF ${esc(icao)} (NOAA/AWC)</a>` : '<span class="small">Informe a estação OACI na missão para gerar os links.</span>') +
@@ -2578,15 +2595,24 @@ const MET = (() => {
   async function runNow() {
     if (STANDALONE) {
       if (!hasPos()) { flash('Salve a missão antes de atualizar.', true); return; }
-      S.busy = true; S.etapas = [{ txt: 'Modelos GFS, ECMWF e ICON (Open-Meteo)…' }]; S.tab = 'auto'; renderSources(); updBtn();
+      S.busy = true; S.etapas = [{ txt: 'Modelos: janela (GFS, ECMWF 9 km, ICON, UKMO) e tendência D a D+7…' }]; S.tab = 'auto'; renderSources(); updBtn();
       const m = S.mission, step = (txt, ok) => { S.etapas.push({ txt, ok }); renderSources(); };
       try {
-        const url = M.openMeteoUrl(m), r = await fetch(url);
+        const rodadas = {};
+        await Promise.all(M.MODELS.map(async x => { try { const r0 = await fetch(M.metaUrl(x.id)); const j = await r0.json(); rodadas[x.id] = { init_utc: j.last_run_initialisation_time, disponivel_utc: j.last_run_availability_time, intervalo_s: j.update_interval_seconds }; } catch (e) { /* metadados opcionais */ } }));
+        const url = M.openMeteoUrl(m, 'janela'), r = await fetch(url);
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const p = M.parseOpenMeteo(await r.text());
-        S.models = Object.assign(p, { fetchedAt: nowIso(), url }); await save('models', S.models);
-        step(`Modelos carregados: ${Object.keys(p.models).join(', ')}`, true);
-      } catch (e) { step('Modelos indisponíveis: ' + e.message, false); }
+        S.models = Object.assign(p, { fetchedAt: nowIso(), url, rodadas }); await save('models', S.models);
+        step(`Janela H a H+5: ${Object.keys(p.models).join(', ')}`, true);
+      } catch (e) { step('Modelos da janela indisponíveis: ' + e.message, false); }
+      try {
+        const url7 = M.openMeteoUrl(m, 'tendencia'), r7 = await fetch(url7);
+        if (!r7.ok) throw new Error('HTTP ' + r7.status);
+        const p7 = M.parseOpenMeteo(await r7.text());
+        S.models7 = Object.assign(p7, { fetchedAt: nowIso(), url: url7 }); await save('models7', S.models7);
+        step(`Tendência D a D+7: ${Object.keys(p7.models).join(', ')}`, true);
+      } catch (e) { step('Modelos da tendência indisponíveis: ' + e.message, false); }
       const ids = [...new Set([...(m.aerodromos || '').split(',').filter(Boolean), (m.icao || '').toUpperCase()].filter(Boolean))].join(',');
       if (ids) {
         try {
@@ -2614,16 +2640,16 @@ const MET = (() => {
   }
 
   /* ---------------- Persistência ---------------- */
-  const DOCS = { models_GFS: 'dados/modelos_GFS', models_ECMWF: 'dados/modelos_ECMWF', models_ICON: 'dados/modelos_ICON', models_MODELO: 'dados/modelos_MODELO', mission: 'cfg/missao', sys: 'cfg/sistema', models: 'dados/modelos', sounding: 'dados/sondagem', obs: 'dados/obs', analysis: 'dados/analise', history: 'dados/historico', astro: 'dados/astro', oficiais: 'dados/oficiais', aer: 'dados/aerodromos' };
+  const DOCS = { models_GFS: 'dados/modelos_GFS', models_ECMWF: 'dados/modelos_ECMWF', models_ICON: 'dados/modelos_ICON', models_UKMO: 'dados/modelos_UKMO', models_MODELO: 'dados/modelos_MODELO', models7: 'dados/modelos7', models7_GFS: 'dados/modelos7_GFS', models7_ECMWF: 'dados/modelos7_ECMWF', models7_ICON: 'dados/modelos7_ICON', mission: 'cfg/missao', sys: 'cfg/sistema', models: 'dados/modelos', sounding: 'dados/sondagem', obs: 'dados/obs', analysis: 'dados/analise', history: 'dados/historico', astro: 'dados/astro', oficiais: 'dados/oficiais', aer: 'dados/aerodromos' };
   async function save(name, data) {
     if (APP) { try { await api('/api/doc/' + name, data); return true; } catch (e) { flash('Falha ao gravar: ' + e.message, true); return false; } }
     if (!S.db) { try { const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); all[name] = data; localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) { } return true; }
     try {
-      if (name === 'models' && data && data.models) {
+      if ((name === 'models' || name === 'models7') && data && data.models) {
         const ids = Object.keys(data.models);
-        for (const id of ids) await S.db.doc(DOCS.models + '_' + id).set({ id, vars: data.models[id] });
+        for (const id of ids) await S.db.doc(DOCS[name] + '_' + id).set({ id, vars: data.models[id] });
         const head = Object.assign({}, data, { parts: ids }); delete head.models;
-        await S.db.doc(DOCS.models).set(head); return true;
+        await S.db.doc(DOCS[name]).set(head); return true;
       }
       await S.db.doc(DOCS[name]).set(data); return true;
     }
@@ -2661,10 +2687,11 @@ const MET = (() => {
         const p = M.parseOpenMeteo($('#om-in').value);
         if (hasPos() && (Math.abs(p.meta.lat - S.mission.lat) > 0.3 || Math.abs(p.meta.lon - S.mission.lon) > 0.3)) throw new Error(`O JSON é de ${fmt(p.meta.lat, 3)}, ${fmt(p.meta.lon, 3)}, distante da coordenada da missão. Gere o link novamente.`);
         if (!p.time.some(t => t.startsWith(S.mission.date))) throw new Error('O JSON não cobre a data da missão. Gere o link novamente após salvar a missão.');
-        const doc = Object.assign(p, { fetchedAt: nowIso(), url: hasPos() ? M.openMeteoUrl(S.mission) : null });
+        const doc = Object.assign(p, { fetchedAt: nowIso(), url: hasPos() ? M.openMeteoUrl(S.mission, p.kind) : null });
         if (S.db) { const big = Object.values(doc.models).map(o => JSON.stringify(o).length).find(n => n > 250000); if (big) throw new Error(`Um dos modelos excede o limite de armazenamento compartilhado (${Math.round(big / 1024)} KB). Use o aplicativo Windows ou o HTML.`); }
-        S.models = doc; await save('models', doc); $('#om-in').value = '';
-        out.textContent = `Processado: ${Object.keys(p.models).join(', ')} · ${p.time.length} horas.`; out.className = 'small ok';
+        if (p.kind === 'tendencia') { S.models7 = doc; await save('models7', doc); } else { S.models = doc; await save('models', doc); }
+        $('#om-in').value = '';
+        out.textContent = `Processado (${p.kind === 'tendencia' ? 'tendência D a D+7' : 'janela H a H+5'}): ${Object.keys(p.models).join(', ')} · previsão horária de ${p.time[0].slice(8, 10)}/${p.time[0].slice(5, 7)} a ${p.time[p.time.length - 1].slice(8, 10)}/${p.time[p.time.length - 1].slice(5, 7)}.`; out.className = 'small ok';
         logHist('Modelos carregados (Open-Meteo: ' + Object.keys(p.models).join(', ') + ')');
         renderAll();
       } catch (e) { out.textContent = e.message; out.className = 'small err'; }
@@ -2906,9 +2933,18 @@ const MET = (() => {
       ['T mín / máx', c => `${fmt(c.tmin)} / ${fmt(c.tmax)} °C`], ['PNMM mínima', c => `${fmt(c.pmin)} hPa`],
       ['Tendência para o salto', c => { const b = (c.gmax > lim) + (c.pr >= 5) + (c.cape >= (+S.mission.capeMod || 1000)); return `<span class="pill ${b >= 2 ? 'bad' : b ? 'warn' : 'ok'}">${b >= 2 ? 'DESFAVORÁVEL' : b ? 'COM RESTRIÇÕES' : 'FAVORÁVEL'}</span>`; }]];
     el.innerHTML = `<div class="tbl-wrap"><table class="mini trend"><thead><tr><th></th>${days.map(x => `<th>${x.l}<small>${x.d.split('-').reverse().slice(0, 2).join('/')}</small></th>`).join('')}</tr></thead><tbody>${rows.map(([n, f]) => `<tr><th scope="row">${n}</th>${days.map(x => `<td>${cell(x.c, f)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
-      <p class="note"><span class="st st-prev">PREVISTO</span> mediana GFS/ECMWF/ICON do dia inteiro (hora local). Tendência diária indicativa: considera rajada acima do limite, chuva ≥ 5 mm e CAPE acima do limiar moderado; não substitui a análise horária.</p>`;
+      <p class="note"><span class="st st-prev">PREVISTO</span> mediana dos modelos do dia inteiro (hora local). Tendência diária indicativa: considera rajada acima do limite, chuva ≥ 5 mm e CAPE acima do limiar moderado; não substitui a análise horária.</p>`;
   }
 
+  /** Rodadas (inicialização) dos modelos da janela: idade e antecedência até H. */
+  function rodadasInfo() {
+    const R = S.models && S.models.rodadas; if (!R) return null;
+    const H0 = hourUtc(0), rows = Object.entries(R).filter(([, v]) => v && v.init_utc).map(([id, v]) => { const t = v.init_utc * 1000, next = v.disponivel_utc && v.intervalo_s ? (v.disponivel_utc + v.intervalo_s) * 1000 : t + 18 * 3600e3; return { id, t, lead: (H0 - t) / 3600e3, age: (Date.now() - t) / 3600e3, newer: Date.now() > next }; });
+    if (!rows.length) return null;
+    const maxLead = Math.max(...rows.map(r => r.lead)), maxAge = Math.max(...rows.map(r => r.age));
+    const txt = rows.map(r => `${r.id} ${M.hhmm(r.t, 'UTC').slice(0, 2)}Z ${M.ddmm(r.t, 'UTC')}`).join(' · ') + ` — antecedência até H: ${fmt(Math.min(...rows.map(r => r.lead)))}–${fmt(maxLead)} h`;
+    return { rows, maxLead, maxAge, txt, newer: rows.filter(r => r.newer).map(r => r.id) };
+  }
   /** Ferramentas do MSL: situação de cada capacidade para a decisão. */
   function renderMsl(H) {
     const el = $('#msl'); if (!el) return;
@@ -2921,6 +2957,8 @@ const MET = (() => {
     const nt = (S.mission.tadN || {})[nightEve().eve];
     const rows = [
       ['Previsão do tempo para a operação', V.length ? st(best.length ? 'ok' : rest.length ? 'warn' : 'bad', best.length ? `Favorável ${hrs(best, tz)}` : rest.length ? `Somente com restrições (${hrs(rest, tz)})` : 'Janela H a H+5 desfavorável', '#h-verd') : st('na', 'Sem modelos carregados', '#h-src')],
+      ['Atualidade das rodadas dos modelos (janela)', (() => { const r = rodadasInfo(); if (!r) return st('warn', 'Horário das rodadas não registrado — atualizar dados', '#h-src');
+        return r.maxLead > 48 ? st('warn', `${esc(r.txt)}. Antecedência longa: reatualizar em H-24, H-6 e H-1`, '#h-src') : r.newer.length ? st('warn', `${esc(r.txt)}. Provável rodada mais nova de ${r.newer.join(', ')}: atualizar`, '#h-src') : st('ok', esc(r.txt), '#h-src'); })()],
       ['Tendência 24, 48 e 72 h (até D+7)', d7Series() && d7Series().n >= 72 ? st('ok', `Modelos até D+${Math.ceil(d7Series().n / 24) - 1}${S.oficiais && S.oficiais.inmet_prev && S.oficiais.inmet_prev.previsao ? ' + previsão INMET' : ''}${S.oficiais && S.oficiais.cptec && S.oficiais.cptec.dias ? ' + CPTEC' : ''}`, '#h-trend') : st('warn', 'Atualize os dados para estender até D+7', '#h-trend')],
       ['Cartas de vento de camada', V.some(h => h.zl && h.zl.cLayer) ? st('ok', `Vento por nível e ZL + 750 ft${S.sounding ? ' + sondagem NOAA' : ''}`, '#h-up') : st('warn', 'Ventos em altitude indisponíveis', '#h-up')],
       ['Condições predominantes da região (relevo, litoral)', st('warn', 'Avaliação do MSL — o modelo não resolve efeitos locais finos (brisa, vale, encosta)', '#h-days')],
@@ -2968,17 +3006,17 @@ const MET = (() => {
   /** Série horária consolidada (mediana ponderada) de D 00h até D+7 23h, e séries por modelo. */
   let _d7memo = { key: null, val: null };
   function d7Series() {
-    if (!S.models) return null;
-    const m = S.mission, key = JSON.stringify([S.models.fetchedAt, m.date, m.tz, m.weights]);
+    const SM = S.models7 || S.models; if (!SM) return null;
+    const m = S.mission, key = JSON.stringify([SM.fetchedAt, SM.time.length, m.date, m.tz, m.weights]);
     if (_d7memo.key === key) return _d7memo.val;
-    const T0 = S.models.time.indexOf(m.date + 'T00:00'); if (T0 < 0) return null;
-    const n = Math.min(8 * 24, S.models.time.length - T0), ids = modelIds(), W = m.weights || {};
-    const per = {}; ids.forEach(id => { const o = S.models.models[id]; const g = v => Array.from({ length: n }, (_, i) => o[v] ? o[v][T0 + i] : null);
+    const T0 = SM.time.indexOf(m.date + 'T00:00'); if (T0 < 0) return null;
+    const n = Math.min(8 * 24, SM.time.length - T0), ids = Object.keys(SM.models), W = m.weights || {};
+    const per = {}; ids.forEach(id => { const o = SM.models[id]; const g = v => Array.from({ length: n }, (_, i) => o[v] ? o[v][T0 + i] : null);
       per[id] = { t: g('temperature_2m'), p: g('pressure_msl'), pr: g('precipitation'), sh: g('showers'), dir: g('wind_direction_10m'), kt: g('wind_speed_10m'), gust: g('wind_gusts_10m'), cape: g('cape'), wc: g('weather_code'), cc: g('cloud_cover') }; });
     const med = (v, i) => { const a = ids.map(id => ({ v: per[id][v][i], w: W[id] ?? 1 })).filter(x => x.v != null); return a.length ? M.weightedMedian(a) : null; };
     const cons = { utc: [], key: [] }; ['t', 'p', 'pr', 'sh', 'kt', 'gust', 'cape', 'cc'].forEach(v => cons[v] = []); cons.dir = []; cons.ts = [];
     for (let i = 0; i < n; i++) {
-      const k = S.models.time[T0 + i]; cons.key.push(k); cons.utc.push(keyMs(k, m.tz));
+      const k = SM.time[T0 + i]; cons.key.push(k); cons.utc.push(keyMs(k, m.tz));
       ['t', 'p', 'pr', 'sh', 'kt', 'gust', 'cape', 'cc'].forEach(v => cons[v].push(med(v, i)));
       cons.dir.push(M.circularMedoid(ids.map(id => ({ v: per[id].dir[i], w: W[id] ?? 1 })).filter(x => x.v != null)));
       cons.ts.push(ids.filter(id => per[id].wc[i] != null && per[id].wc[i] >= 95).length);
@@ -3088,7 +3126,7 @@ const MET = (() => {
     ];
     html += `<div class="tbl-wrap"><table class="mini d7"><thead><tr><th></th>${days.map((d, i) => `<th>${i === 0 ? 'D' : 'D+' + i}<small>${d.dow} ${d.ds.split('-').reverse().slice(0, 2).join('/')}</small></th>`).join('')}</tr></thead><tbody>${rows.map(([n, u, cs]) => `<tr><th scope="row">${n}${u ? `<small>${u}</small>` : ''}</th>${cs.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     html += d7Chart(D7, fronts, days);
-    html += `<p class="note"><span class="st st-prev">PREVISTO</span> modelos GFS/ECMWF/ICON (mediana) até D+7; INMET: previsão oficial do município (até 5 dias) e avisos; CPTEC/INPE: previsão de 7 dias da cidade mais próxima${CP && CP.cidade ? ` (${esc(CP.cidade)} - ${esc(CP.uf)})` : ''}. <b>Assinatura de frente fria</b>: giro do vento de ${m.lat < 0 ? 'N/NW/NE para S/SW/SE' : 'S para N/NW'} acompanhado de subida da pressão e/ou queda da temperatura nas 24 h seguintes, procurada em cada modelo; indicada com o número de modelos concordantes. <b>Concordância</b>: diferença entre os modelos na chuva e na temperatura máxima do dia (quanto menor, mais previsível). Tendência indicativa — confirmar na análise horária quando o dia entrar na janela.</p>`;
+    html += `<p class="note"><span class="st st-prev">PREVISTO</span> modelos GFS/ECMWF/ICON (mediana) até D+7, em busca própria de 7 dias; INMET: previsão oficial do município (até 5 dias) e avisos; CPTEC/INPE: previsão de 7 dias da cidade mais próxima${CP && CP.cidade ? ` (${esc(CP.cidade)} - ${esc(CP.uf)})` : ''}. <b>Assinatura de frente fria</b>: giro do vento de ${m.lat < 0 ? 'N/NW/NE para S/SW/SE' : 'S para N/NW'} acompanhado de subida da pressão e/ou queda da temperatura nas 24 h seguintes, procurada em cada modelo; indicada com o número de modelos concordantes. <b>Concordância</b>: diferença entre os modelos na chuva e na temperatura máxima do dia (quanto menor, mais previsível). Tendência indicativa — confirmar na análise horária quando o dia entrar na janela.</p>`;
     el.innerHTML = html;
     addDed('#trend', dedD7(days, fronts, D7), 'Deduzida para o salto — mudança de tempo D a D+7');
   }
@@ -3204,14 +3242,16 @@ const MET = (() => {
   }
 
   /* ---------------- Inicialização ---------------- */
-  const MPARTS = {};
+  const MPARTS = { models: {}, models7: {} };
   function applyDoc(name, data) {
-    if (name === 'models' || name.startsWith('models_')) {
-      if (name === 'models') MPARTS.head = data || null; else MPARTS[name.slice(7)] = data || null;
-      const h = MPARTS.head;
-      if (!h) { S.models = null; return; }
-      if (!h.parts) { S.models = h; return; } // formato antigo: documento único
-      if (h.parts.every(id => MPARTS[id] && MPARTS[id].vars)) { const models = {}; h.parts.forEach(id => { models[id] = MPARTS[id].vars; }); S.models = Object.assign({}, h, { models }); }
+    const mm = name.match(/^(models7?)(?:_(\w+))?$/);
+    if (mm) {
+      const base = mm[1], P = MPARTS[base];
+      if (!mm[2]) P.head = data || null; else P[mm[2]] = data || null;
+      const h = P.head;
+      if (!h) { S[base] = null; return; }
+      if (!h.parts) { S[base] = h; return; } // formato antigo: documento único
+      if (h.parts.every(id => P[id] && P[id].vars)) { const models = {}; h.parts.forEach(id => { models[id] = P[id].vars; }); S[base] = Object.assign({}, h, { models }); }
       return;
     }
     if (name === 'mission') S.mission = Object.assign(DEFAULT_MISSION(), data || {});
@@ -3225,8 +3265,11 @@ const MET = (() => {
     ['mission', 'obs', 'analysis', 'history', 'astro', 'oficiais', 'aer'].forEach(n => applyDoc(n, st[n]));
     const newer = (a, b) => (a && a.fetchedAt || '') >= (b && b.fetchedAt || '');
     if (st.models && newer(st.models, st.models_raw)) S.models = st.models;
-    else if (st.models_raw && st.models_raw.raw) { try { S.models = Object.assign(M.parseOpenMeteo(st.models_raw.raw), { fetchedAt: st.models_raw.fetchedAt, url: st.models_raw.url }); } catch (e) { S.models = null; flash('Resposta dos modelos inválida: ' + e.message, true); } }
+    else if (st.models_raw && st.models_raw.raw) { try { S.models = Object.assign(M.parseOpenMeteo(st.models_raw.raw), { fetchedAt: st.models_raw.fetchedAt, url: st.models_raw.url, rodadas: st.models_raw.rodadas || null }); } catch (e) { S.models = null; flash('Resposta dos modelos inválida: ' + e.message, true); } }
     else S.models = null;
+    S.models7 = null;
+    if (st.models7 && newer(st.models7, st.models7_raw)) S.models7 = st.models7;
+    else if (st.models7_raw && st.models7_raw.raw) { try { S.models7 = Object.assign(M.parseOpenMeteo(st.models7_raw.raw), { fetchedAt: st.models7_raw.fetchedAt, url: st.models7_raw.url }); } catch (e) { S.models7 = null; } }
     if (st.sounding && newer(st.sounding, st.sounding_raw)) S.sounding = st.sounding;
     else if (st.sounding_raw && st.sounding_raw.raw) { try { S.sounding = Object.assign(M.parseGSD(st.sounding_raw.raw), { fetchedAt: st.sounding_raw.fetchedAt, source: st.sounding_raw.fonte, url: st.sounding_raw.url }); } catch (e) { S.sounding = null; } }
     else S.sounding = null;
