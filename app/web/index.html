@@ -873,7 +873,9 @@ const MET = (() => {
   const SURF = ['temperature_2m', 'apparent_temperature', 'dew_point_2m', 'precipitation_probability', 'precipitation', 'showers', 'cloud_cover', 'cloud_cover_low', 'cloud_cover_mid', 'cloud_cover_high', 'wind_speed_10m', 'wind_direction_10m', 'wind_gusts_10m', 'cape', 'pressure_msl', 'visibility', 'wind_speed_80m', 'wind_direction_80m', 'wind_speed_120m', 'wind_direction_120m', 'wind_speed_180m', 'wind_direction_180m', 'freezing_level_height', 'lifted_index', 'weather_code'];
   const LEVELS = [1000, 975, 950, 925, 900, 850, 800, 700, 600, 500, 400, 300];
   const LVARS = ['wind_speed', 'wind_direction', 'geopotential_height', 'temperature', 'relative_humidity', 'cloud_cover'];
-  /** kind 'janela' = D-1 a D+1, quatro modelos, superfície + níveis; 'tendencia' = D-1 a D+7, três modelos, superfície. */
+  /** Último dia necessário para a janela: o próprio dia D, ou D+1 só quando H+5 passa da meia-noite. */
+  const janelaFim = m => (+m.hour || 0) + 5 >= 24 ? shiftDate(m.date, 1) : m.date;
+  /** kind 'janela' = somente o dia D (D+1 apenas se H+5 cruzar a meia-noite), quatro modelos, superfície + níveis; 'tendencia' = D-1 a D+7, três modelos, superfície. */
   function openMeteoUrl(m, kind = 'janela') {
     const jan = kind !== 'tendencia', hourly = jan ? [...SURF] : [...SURF7];
     if (jan) LEVELS.forEach(p => LVARS.forEach(v => hourly.push(`${v}_${p}hPa`)));
@@ -881,7 +883,7 @@ const MET = (() => {
     const q = new URLSearchParams({
       latitude: m.lat.toFixed(4), longitude: m.lon.toFixed(4), hourly: hourly.join(','),
       models: keys.join(','), wind_speed_unit: 'kn', timezone: m.tz,
-      start_date: shiftDate(m.date, -1), end_date: shiftDate(m.date, jan ? 1 : 7),
+      start_date: m.date, end_date: jan ? janelaFim(m) : shiftDate(m.date, 7),
     });
     return 'https://api.open-meteo.com/v1/forecast?' + q.toString().replace(/%2C/g, ',');
   }
@@ -1123,7 +1125,7 @@ const MET = (() => {
     return { prev, vari };
   }
 
-  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
+  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, janelaFim, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
 })();
 
 
@@ -1518,7 +1520,7 @@ const MET = (() => {
     // verificação
     const ver = U.filter(a => a.metars.length).map(ad => {
       const v = verifyAd(ad);
-      if (!v.n) return `<div class="opm-v"><h4>${esc(ad.icao)} — METAR × modelos</h4><p class="small muted">Os horários dos METAR estão fora do período coberto pelos modelos carregados (D-1 a D+1). Atualize os modelos.</p></div>`;
+      if (!v.n) return `<div class="opm-v"><h4>${esc(ad.icao)} — METAR × modelos</h4><p class="small muted">Os horários dos METAR estão fora do período coberto pelos modelos da janela (somente o dia D): a comparação fica disponível quando os METAR forem do próprio dia D. Atualize os modelos.</p></div>`;
       const tr = v.rows.filter(r => r.h).map(r => `<tr><th scope="row">${M.ddmm(r.m.utc, tz)} ${M.hhmm(r.m.utc, tz)}</th><td>${windTxt(r.m.wind)}</td><td>${dir3(r.h.c.dir)}/${M.pad(Math.round(r.h.c.wind))} kt</td><td class="${r.dw != null && Math.abs(r.dw) >= 5 ? 'tbad' : r.dw != null && Math.abs(r.dw) >= 3 ? 'twarn' : ''}">${r.dw != null ? (r.dw > 0 ? '+' : '') + fmt(r.dw) : '—'}</td><td>${fmt(r.m.t)} / ${fmt(r.h.c.temp)}</td><td>${r.oc != null ? fmt(r.oc) : 'sem teto'} / ${r.mc != null ? fmt(r.mc) : 'sem teto'}</td><td class="l small">${esc(r.m.clouds.map(c => c.cov + (c.base != null ? String(c.base / 100).padStart(3, '0') : '') + c.type).join(' ') || (r.m.cavok ? 'CAVOK' : ''))}${r.m.wx.length ? ' · ' + esc(r.m.wx.join(' ')) : ''}</td></tr>`).join('');
       const bw = v.biasW, txt = bw == null ? '' : Math.abs(bw) < 2 ? `Vento: modelos coerentes com o observado (viés médio ${bw > 0 ? '+' : ''}${fmt(bw, 1)} kt, ${v.nW} METAR).` : `Vento: os modelos ${bw > 0 ? '<b>superestimam</b>' : '<b>subestimam</b>'} o vento a 10 m em ${fmt(Math.abs(bw), 1)} kt em média (${v.nW} METAR).`;
       return `<div class="opm-v"><h4>${esc(ad.icao)} — METAR observado × modelos (mesmo horário)</h4>
@@ -2379,7 +2381,7 @@ const MET = (() => {
       const st = dayStats(ds), [y, mo, d] = ds.split('-');
       const tbl = st ? `<div class="tbl-wrap"><table class="mini"><thead><tr><th></th>${Object.keys(st).map(i => `<th>${i}</th>`).join('')}</tr></thead><tbody>
         ${[['Vento máx.', 'wmax', 0, 'kt'], ['Rajada máx.', 'gmax', 0, 'kt'], ['Precip. total', 'pr', 1, 'mm'], ['Pancadas', 'sh', 1, 'mm'], ['CAPE máx.', 'cape', 0, 'J/kg'], ['T mín/máx', 'tt', 0, '°C'], ['PNMM mín/máx', 'pp', 0, 'hPa']].map(([n, k, dd, u]) => `<tr><th scope="row">${n}<small>${u}</small></th>${Object.keys(st).map(i => `<td>${k === 'tt' ? fmt(st[i].tmin) + '/' + fmt(st[i].tmax) : k === 'pp' ? fmt(st[i].pmin) + '/' + fmt(st[i].pmax) : fmt(st[i][k], dd)}</td>`).join('')}</tr>`).join('')}
-      </tbody></table></div>` : `<p class="muted small">Sem dados de modelo para este dia.</p>`;
+      </tbody></table></div>` : `<p class="muted small">${lab === 'D-1' ? 'Sem estatística de modelo: a busca começa no dia D (D-1 não é consultado). Use a análise sinótica e as observações.' : 'Sem dados de modelo para este dia.'}</p>`;
       const txt = A[key] ? `<div class="syn">${esc(A[key]).replace(/\n/g, '<br>')}</div>` : `<p class="muted small">Análise sinótica pendente — preenchida pela atualização agendada.</p>`;
       return `<article class="day"><header><b>${lab}</b><span>${d}/${mo}/${y}</span></header>${txt}${tbl}<p class="note">${lab === 'D-1' ? 'Valores de modelo para o dia anterior: não substituem observação.' : 'Valores de modelo (Open-Meteo).'}</p></article>`;
     }).join('') + (A.sources && A.sources.length ? `<div class="srcs"><b>Fontes da análise sinótica</b> (${esc(whenStr(A.writtenAt))}): ${A.sources.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.title || s.url)}</a>`).join(' · ')}</div>` : '')
@@ -2556,9 +2558,9 @@ const MET = (() => {
     const m = S.mission, ok = hasPos();
     const omUrl = ok ? M.openMeteoUrl(m) : null, sdUrl = ok ? M.soundingUrl(m, 'GFS') : null;
     const icao = (m.icao || '').toUpperCase();
-    $('#src-om-link').innerHTML = ok ? `<a class="btn" href="${esc(M.openMeteoUrl(m, 'janela'))}" target="_blank" rel="noopener">1 · Janela H a H+5 (GFS · ECMWF 9 km · ICON · UKMO)</a><span class="small">${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 1))} · superfície e níveis</span>
-      <a class="btn" href="${esc(M.openMeteoUrl(m, 'tendencia'))}" target="_blank" rel="noopener">2 · Tendência D a D+7 (GFS · ECMWF · ICON)</a><span class="small">${esc(M.shiftDate(m.date, -1))} a ${esc(M.shiftDate(m.date, 7))} · superfície</span><span class="small">Cole uma resposta de cada vez; o dashboard identifica qual é.</span>` : '<span class="muted">Defina coordenada e data.</span>';
-    const per = x => `${x.time[0].slice(8, 10)}/${x.time[0].slice(5, 7)} a ${x.time[x.time.length - 1].slice(8, 10)}/${x.time[x.time.length - 1].slice(5, 7)}`;
+    $('#src-om-link').innerHTML = ok ? `<a class="btn" href="${esc(M.openMeteoUrl(m, 'janela'))}" target="_blank" rel="noopener">1 · Janela H a H+5 (GFS · ECMWF 9 km · ICON · UKMO)</a><span class="small">${M.janelaFim(m) === m.date ? `somente o dia D (${esc(m.date.split('-').reverse().join('/'))})` : `dia D e madrugada de D+1 (H+5 passa da meia-noite)`} · superfície e níveis</span>
+      <a class="btn" href="${esc(M.openMeteoUrl(m, 'tendencia'))}" target="_blank" rel="noopener">2 · Tendência D a D+7 (GFS · ECMWF · ICON)</a><span class="small">${esc(m.date.split('-').reverse().join('/'))} a ${esc(M.shiftDate(m.date, 7).split('-').reverse().join('/'))} (D a D+7) · superfície</span><span class="small">Cole uma resposta de cada vez; o dashboard identifica qual é.</span>` : '<span class="muted">Defina coordenada e data.</span>';
+    const per = x => { const a0 = x.time[0].slice(0, 10), a1 = x.time[x.time.length - 1].slice(0, 10), f = d => d.slice(8, 10) + '/' + d.slice(5, 7); return a0 === a1 ? `de ${f(a0)} (00h a 23h)` : `${f(a0)} a ${f(a1)}`; };
     $('#src-om-state').innerHTML = (S.models ? `<div><span class="st st-prev">JANELA</span> ${esc(Object.keys(S.models.models).join(', '))} · previsão horária ${per(S.models)} · coletado ${esc(whenStr(S.models.fetchedAt))}</div>` : `<div><span class="st st-ind">JANELA PENDENTE</span></div>`)
       + (S.models7 ? `<div><span class="st st-prev">TENDÊNCIA</span> ${esc(Object.keys(S.models7.models).join(', '))} · previsão horária ${per(S.models7)} · coletado ${esc(whenStr(S.models7.fetchedAt))}</div>` : `<div><span class="st st-ind">TENDÊNCIA PENDENTE</span> D a D+7 usa a janela até atualizar</div>`)
       + (rodadasInfo() ? `<div class="small">Rodadas: ${rodadasInfo().txt}</div>` : '');
@@ -2670,7 +2672,7 @@ const MET = (() => {
       const { m, err } = readForm();
       if (err.length) { $('#form-err').textContent = err.join(' '); return; }
       $('#form-err').textContent = '';
-      const changedPlace = S.mission.lat !== m.lat || S.mission.lon !== m.lon || S.mission.date !== m.date || S.mission.tz !== m.tz;
+      const changedPlace = S.mission.lat !== m.lat || S.mission.lon !== m.lon || S.mission.date !== m.date || S.mission.tz !== m.tz || M.janelaFim(S.mission) !== M.janelaFim(m);
       const samePos = S.mission.lat === m.lat && S.mission.lon === m.lon && S.mission.tz === m.tz;
       const keep = {};
       if (samePos && S.mission.tadN) keep.tadN = S.mission.tadN; // valores do Time and Date só valem para a mesma coordenada
