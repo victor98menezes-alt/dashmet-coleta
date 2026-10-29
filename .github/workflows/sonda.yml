@@ -18,7 +18,7 @@ jobs:
       - name: Testar radiossonda, radar e GOES
         run: |
           pip install --quiet h5py numpy
-          python sonda_fontes2.py
+          python sonda_radar.py
       - name: Gravar resultado
         run: |
           git config user.name "coleta-meteorologica"
