@@ -8,6 +8,7 @@ on:
       - "coleta.py"
       - "fontes_extra.py"
       - "aisweb.py"
+      - "conveccao.py"
       - ".github/workflows/app.yml"
 
 permissions:

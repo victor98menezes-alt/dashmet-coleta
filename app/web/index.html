@@ -294,6 +294,10 @@ svg .cc-b.ok{fill:var(--ok-bg)} svg .cc-b.bad{fill:var(--bad-bg)} svg .cc-b.na{f
 svg .cc-bv{fill:var(--fg);font:600 10.5px var(--f-data)}
 /* METAR/TAF inseridos */
 svg .wmed{fill:none;stroke:var(--fg);stroke-width:1.6} .legend .lg-med{display:inline-block;width:9px;height:9px;border:1.6px solid var(--fg);transform:rotate(45deg);background:none!important}
+.sat-g{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start} @media (max-width:820px){.sat-g{grid-template-columns:1fr}}
+.sat-map canvas{width:100%;height:auto;border-radius:10px;border:1px solid var(--line);display:block;background:#0b1118}
+.sat-lg{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.74rem;color:var(--muted);margin-top:6px} .sat-lg i{display:inline-block;width:14px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.sat-st{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px} .sat-k{background:var(--sunk);border-radius:8px;padding:8px 10px} .sat-k b{display:block;font-size:1.05rem} .sat-k small{color:var(--muted);font-size:.74rem} .sat-k.bad b{color:var(--bad)} .sat-k.warn b{color:var(--warn)} .sat-k.ok b{color:var(--ok)}
 .obsday{margin:6px 0;padding:6px 10px;border-left:3px solid var(--obs);background:var(--sunk);border-radius:6px} .obsday p{margin:3px 0}
 .opm-zl{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:0 0 10px} .opm-zl h4{margin:6px 0 8px;font-size:.88rem} .opm-zl h4 small{font-weight:400;color:var(--muted)}
 .opm-zlg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:10px;margin-bottom:6px} .opm-zlg label{display:flex;flex-direction:column;gap:4px;font-size:.8rem;color:var(--muted)}
@@ -467,6 +471,7 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
         <div class="fld"><label for="f-cape-s">CAPE forte</label><input id="f-cape-s" inputmode="numeric"><span class="hint">J/kg (indicador)</span></div>
       </fieldset>
       <fieldset><legend>Peso dos modelos na consolidação</legend>
+        <div class="fld"><label for="f-wmode">Modo</label><select id="f-wmode"><option value="auto">Automático — desempenho recente (METAR × modelos)</option><option value="manual">Manual — valores abaixo</option></select><span class="hint">Automático: pesos iguais até haver ≥ 10 comparações por modelo</span></div>
         <div class="fld"><label for="f-w-gfs">GFS</label><input id="f-w-gfs" inputmode="decimal"></div>
         <div class="fld"><label for="f-w-ecmwf">ECMWF</label><input id="f-w-ecmwf" inputmode="decimal"></div>
         <div class="fld"><label for="f-w-icon">ICON</label><input id="f-w-icon" inputmode="decimal"></div>
@@ -549,6 +554,10 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
         <section class="panel card" data-col="aer" aria-labelledby="h-aer">
           <h2 class="card-ttl" id="h-aer"><button type="button" class="card-t" aria-expanded="false" aria-controls="b-aer"><span class="card-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 15.5 13 11V5a1 1 0 0 0-2 0v6l-8 4.5V17l8-2v4l-2 1.5V22l3-1 3 1v-1.5L13 19v-4l8 2z"/></svg></span><span class="card-tt"><span class="card-name">Aeródromos próximos</span><span class="card-sub">teto · visibilidade · tempo presente · mudança</span></span><span class="card-sum" id="s-aer"></span><span class="chev" aria-hidden="true"></span></button></h2>
           <div class="card-b" id="b-aer"><div id="aer"></div></div>
+        </section>
+        <section class="panel card" data-col="sat" aria-labelledby="h-sat">
+          <h2 class="card-ttl" id="h-sat"><button type="button" class="card-t" aria-expanded="false" aria-controls="b-sat"><span class="card-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M13 2 6 13h5l-1 9 7-11h-5z"/></svg></span><span class="card-tt"><span class="card-name">Convecção atual — satélite, raios e radar</span><span class="card-sub">GOES-19 topos frios · GLM descargas · radar</span></span><span class="card-sum" id="s-sat"></span><span class="chev" aria-hidden="true"></span></button></h2>
+          <div class="card-b" id="b-sat"><div id="sat"></div></div>
         </section>
         <section class="panel card" data-col="inmet" aria-labelledby="h-inmet">
           <h2 class="card-ttl" id="h-inmet"><button type="button" class="card-t" aria-expanded="false" aria-controls="b-inmet"><span class="card-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 21h10"/><path d="M12 6h6M12 10h4"/><circle cx="12" cy="14" r="2"/></svg></span><span class="card-tt"><span class="card-name">Estação INMET</span><span class="card-sub">observação mais próxima</span></span><span class="card-sum" id="s-inmet"></span><span class="chev" aria-hidden="true"></span></button></h2>
@@ -1087,6 +1096,41 @@ const MET = (() => {
   const ceilingFt = m => { const c = (m && m.clouds || []).filter(x => /FEW|SCT|BKN|OVC|VV/.test(x.cov) && x.base != null).map(x => x.base); return c.length ? Math.min(...c) : null; };
 
 
+
+  /* ---------- Declinação magnética — World Magnetic Model WMM2025 (NOAA/NCEI e BGS; válido 2025,0–2030,0) ----------
+     Coeficientes de Gauss g, h e variação secular (nT, nT/ano), n = 1..12, na ordem do arquivo WMM.COF oficial. */
+  const WMM2025 = { epoch: 2025.0, c: '-29351.8 0.0 12.0 0.0;-1410.8 4545.4 9.7 -21.5;-2556.6 0.0 -11.6 0.0;2951.1 -3133.6 -5.2 -27.7;1649.3 -815.1 -8.0 -12.1;1361.0 0.0 -1.3 0.0;-2404.1 -56.6 -4.2 4.0;1243.8 237.5 0.4 -0.3;453.6 -549.5 -15.6 -4.1;895.0 0.0 -1.6 0.0;799.5 278.6 -2.4 -1.1;55.7 -133.9 -6.0 4.1;-281.1 212.0 5.6 1.6;12.1 -375.6 -7.0 -4.4;-233.2 0.0 0.6 0.0;368.9 45.4 1.4 -0.5;187.2 220.2 0.0 2.2;-138.7 -122.9 0.6 0.4;-142.0 43.0 2.2 1.7;20.9 106.1 0.9 1.9;64.4 0.0 -0.2 0.0;63.8 -18.4 -0.4 0.3;76.9 16.8 0.9 -1.6;-115.7 48.8 1.2 -0.4;-40.9 -59.8 -0.9 0.9;14.9 10.9 0.3 0.7;-60.7 72.7 0.9 0.9;79.5 0.0 -0.0 0.0;-77.0 -48.9 -0.1 0.6;-8.8 -14.4 -0.1 0.5;59.3 -1.0 0.5 -0.8;15.8 23.4 -0.1 0.0;2.5 -7.4 -0.8 -1.0;-11.1 -25.1 -0.8 0.6;14.2 -2.3 0.8 -0.2;23.2 0.0 -0.1 0.0;10.8 7.1 0.2 -0.2;-17.5 -12.6 0.0 0.5;2.0 11.4 0.5 -0.4;-21.7 -9.7 -0.1 0.4;16.9 12.7 0.3 -0.5;15.0 0.7 0.2 -0.6;-16.8 -5.2 -0.0 0.3;0.9 3.9 0.2 0.2;4.6 0.0 -0.0 0.0;7.8 -24.8 -0.1 -0.3;3.0 12.2 0.1 0.3;-0.2 8.3 0.3 -0.3;-2.5 -3.3 -0.3 0.3;-13.1 -5.2 0.0 0.2;2.4 7.2 0.3 -0.1;8.6 -0.6 -0.1 -0.2;-8.7 0.8 0.1 0.4;-12.9 10.0 -0.1 0.1;-1.3 0.0 0.1 0.0;-6.4 3.3 0.0 0.0;0.2 0.0 0.1 -0.0;2.0 2.4 0.1 -0.2;-1.0 5.3 -0.0 0.1;-0.6 -9.1 -0.3 -0.1;-0.9 0.4 0.0 0.1;1.5 -4.2 -0.1 0.0;0.9 -3.8 -0.1 -0.1;-2.7 0.9 -0.0 0.2;-3.9 -9.1 -0.0 -0.0;2.9 0.0 0.0 0.0;-1.5 0.0 -0.0 -0.0;-2.5 2.9 0.0 0.1;2.4 -0.6 0.0 -0.0;-0.6 0.2 0.0 0.1;-0.1 0.5 -0.1 -0.0;-0.6 -0.3 0.0 -0.0;-0.1 -1.2 -0.0 0.1;1.1 -1.7 -0.1 -0.0;-1.0 -2.9 -0.1 0.0;-0.2 -1.8 -0.1 0.0;2.6 -2.3 -0.1 0.0;-2.0 0.0 0.0 0.0;-0.2 -1.3 0.0 -0.0;0.3 0.7 -0.0 0.0;1.2 1.0 -0.0 -0.1;-1.3 -1.4 -0.0 0.1;0.6 -0.0 -0.0 -0.0;0.6 0.6 0.1 -0.0;0.5 -0.1 -0.0 -0.0;-0.1 0.8 0.0 0.0;-0.4 0.1 0.0 -0.0;-0.2 -1.0 -0.1 -0.0;-1.3 0.1 -0.0 0.0;-0.7 0.2 -0.1 -0.1' };
+  let _wmm = null;
+  function wmmCoef() {
+    if (_wmm) return _wmm;
+    const g = [], h = [], gd = [], hd = []; let k = 0; const v = WMM2025.c.split(';').map(s => s.split(' ').map(Number));
+    for (let n = 1; n <= 12; n++) { g[n] = []; h[n] = []; gd[n] = []; hd[n] = []; for (let m = 0; m <= n; m++) { const r = v[k++]; g[n][m] = r[0]; h[n][m] = r[1]; gd[n][m] = r[2]; hd[n][m] = r[3]; } }
+    return (_wmm = { g, h, gd, hd });
+  }
+  /** Declinação (graus, + = leste) e componentes (nT) pelo WMM2025. lat/lon geodésicas (graus), altitude em km, data em ano decimal. */
+  function magDecl(lat, lon, hKm, year) {
+    if (lat == null || lon == null || year == null) return null;
+    const C = wmmCoef(), dt = year - WMM2025.epoch, rad = Math.PI / 180;
+    const a = 6378.137, f = 1 / 298.257223563, e2 = f * (2 - f), re = 6371.2;
+    const phi = lat * rad, lam = lon * rad, sp = Math.sin(phi), cp = Math.cos(phi);
+    const Rc = a / Math.sqrt(1 - e2 * sp * sp), p = (Rc + hKm) * cp, z = (Rc * (1 - e2) + hKm) * sp, r = Math.hypot(p, z), phic = Math.asin(z / r);
+    const th = Math.PI / 2 - phic, ct = Math.cos(th), st = Math.sin(th);
+    const P = [[1]], dP = [[0]];
+    for (let n = 1; n <= 12; n++) { P[n] = []; dP[n] = []; for (let m = 0; m <= n; m++) {
+      if (n === m) { if (n === 1) { P[1][1] = st; dP[1][1] = ct; } else { const k2 = Math.sqrt((2 * n - 1) / (2 * n)); P[n][n] = k2 * st * P[n - 1][n - 1]; dP[n][n] = k2 * (ct * P[n - 1][n - 1] + st * dP[n - 1][n - 1]); } }
+      else { const a1 = 2 * n - 1, b1 = Math.sqrt((n - 1) * (n - 1) - m * m), d1 = Math.sqrt(n * n - m * m), p2 = n - 2 >= m ? P[n - 2][m] : 0, dp2 = n - 2 >= m ? dP[n - 2][m] : 0;
+        P[n][m] = (a1 * ct * P[n - 1][m] - b1 * p2) / d1; dP[n][m] = (a1 * (ct * dP[n - 1][m] - st * P[n - 1][m]) - b1 * dp2) / d1; } } }
+    let X = 0, Y = 0, Z = 0;
+    for (let n = 1; n <= 12; n++) { const ar = Math.pow(re / r, n + 2); for (let m = 0; m <= n; m++) {
+      const gg = C.g[n][m] + dt * C.gd[n][m], hh = C.h[n][m] + dt * C.hd[n][m], cm = Math.cos(m * lam), sm = Math.sin(m * lam);
+      X += ar * (gg * cm + hh * sm) * dP[n][m]; Y += ar * m * (gg * sm - hh * cm) * P[n][m]; Z -= ar * (n + 1) * (gg * cm + hh * sm) * P[n][m]; } }
+    Y /= st;
+    const dp = phic - phi, Xg = X * Math.cos(dp) - Z * Math.sin(dp), Zg = X * Math.sin(dp) + Z * Math.cos(dp);
+    return { D: Math.atan2(Y, Xg) / rad, X: Xg, Y, Z: Zg, valid: year >= 2025 && year < 2030 };
+  }
+  /** Ano decimal de um instante UTC (ms). */
+  const decYear = ms => { const d = new Date(ms), y = d.getUTCFullYear(), a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1); return y + (ms - a) / (b - a); };
+
   /* ---------- Atmosfera padrão e altitude-densidade ---------- */
   /** Altitude-pressão (ft) a partir da elevação (ft) e do QNH (hPa): 1 hPa ≈ 27 ft próximo ao nível do mar (fórmula barométrica ISA). */
   function pressureAlt(elevFt, qnh) {
@@ -1133,7 +1177,7 @@ const MET = (() => {
     return { prev, vari };
   }
 
-  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, janelaFim, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
+  return { magDecl, decYear, wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, janelaFim, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
 })();
 
 
@@ -1157,10 +1201,13 @@ const MET = (() => {
   const DEFAULT_MISSION = () => ({
     name: '', latStr: '', lonStr: '', lat: null, lon: null, date: tomorrow('America/Sao_Paulo'), hour: 10, tz: 'America/Sao_Paulo',
     activity: 'ENG', launchFtAGL: 1000, exitFtMSL: null, windLimitEng: 13, windLimitSlop: 18, baseMinFt: 1000, icao: '', ibge: '', zlElevFt: null, windRef: 'ZL750', aerodromos: '', xwLimit: null, ceilMin: null, visMin: null,
-    weights: { GFS: 1, ECMWF: 1, ICON: 1, UKMO: 1 }, capeMod: 1000, capeStrong: 2500, updatedAt: null,
+    weights: { GFS: 1, ECMWF: 1, ICON: 1, UKMO: 1 }, weightMode: 'auto', capeMod: 1000, capeStrong: 2500, updatedAt: null,
   });
   const S = { mission: DEFAULT_MISSION(), models: null, sounding: null, obs: null, analysis: null, astro: null, oficiais: null, aer: null, sys: null, history: [], db: null, user: null, mcp: null, downloads: null, canWrite: true, selHour: 0, upperSrc: 'auto', tab: 'modelos' };
 
+  /* Coordenadas e elevação dos aeródromos brasileiros com indicador OACI SBxx (OurAirports, domínio público; consulta em 29/10/2026).
+     Usadas só quando o AISWEB não foi consultado (HTML e painel no Claude), para a distância à ZL e a correção das bases das nuvens. */
+  const AD_BR = (() => { const o = {}; 'SBAA:-8.3483,-49.3015,653|SBAC:-4.5689,-37.8051,128|SBAE:-22.1608,-49.0703,1962|SBAF:-22.8751,-43.3847,110|SBAM:2.0775,-50.8582,45|SBAN:-16.2292,-48.9643,3731|SBAQ:-21.8120,-48.1330,2334|SBAR:-10.9839,-37.0729,23|SBAT:-9.8664,-56.1063,948|SBAU:-21.1415,-50.4246,1358|SBAX:-19.5632,-46.9604,3276|SBBE:-1.3793,-48.4762,54|SBBG:-31.3905,-54.1122,600|SBBH:-19.8507,-43.9503,2589|SBBI:-25.4051,-49.2320,3057|SBBP:-22.9788,-46.5371,2887|SBBQ:-21.2672,-43.7610,3657|SBBR:-15.8692,-47.9208,3497|SBBU:-22.3450,-49.0538,2025|SBBV:2.8462,-60.6906,276|SBBW:-15.8614,-52.3890,1147|SBCA:-25.0003,-53.5012,2481|SBCB:-22.9215,-42.0719,22|SBCC:-9.3339,-54.9654,1777|SBCD:-26.7874,-50.9399,3376|SBCF:-19.6357,-43.9669,2721|SBCG:-20.4700,-54.6740,1833|SBCH:-27.1342,-52.6566,2154|SBCI:-7.3204,-47.4587,565|SBCJ:-6.1178,-50.0034,2064|SBCN:-17.7251,-48.6063,2307|SBCO:-29.9459,-51.1444,26|SBCP:-21.6983,-41.3017,59|SBCR:-19.0119,-57.6728,463|SBCT:-25.5285,-49.1758,2988|SBCX:-29.1972,-51.1876,2472|SBCY:-15.6529,-56.1167,617|SBCZ:-7.5999,-72.7695,637|SBDB:-21.2473,-56.4524,1180|SBDN:-22.1751,-51.4246,1477|SBDO:-22.2019,-54.9266,1503|SBEG:-3.0386,-60.0497,264|SBEK:-6.2332,-57.7769,295|SBES:-22.8129,-42.0926,61|SBFI:-25.5942,-54.4894,786|SBFL:-27.6703,-48.5525,16|SBFN:-3.8545,-32.4230,193|SBFT:-20.2787,-49.1876,1598|SBFZ:-3.7758,-38.5322,83|SBGL:-22.8100,-43.2506,28|SBGM:-10.7864,-65.2849,478|SBGO:-16.6320,-49.2207,2450|SBGP:-21.7737,-48.4051,1998|SBGR:-23.4313,-46.4700,2461|SBGV:-18.8959,-41.9829,561|SBGW:-22.7916,-45.2048,1761|SBHT:-3.2531,-52.2539,368|SBIC:-3.1265,-58.4817,142|SBIH:-4.2421,-56.0007,110|SBIL:-14.8159,-39.0335,15|SBIP:-19.4707,-42.4876,786|SBIT:-18.4447,-49.2134,1630|SBIZ:-5.5313,-47.4600,430|SBJA:-28.6753,-49.0596,120|SBJD:-23.1809,-46.9439,2470|SBJE:-2.9064,-40.3573,89|SBJF:-21.7915,-43.3861,2989|SBJH:-23.4269,-47.1657,2547|SBJI:-10.8707,-61.8467,598|SBJP:-7.1487,-34.9506,217|SBJR:-22.9868,-43.3722,10|SBJU:-7.2193,-39.2691,1342|SBJV:-26.2245,-48.7974,15|SBKG:-7.2697,-35.8961,1646|SBKP:-23.0074,-47.1345,2170|SBLE:-12.4823,-41.2770,1676|SBLJ:-27.7821,-50.2815,3065|SBLO:-23.3344,-51.1284,1867|SBLP:-13.2621,-43.4081,1454|SBLS:-19.6618,-43.8974,2795|SBMA:-5.3686,-49.1380,357|SBMD:-0.8898,-52.6022,677|SBME:-22.3430,-41.7660,8|SBMG:-23.4761,-52.0162,1801|SBMI:-22.9195,-42.8309,5|SBMK:-16.7069,-43.8189,2191|SBML:-22.1969,-49.9265,2134|SBMN:-3.1460,-59.9863,267|SBMO:-9.5126,-35.7918,387|SBMQ:0.0507,-51.0722,56|SBMS:-5.2019,-37.3643,76|SBMT:-23.5091,-46.6378,2371|SBMY:-5.8114,-61.2783,174|SBNF:-26.8794,-48.6510,18|SBNM:-28.2825,-54.1696,1056|SBNT:-5.9114,-35.2477,171|SBNV:-16.6258,-49.3488,2707|SBOA:-6.9745,-35.2522,440|SBOB:-16.3197,-47.2253,3215|SBOD:-7.4558,-49.1956,702|SBOE:-12.5874,-52.0952,1181|SBOF:-19.3184,-52.5346,1752|SBOG:-14.7848,-40.8170,3051|SBOH:-16.0009,-53.5436,2077|SBOI:3.8541,-51.7971,53|SBOJ:-6.8199,-56.8414,623|SBOK:-13.2902,-55.9755,1411|SBOL:-18.9203,-52.0014,1923|SBOM:-15.3769,-57.6821,630|SBON:-7.6159,-47.4521,764|SBOO:-20.8387,-56.5889,1555|SBOQ:-18.6220,-52.8331,2808|SBOR:-13.7320,-50.3576,814|SBOS:-13.1528,-58.1175,1594|SBOT:-3.6924,-45.2690,118|SBOU:-10.2703,-55.7861,919|SBOV:-14.1582,-54.9262,1489|SBOW:-4.1863,-56.0599,217|SBOX:-18.2611,-55.3737,548|SBOY:-17.4170,-56.1812,394|SBOZ:-16.1800,-57.2785,499|SBPA:-29.9940,-51.1675,11|SBPB:-2.8937,-41.7320,23|SBPC:-21.8425,-46.5698,4138|SBPF:-28.2440,-52.3278,2380|SBPG:-25.1845,-50.1438,2588|SBPJ:-10.2915,-48.3570,774|SBPK:-31.7172,-52.3278,59|SBPL:-9.3624,-40.5691,1263|SBPO:-26.2172,-52.6945,2697|SBPP:-22.5496,-55.7026,2156|SBPR:-19.9096,-43.9892,3044|SBPS:-16.4384,-39.0806,169|SBPV:-8.7085,-63.9023,295|SBQA:-16.5361,-49.8382,2274|SBQB:-13.2619,-45.0769,2533|SBQC:-13.3665,-55.8551,1421|SBQD:-9.5233,-56.2383,899|SBQE:-7.8043,-45.0576,1424|SBQG:-13.5131,-56.5983,1076|SBQH:-10.6990,-51.6147,728|SBQI:1.8439,-61.1218,184|SBQJ:-23.8464,-50.2084,2615|SBQK:-6.5391,-51.4423,778|SBQM:-22.7653,-53.9083,1214|SBQN:-15.5754,-57.3782,512|SBQO:-17.0275,-39.1761,59|SBQP:-7.7524,-44.3159,1526|SBQR:-16.8088,-44.9732,1617|SBQS:-15.4058,-54.9641,2208|SBQT:-15.8020,-53.5564,1877|SBQX:-13.5783,-57.9369,1841|SBRB:-9.8690,-67.8940,633|SBRD:-16.5843,-54.7248,1467|SBRF:-8.1275,-34.9230,33|SBRJ:-22.9104,-43.1628,11|SBRP:-21.1343,-47.7741,1805|SBSC:-22.9324,-43.7191,10|SBSG:-5.7698,-35.3666,273|SBSI:-11.8850,-55.5861,1227|SBSJ:-23.2292,-45.8615,2120|SBSL:-2.5864,-44.2350,178|SBSM:-29.7114,-53.6882,287|SBSN:-2.4224,-54.7931,198|SBSO:-12.4792,-55.6723,1266|SBSP:-23.6277,-46.6546,2631|SBSR:-20.8171,-49.4070,1784|SBST:-23.9282,-46.3002,13|SBSV:-12.9086,-38.3225,64|SBTA:-23.0401,-45.5162,1902|SBTB:-1.4896,-56.3968,167|SBTC:-15.3544,-38.9987,23|SBTD:-24.6863,-53.6975,1843|SBTE:-5.0602,-42.8237,219|SBTF:-3.3829,-64.7241,186|SBTG:-20.7526,-51.6820,1063|SBTK:-8.1555,-70.7830,646|SBTS:2.2245,-55.9447,1127|SBTT:-4.2557,-69.9358,263|SBTU:-3.7860,-49.7203,830|SBTV:-16.5414,-39.1081,164|SBUA:-0.1484,-66.9855,249|SBUF:-9.4009,-38.2506,883|SBUG:-29.7822,-57.0382,256|SBUL:-18.8836,-48.2259,3094|SBUR:-19.7650,-47.9648,2655|SBUY:-4.8843,-65.3554,210|SBVC:-14.9079,-40.9148,2940|SBVG:-21.5914,-45.4741,3025|SBVH:-12.6944,-60.0983,2018|SBVT:-20.2580,-40.2850,34|SBYA:0.6104,-69.1800,466|SBYS:-21.9847,-47.3412,1968|SBZM:-21.5131,-43.1731,1348'.split('|').forEach(s => { const [k, v] = s.split(':'), [la, lo, el] = v.split(','); o[k] = { lat: +la, lon: +lo, elev_ft: el === '' ? null : +el, fonte: 'OurAirports' }; }); return o; })();
   const limitKt = () => S.mission.activity === 'SLOP' ? +S.mission.windLimitSlop : +S.mission.windLimitEng;
   const actLabel = () => S.mission.activity === 'SLOP' ? 'SLOp (HALO/HAHO)' : 'Semiautomático enganchado';
   const hasPos = () => S.mission.lat != null && S.mission.lon != null && S.mission.date;
@@ -1228,7 +1275,7 @@ const MET = (() => {
     const FULL = utcOv == null || !!full;
     const utc = utcOv != null ? utcOv : hourUtc(k), key = M.localKey(utc, S.mission.tz);
     const r = { k, utc, key, label: k == null ? '' : k === 0 ? 'H' : 'H+' + k, per: {}, n: 0, tafU: [] };
-    const W = S.mission.weights || {};
+    const W = effW();
     if (S.models) {
       const idx = S.models.time.indexOf(key);
       modelIds().forEach(id => {
@@ -1290,6 +1337,9 @@ const MET = (() => {
       else if (conv.level < 1) { conv.level = 1; conv.text = 'TCU/CB citado pelo INMET para o período'; conv.inmetOnly = true; }
       conv.src.push(`INMET ${r.inmet.periodo}: ${r.inmet.texto}${sup ? '' : ' — sem indício nos modelos (CAPE ' + fmt(c.cape) + ' J/kg, sem pancadas) nem no TAF nesta hora'}`);
     }
+    // satélite (topos frios) e descargas elétricas: previsão imediata
+    r.sat = FULL ? satAt(utc) : null;
+    if (r.sat && r.sat.level) { if (conv.level < r.sat.level) { conv.level = r.sat.level; conv.text = r.sat.txt[0]; } conv.inmetOnly = false; conv.src.push('Satélite/raios: ' + r.sat.txt.join('; ')); }
     // vento na ZL (ZL + 750 ft), 1ª camada acima e altura de lançamento
     r.zl = zlWinds(r);
     // observação (METAR / medição na ZL) e TAF corrigem os valores dos modelos
@@ -1369,7 +1419,7 @@ const MET = (() => {
       if (!lv.length) return;
       const ncl = h.per[id] && h.per[id].temp != null && h.per[id].td != null ? M.lclFt(h.per[id].temp, h.per[id].td) : null;
       per[id] = M.layersFrom(lv.map(l => ({ zAgl: l.z - zl, cover: l.cover })), ncl);
-      lv.forEach(l => { (byLevel[l.p] = byLevel[l.p] || []).push({ z: l.z, cover: l.cover, w: (m.weights || {})[id] ?? 1, ncl }); });
+      lv.forEach(l => { (byLevel[l.p] = byLevel[l.p] || []).push({ z: l.z, cover: l.cover, w: effW()[id] ?? 1, ncl }); });
     });
     if (!Object.keys(per).length) return { per, cons: [], src: 'sem cobertura por nível' };
     const levels = Object.keys(byLevel).map(Number).map(p => ({ p, z: M.weightedMedian(byLevel[p].map(x => ({ v: x.z, w: 1 }))), cover: M.weightedMedian(byLevel[p].map(x => ({ v: x.cover, w: x.w }))), n: byLevel[p].length })).sort((x, y) => x.z - y.z);
@@ -1396,7 +1446,7 @@ const MET = (() => {
       const pts = [{ z: elev + 2, v: g('temperature_2m') }];
       const lv = [];
       M.LEVELS.forEach(p => { const z = g(`geopotential_height_${p}hPa`), t = g(`temperature_${p}hPa`), rh = g(`relative_humidity_${p}hPa`); if (z != null && t != null && z > elev) { pts.push({ z, v: t }); lv.push({ p, z, t, rh }); } });
-      const t = M.scalarAt(pts, topM); if (t != null) temps.push({ v: t, w: (m.weights || {})[id] ?? 1 });
+      const t = M.scalarAt(pts, topM); if (t != null) temps.push({ v: t, w: effW()[id] ?? 1 });
       lv.filter(l => l.z <= topM && l.t <= 0 && l.t >= -20 && l.rh != null && l.rh >= 80).forEach(l => { const k = l.p; const e = ice.get(k) || { p: l.p, z: l.z, n: 0, ids: [] }; e.n++; e.ids.push(id); ice.set(k, e); });
     });
     const iceL = [...ice.values()].sort((a, b) => a.z - b.z);
@@ -1423,7 +1473,7 @@ const MET = (() => {
       const w750 = M.windAt(pts, t750);
       const layer = pts.find(p => p.p && p.z > t750) || null;
       const launch = tLaunch ? M.windAt(pts, tLaunch) : null;
-      per[id] = { w750, layer, launch, w: (m.weights || {})[id] ?? 1 };
+      per[id] = { w750, layer, launch, w: effW()[id] ?? 1 };
     });
     const ids = Object.keys(per); if (!ids.length) return null;
     const cons = sel => { const v = ids.map(i => ({ id: i, x: sel(per[i]), w: per[i].w })).filter(q => q.x && q.x.kt != null); if (!v.length) return null;
@@ -1433,6 +1483,165 @@ const MET = (() => {
     const cLayer = cl ? Object.assign(cl, { p: lay.length ? M.weightedMedian(lay.map(x => ({ v: x.p, w: 1 }))) : null, z: lay.length ? M.weightedMedian(lay.map(x => ({ v: x.z, w: 1 }))) : null }) : null;
     return { zlM, t750, tLaunch, per, c750, cLayer, cLaunch, zlFromModel: !(m.zlElevFt != null && m.zlElevFt !== ''), modelElev: S.models.meta.elevation };
   }
+
+  /* ---------------- Convecção atual: satélite GOES-19 (topos frios), descargas GLM e radar ---------------- */
+  function satData() {
+    const SV = S.oficiais && S.oficiais.satelite; if (!SV || !hasPos()) return null;
+    if (SV.lat != null && (Math.abs(SV.lat - S.mission.lat) > 0.05 || Math.abs(SV.lon - S.mission.lon) > 0.05)) return { erro: 'coletado para outra coordenada — atualize' };
+    const A = SV.abi && SV.abi.grade ? SV.abi : null, G = SV.glm && SV.glm.fim_utc ? SV.glm : null;
+    if (!A && !G) return { erro: (SV.abi && SV.abi.erro) || (SV.glm && SV.glm.erro) || SV.erro || 'indisponível' };
+    return { A, G, tA: A ? Date.parse(A.inicio_utc) : null, tG: G ? Date.parse(G.fim_utc) : null };
+  }
+  const etaOk = f => f && f.eta_min != null && f.eta_min <= 240 && (f.aprox_kmh || 0) >= 5;
+  /** Efeito da convecção observada (satélite/raios) num horário — previsão imediata: até ~2 h da imagem, ou na chegada estimada. */
+  function satAt(utc) {
+    const D = satData(); if (!D || D.erro) return null;
+    const t0 = Math.max(D.tA || 0, D.tG || 0), lead = (utc - t0) / 3600e3;
+    if (lead < -0.75) return null;
+    const out = { level: 0, txt: [], lead }, G = D.G, A = D.A;
+    if (G && lead <= 1.5) {
+      if (G.n_30km > 0) { out.level = 3; out.txt.push(`Raios a ${fmt(G.mais_proximo.dist_km)} km da ZL (${G.n_30km} descargas em 30 km nos últimos ${G.janela_min} min — GLM)`); }
+      else if (G.n_100km > 0) { out.level = 2; out.txt.push(`Raios a ${fmt(G.mais_proximo.dist_km)} km a ${M.cardinal(G.mais_proximo.rumo)} (${G.n_100km} descargas em 100 km — GLM)`); }
+    }
+    if (A && lead <= 1.5) {
+      if (A.frio52 && A.frio52.dist_km <= 30) { out.level = 3; out.txt.push(`Topo de CB (≤ −52 °C) a ${fmt(A.frio52.dist_km)} km da ZL (GOES-19)`); }
+      else if (A.frio32 && A.frio32.dist_km <= 30) { out.level = Math.max(out.level, 2); out.txt.push(`Topo frio (≤ −32 °C) a ${fmt(A.frio32.dist_km)} km da ZL — TCU/CB (GOES-19)`); }
+    }
+    if (A) [['frio52', 3, 'Núcleo de CB'], ['frio32', 2, 'Nuvem convectiva']].forEach(([k, lv, nm]) => { const f = A[k]; if (!etaOk(f)) return; const eta = D.tA + f.eta_min * 60e3;
+      if (utc >= eta - 45 * 60e3 && utc <= eta + 90 * 60e3) { out.level = Math.max(out.level, lv); out.txt.push(`${nm} se aproximando de ${M.cardinal(f.rumo)} a ${fmt(f.aprox_kmh)} km/h — chegada estimada ${M.hhmm(eta, S.mission.tz)} (GOES-19)`); } });
+    if (!out.level) { out.clear = lead <= 2 && (!A || !A.frio32 || A.frio32.dist_km > 100) && (!G || !G.n_100km); out.tA = D.tA; }
+    return out;
+  }
+  /** Cor do realce IR (temperatura de brilho, °C). */
+  function irColor(c) {
+    if (c == null) return [0, 0, 0, 0];
+    if (c >= 20) return [16, 22, 30, 255];
+    if (c > -20) { const f = (20 - c) / 40; const v = Math.round(30 + f * 150); return [v, v, Math.round(v * 1.04), 255]; }
+    if (c > -32) { const f = (-20 - c) / 12; const v = Math.round(180 + f * 60); return [v, v, v, 255]; }
+    const stops = [[-32, [255, 236, 60]], [-42, [255, 150, 0]], [-52, [230, 30, 30]], [-62, [200, 0, 160]], [-72, [255, 255, 255]]];
+    for (let i = 1; i < stops.length; i++) if (c > stops[i][0]) { const [a0, ca] = stops[i - 1], [a1, cb] = stops[i], f = (a0 - c) / (a0 - a1); return [0, 1, 2].map(k => Math.round(ca[k] + f * (cb[k] - ca[k]))).concat(255); }
+    return [255, 255, 255, 255];
+  }
+  function drawSat(cv, D) {
+    const A = D.A, G = D.G, g = A ? A.grade : { lat0: S.mission.lat + 2, lon0: S.mission.lon - 2, passo: 0.04, n: 101 }, n = g.n, px = 4, W = n * px;
+    cv.width = W; cv.height = W; const ctx = cv.getContext('2d');
+    ctx.fillStyle = '#0b1118'; ctx.fillRect(0, 0, W, W);
+    if (A && g.tb_c_mais_100_b64) {
+      const bin = atob(g.tb_c_mais_100_b64), img = ctx.createImageData(n, n);
+      for (let i = 0; i < n * n; i++) { const b = bin.charCodeAt(i), col = irColor(b === 255 ? null : b - 100); img.data.set(col, i * 4); }
+      const tmp = document.createElement('canvas'); tmp.width = n; tmp.height = n; tmp.getContext('2d').putImageData(img, 0, 0);
+      ctx.imageSmoothingEnabled = true; ctx.drawImage(tmp, 0, 0, W, W);
+    }
+    const lat = S.mission.lat, lon = S.mission.lon, X = lo => (lo - g.lon0) / g.passo * px + px / 2, Y = la => (g.lat0 - la) / g.passo * px + px / 2;
+    const kmLat = 111.32, kmLon = 111.32 * Math.cos(lat * Math.PI / 180);
+    // graticulado de 1° (sem linha de costa)
+    ctx.strokeStyle = 'rgba(0,229,255,.22)'; ctx.fillStyle = 'rgba(0,229,255,.7)'; ctx.font = '10px system-ui, sans-serif'; ctx.lineWidth = 1;
+    for (let la = Math.ceil(g.lat0 - (n - 1) * g.passo); la <= g.lat0; la++) { const y = Y(la); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillText(Math.abs(la) + '°' + (la < 0 ? 'S' : 'N'), 3, y - 3); }
+    for (let lo = Math.ceil(g.lon0); lo <= g.lon0 + (n - 1) * g.passo; lo++) { const x = X(lo); ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, W); ctx.stroke(); ctx.fillText(Math.abs(lo) + '°' + (lo < 0 ? 'W' : 'E'), x + 3, W - 4); }
+    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '600 11px system-ui, sans-serif'; ctx.lineWidth = 1.2;
+    [10, 30, 100].forEach(r => { ctx.setLineDash(r === 100 ? [5, 4] : []); ctx.beginPath(); ctx.ellipse(X(lon), Y(lat), r / kmLon / g.passo * px, r / kmLat / g.passo * px, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.fillText(r + ' km', X(lon) + 4, Y(lat) - r / kmLat / g.passo * px - 3); });
+    ctx.setLineDash([]);
+    if (G && G.flashes) G.flashes.forEach(([la, lo, ag]) => { const x = X(lo), y = Y(la); if (x < 0 || y < 0 || x > W || y > W) return; ctx.strokeStyle = ag <= 5 ? '#ffffff' : ag <= 10 ? '#ffe14d' : '#ff9a1f'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x - 4, y); ctx.lineTo(x + 4, y); ctx.moveTo(x, y - 4); ctx.lineTo(x, y + 4); ctx.stroke(); });
+    ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(X(lon) - 8, Y(lat)); ctx.lineTo(X(lon) + 8, Y(lat)); ctx.moveTo(X(lon), Y(lat) - 8); ctx.lineTo(X(lon), Y(lat) + 8); ctx.stroke();
+    ctx.fillStyle = '#00e5ff'; ctx.fillText('ZL', X(lon) + 9, Y(lat) + 14);
+    ctx.fillStyle = 'rgba(255,255,255,.9)'; ctx.font = '700 13px system-ui, sans-serif'; ctx.fillText('N ↑', W - 34, 18);
+  }
+  function renderSat(H) {
+    const el = $('#sat'); if (!el) return;
+    if (!hasPos()) { el.innerHTML = ''; return; }
+    const D = satData(), tz = S.mission.tz, RD = S.oficiais && S.oficiais.radar;
+    const radarHtml = (() => {
+      const imgs = RD && RD.imagens && RD.imagens.length ? RD.imagens : null;
+      if (imgs) return `<h4 class="sub">Radar meteorológico — REDEMET (${esc(RD.produto || 'maxcappi')})</h4><div class="rad-g">${imgs.slice(0, 2).map(x => `<figure><img src="${esc(x.url)}" alt="Radar ${esc(x.nome || '')}" loading="lazy" style="width:100%;border-radius:8px"><figcaption class="small">${esc(x.nome || '')} ${esc(x.hora || '')}</figcaption></figure>`).join('')}</div>`;
+      return `<p class="small muted"><b>Radar:</b> ${RD && RD.erro ? esc(RD.erro.charAt(0).toUpperCase() + RD.erro.slice(1)) + '. ' : ''}A imagem de radar oficial (REDEMET/DECEA) exige a chave da API REDEMET — informe-a em Configurações do aplicativo. Enquanto isso, consulte o radar em <a href="https://redemet.decea.mil.br/" target="_blank" rel="noopener">REDEMET</a> ou no <a href="https://www.sistema-alerta-rio.com.br/" target="_blank" rel="noopener">Alerta Rio</a>.</p>`;
+    })();
+    if (!D) { el.innerHTML = `<p class="muted">Disponível após “Atualizar dados” no aplicativo (coleta GOES-19 e GLM da NOAA). No HTML e no painel do Claude, a coleta de satélite não é feita.</p>${radarHtml}`; return; }
+    if (D.erro) { el.innerHTML = `<p class="small err">Satélite/raios: ${esc(D.erro)}</p>${radarHtml}`; return; }
+    const A = D.A, G = D.G, k = (cls, v, l) => `<div class="sat-k ${cls}"><b>${v}</b><small>${l}</small></div>`;
+    const f = (x, lim) => !x ? k('ok', 'nenhum', `topo ≤ ${lim} °C em 220 km`) : k(x.dist_km <= 30 ? 'bad' : x.dist_km <= 100 ? 'warn' : 'ok', `${fmt(x.dist_km)} km ${M.cardinal(x.rumo)}`, `topo ≤ ${lim} °C mais próximo${x.aprox_kmh != null ? ` · ${x.aprox_kmh > 0 ? 'aproximando' : 'afastando'} ${fmt(Math.abs(x.aprox_kmh))} km/h` : ''}${etaOk(x) ? ` · chegada ~${M.hhmm(D.tA + x.eta_min * 60e3, tz)}` : ''}`);
+    const tiles = [
+      A ? k(A.tb_zl_c != null && A.tb_zl_c <= -32 ? 'bad' : 'ok', `${fmt(A.tb_zl_c, 0)} °C`, 'topo sobre a ZL (IR 10,3 µm)') : '',
+      A ? k(A.tb_min_30km_c != null && A.tb_min_30km_c <= -32 ? 'bad' : 'ok', `${fmt(A.tb_min_30km_c, 0)} °C`, 'topo mais frio a até 30 km') : '',
+      A ? f(A.frio32, '−32') : '', A ? f(A.frio52, '−52') : '',
+      G ? k(G.n_30km ? 'bad' : G.n_100km ? 'warn' : 'ok', `${G.n_30km} / ${G.n_100km}`, `descargas em 30 / 100 km (${G.janela_min} min)`) : '',
+      G && G.mais_proximo ? k(G.mais_proximo.dist_km <= 30 ? 'bad' : G.mais_proximo.dist_km <= 100 ? 'warn' : 'ok', `${fmt(G.mais_proximo.dist_km)} km ${M.cardinal(G.mais_proximo.rumo)}`, `raio mais próximo · ${M.hhmm(Date.parse(G.mais_proximo.utc), tz)}`) : G ? k('ok', 'nenhuma', 'descarga num raio de 150 km') : '',
+      G && (G.n_100km_1a_metade != null) ? k(G.n_100km_2a_metade > G.n_100km_1a_metade ? 'warn' : 'ok', `${G.n_100km_1a_metade} → ${G.n_100km_2a_metade}`, 'descargas em 100 km (1ª → 2ª metade da janela)') : '',
+    ].join('');
+    el.innerHTML = `<div class="sat-g"><div class="sat-map"><canvas id="sat-cv" aria-label="Imagem infravermelha do GOES-19 em torno da ZL com descargas elétricas"></canvas>
+        <div class="sat-lg"><span><i style="background:#2a2f36"></i>quente / sem nuvem alta</span><span><i style="background:#d8d8d8"></i>−20 a −32 °C</span><span><i style="background:#ffec3c"></i>−32 °C</span><span><i style="background:#ff9600"></i>−42 °C</span><span><i style="background:#e61e1e"></i>−52 °C</span><span><i style="background:#c800a0"></i>−62 °C</span><span><i style="background:#fff;border:1px solid #999"></i>≤ −72 °C</span><span>✚ descarga (branco ≤ 5 min, amarelo ≤ 10, laranja mais antiga)</span><span>círculos 10 / 30 / 100 km</span></div></div>
+      <div><p class="small">${A ? `Imagem IR: <b>${M.ddmm(D.tA, tz)} ${M.hhmm(D.tA, tz)}</b> (${M.hhmm(D.tA, 'UTC')}Z)` : 'Imagem IR indisponível'}${G ? ` · Raios: ${M.hhmm(Date.parse(G.inicio_utc), tz)}–${M.hhmm(D.tG, tz)}` : ''}</p><div class="sat-st">${tiles}</div>${radarHtml}</div></div>
+      <p class="note"><span class="st st-obs">OBSERVADO</span> NOAA GOES-19 — ABI canal 13 (10,3 µm, temperatura de brilho do topo das nuvens, grade de ~4 km) e GLM (descargas totais, nuvem-solo e intranuvem), dados públicos na AWS (noaa-goes19). Topos ≤ −32 °C e ≤ −52 °C: limiares de Maddox (1980) para nuvens de sistemas convectivos. Aproximação: variação da distância do topo frio mais próximo entre duas imagens (~20–30 min) — estimativa grosseira, válida para as próximas 1–2 h. Limitações: o IR vê só o topo (nuvens baixas e chuva sob a nuvem não aparecem); cirros espessos também são frios sem haver convecção; o GLM não detecta todas as descargas. Este produto entra na coluna “Nuvens significativas” e no parecer dos horários próximos (até ~1,5 h da imagem) e no horário de chegada estimada.</p>`;
+    const cv = $('#sat-cv'); if (cv) drawSat(cv, D);
+  }
+  function dedSat() {
+    const D = satData(); if (!D || D.erro) return [];
+    const A = D.A, G = D.G, out = [], tz = S.mission.tz;
+    if (G && G.n_30km) out.push({ s: 'bad', t: `Descargas elétricas a ${fmt(G.mais_proximo.dist_km)} km da ZL: CB em estágio de maturidade nas proximidades — <b>impeditivo</b>; aguardar a dissipação e o afastamento (referência prática: 30 min sem descargas num raio de 30 km — confirmar no critério da OM).` });
+    else if (G && G.n_100km) out.push({ s: 'warn', t: `Descargas a ${fmt(G.mais_proximo.dist_km)} km (${M.cardinal(G.mais_proximo.rumo)}): convecção ativa na região — acompanhar deslocamento e rajadas de saída (frente de rajada) que podem chegar à ZL antes da nuvem.` });
+    if (A && A.frio52 && A.frio52.dist_km <= 30) out.push({ s: 'bad', t: `Topo ≤ −52 °C a ${fmt(A.frio52.dist_km)} km: CB desenvolvido — turbulência severa, correntes ascendentes e descendentes, granizo possível.` });
+    else if (A && A.frio32 && A.frio32.dist_km <= 30) out.push({ s: 'warn', t: `Topo ≤ −32 °C a ${fmt(A.frio32.dist_km)} km: nuvem de grande desenvolvimento vertical (TCU/CB) ou cirro espesso — confirmar visualmente/METAR.` });
+    ['frio52', 'frio32'].forEach(kk => { const f = A && A[kk]; if (etaOk(f)) out.push({ s: 'warn', t: `Topo ${kk === 'frio52' ? '≤ −52 °C' : '≤ −32 °C'} a ${fmt(f.dist_km)} km de ${M.cardinal(f.rumo)}, aproximando-se a ${fmt(f.aprox_kmh)} km/h: chegada estimada às ${M.hhmm(D.tA + f.eta_min * 60e3, tz)} — estimativa por duas imagens; reavaliar com a próxima atualização.` }); });
+    if (!out.length) out.push({ s: 'ok', t: `Sem topos convectivos (≤ −32 °C) a até 100 km e sem descargas a até 100 km${A ? ' na imagem das ' + M.hhmm(D.tA, tz) : ''} — sem convecção profunda observada nas proximidades.` });
+    return out;
+  }
+
+  /* ---------------- Declinação magnética (WMM2025) ---------------- */
+  let _decl = { k: null, v: null };
+  function decl() {
+    if (!hasPos() || !S.mission.date) return null;
+    const k = [S.mission.lat, S.mission.lon, S.mission.date, S.mission.zlElevFt].join();
+    if (_decl.k !== k) _decl = { k, v: M.magDecl(S.mission.lat, S.mission.lon, (numOrNull(S.mission.zlElevFt) || 0) * FT / 1000, M.decYear(hourUtc(0))) };
+    return _decl.v;
+  }
+  /** Direção magnética = direção verdadeira − declinação (declinação leste positiva). */
+  const magOf = d => { const D = decl(); return d == null || !D ? null : (((d - D.D) % 360) + 360) % 360; };
+  const dirM = d => { const x = magOf(d); return x == null ? '' : dir3(x) + '°M'; };
+  const declTxt = () => { const D = decl(); return D ? `${fmt(Math.abs(D.D), 1)}° ${D.D < 0 ? 'W' : 'E'}` : '—'; };
+  const declNote = () => { const D = decl(); return D ? `Declinação magnética na ZL: <b>${declTxt()}</b> (WMM2025, NOAA/NCEI e BGS, ${esc(S.mission.date.split('-').reverse().join('/'))}) — magnético = verdadeiro ${D.D < 0 ? '+' : '−'} ${fmt(Math.abs(D.D), 1)}°.${D.valid ? '' : ' <b>Data fora da validade do WMM2025 (2025–2030).</b>'}` : ''; };
+
+  /* ---------------- Desempenho recente dos modelos (METAR × modelos) e pesos automáticos ---------------- */
+  const WIDS = ['GFS', 'ECMWF', 'ICON', 'UKMO'], NMIN = 10;
+  let _aw = null, _vsave = null;
+  /** Registra, para cada METAR de hora cheia dos aeródromos no raio, o observado e o previsto por cada modelo (sem consolidação). */
+  function updateVerif() {
+    if (!S.models || !hasPos()) return 0;
+    const V = S.verif = S.verif && S.verif.recs ? S.verif : { recs: {} }; let added = 0;
+    const low = L => { const x = (L || []).find(y => y.baseFt < 5000); return x ? [x.baseFt, oktaN(x)] : [null, 0]; };
+    obsAds().forEach(ad => ad.metars.forEach(m => {
+      const key = ad.icao + '|' + m.utc; if (V.recs[key]) return;
+      const t = Math.round(m.utc / 3600e3) * 3600e3; if (Math.abs(t - m.utc) > 20 * 60e3) return;
+      const h = rawHour(t); if (!h || !h.n) return;
+      const OL = msgLayers(m.cavok ? [] : m.clouds, ad.elev, 'obs'), [ob, oo] = low(OL);
+      const mod = {}; Object.entries(h.per).forEach(([id, p]) => { const [mb, mo] = low(h.layers && h.layers.per ? h.layers.per[id] : null); mod[id] = [p.wind, p.dir, p.temp, mb, mo]; });
+      V.recs[key] = { i: ad.icao, u: m.utc, d: ad.dist, o: [m.wind ? m.wind.kt : null, m.wind && !m.wind.vrb ? m.wind.dir : null, m.t, ob, oo], m: mod }; added++;
+    }));
+    if (added) {
+      const ks = Object.keys(V.recs).sort((a, b) => V.recs[b].u - V.recs[a].u), lim = Date.now() - 60 * 864e5;
+      ks.forEach((k, i) => { if (i >= 800 || V.recs[k].u < lim) delete V.recs[k]; });
+      V.updatedAt = nowIso(); clearTimeout(_vsave); _vsave = setTimeout(() => save('verif', S.verif), 1500);
+    }
+    return added;
+  }
+  /** Erro médio de cada modelo (vento, temperatura, nuvem baixa) e peso = inverso do erro normalizado (média 1; entre 0,5 e 2). */
+  function autoWeights() {
+    if (_aw) return _aw;
+    const R = S.verif && S.verif.recs ? Object.values(S.verif.recs) : [], st = {};
+    WIDS.forEach(id => { st[id] = { n: 0, w: [], t: [], c: [] }; });
+    R.forEach(r => WIDS.forEach(id => { const m = r.m[id]; if (!m) return; const s = st[id]; s.n++;
+      if (r.o[0] != null && m[0] != null) s.w.push(Math.abs(m[0] - r.o[0]));
+      if (r.o[2] != null && m[2] != null) s.t.push(Math.abs(m[2] - r.o[2]));
+      s.c.push(Math.abs((m[4] || 0) - (r.o[4] || 0)) + (m[3] != null && r.o[3] != null ? Math.min(3, Math.abs(m[3] - r.o[3]) / 1000) : 0)); }));
+    const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+    const sc = {}; WIDS.forEach(id => { const s = st[id]; s.ew = mean(s.w); s.et = mean(s.t); s.ec = mean(s.c);
+      const parts = [s.ew != null ? s.ew / 3 : null, s.et != null ? s.et / 2 : null, s.ec != null ? s.ec / 2 : null].filter(v => v != null);
+      if (s.n >= NMIN && parts.length) sc[id] = Math.max(0.05, mean(parts)); });
+    const ids = Object.keys(sc), w = {};
+    if (ids.length >= 2) { const inv = ids.map(id => 1 / sc[id]), mi = mean(inv); ids.forEach((id, i) => { w[id] = Math.min(2, Math.max(0.5, inv[i] / mi)); }); }
+    WIDS.forEach(id => { if (w[id] == null) w[id] = 1; });
+    return (_aw = { w, st, n: R.length, ok: ids.length >= 2 });
+  }
+  /** Pesos em uso: automáticos (quando há dados suficientes) ou os informados na missão. */
+  function effW() { const m = S.mission; if ((m.weightMode || 'auto') === 'auto') { const a = autoWeights(); if (a.ok) return a.w; } return m.weights || {}; }
 
   /* ---------------- Alertas ---------------- */
   function alerts(H) {
@@ -1465,7 +1674,13 @@ const MET = (() => {
   let _opmMemo = { key: null, val: [] };
   /** Interpreta as mensagens coladas pelo usuário; mês/ano de referência = momento em que foram salvas. */
   function userOpmet() {
-    const L = (S.mission.opmetUser || []).filter(a => a && (a.icao || a.txt));
+    const L0 = (S.mission.opmetUser || []).filter(a => a && (a.icao || a.txt));
+    // mensagens coletadas automaticamente pelo aplicativo (NOAA/AWC — mesmas mensagens OACI) entram no mesmo conjunto
+    const auto = S.obs && (S.obs.metars || []).length + (S.obs.tafs || []).length ? (() => {
+      const by = {}; [...(S.obs.metars || []).map(x => ['METAR', x]), ...(S.obs.tafs || []).map(x => ['TAF', x])].forEach(([k, x]) => { const t = /^(METAR|SPECI|TAF)\b/.test(x) ? x : k + ' ' + x; const st = (t.match(/^(?:METAR|SPECI|TAF)\s+(?:COR\s+|AMD\s+)?([A-Z]{4})\b/) || [])[1]; if (st) (by[st] = by[st] || []).push(t); });
+      return Object.entries(by).map(([icao, ms]) => ({ icao, txt: ms.join('\n'), savedAt: S.obs.updatedAt, auto: true })); })() : [];
+    const L = L0.map(a => { const x = auto.find(b => b.icao === (a.icao || '').toUpperCase()); return x ? Object.assign({}, a, { txt: (a.txt || '') + '\n' + x.txt }) : a; })
+      .concat(auto.filter(b => !L0.some(a => (a.icao || '').toUpperCase() === b.icao)));
     const key = JSON.stringify([L, S.aer && S.aer.coletado_em_utc, S.mission.lat, S.mission.lon]);
     if (_opmMemo.key === key) return _opmMemo.val;
     const val = L.map(a => {
@@ -1485,9 +1700,11 @@ const MET = (() => {
         } catch (e) { return null; }
       }).filter(Boolean).filter(t => !icao || !t.station || t.station === icao).sort((x, y) => y.validFrom - x.validFrom);
       if (!icao) icao = (metars[0] && metars[0].station) || (tafs[0] && tafs[0].station) || '';
-      const ad = S.aer && S.aer.aerodromos && S.aer.aerodromos[icao];
+      const ad0 = S.aer && S.aer.aerodromos && S.aer.aerodromos[icao], ad = ad0 && ad0.lat != null ? ad0 : (AD_BR[icao] || ad0);
       const dist = ad && ad.lat != null && hasPos() ? haversine(S.mission.lat, S.mission.lon, ad.lat, ad.lon) : null;
-      return { icao, metars, tafs, dist, elev: ad ? ad.elev_ft : null, nome: ad ? ad.nome : null, savedAt: a.savedAt, txt: a.txt || '' };
+      // remove duplicatas (mesma mensagem colada e coletada)
+      const uniq = arr => arr.filter((x, i) => arr.findIndex(y => y.raw === x.raw) === i);
+      return { icao, metars: uniq(metars), tafs: uniq(tafs), dist, elev: ad ? ad.elev_ft : null, nome: ad0 ? ad0.nome : null, coordFonte: ad0 && ad0.lat != null ? 'AISWEB' : AD_BR[icao] ? 'OurAirports' : null, savedAt: a.savedAt, txt: a.txt || '', auto: !!a.auto };
     }).filter(a => a.icao || a.metars.length || a.tafs.length);
     _opmMemo = { key, val };
     return val;
@@ -1525,7 +1742,7 @@ const MET = (() => {
      enquanto α ≥ 0,5; depois, TAF (se válido) ou modelos corrigidos pelo erro observado. */
   const ASSIM = () => ({ hz: Math.max(1, numOrNull(S.mission.obsHorizonH) ?? 6), rad: numOrNull(S.mission.obsRadiusKm) ?? 30, wTaf: Math.min(1, Math.max(0, (numOrNull(S.mission.tafWeightPct) ?? 50) / 100)) });
   const _raw = new Map(), _full = new Map(); let _sig = '';
-  const cacheSig = () => [S.models ? (S.models.fetchedAt || '') + S.models.time[0] : '', JSON.stringify(S.mission.weights), S.mission.zlElevFt, S.mission.date, S.mission.tz, S.mission.hour, S.mission.activity, S.mission.launchFtAGL, S.mission.exitFtMSL, S.mission.windRef].join('|');
+  const cacheSig = () => [S.models ? (S.models.fetchedAt || '') + S.models.time[0] : '', JSON.stringify(effW()), S.mission.zlElevFt, S.mission.date, S.mission.tz, S.mission.hour, S.mission.activity, S.mission.launchFtAGL, S.mission.exitFtMSL, S.mission.windRef].join('|');
   function cacheCheck() { const g = cacheSig(); if (g !== _sig) { _sig = g; _raw.clear(); _full.clear(); } }
   /** Consolidado só de modelos na hora cheia mais próxima (para medir a tendência desde a observação). */
   function rawHour(utc) { cacheCheck(); const t = Math.round(utc / 3600e3) * 3600e3; if (!_raw.has(t)) _raw.set(t, computeHour(null, t)); return _raw.get(t); }
@@ -1536,6 +1753,14 @@ const MET = (() => {
     const P = ASSIM(), icao = (S.mission.icao || '').toUpperCase();
     return userOpmet().filter(ad => ad.dist == null || ad.dist <= P.rad)
       .sort((a, b) => ((b.icao === icao) - (a.icao === icao)) || ((a.dist ?? 999) - (b.dist ?? 999)));
+  }
+  /** Radiossonda observada mais recente (coletada pelo aplicativo), se dentro do raio de representatividade. */
+  function rsObs() {
+    const O = S.oficiais, R = O && O.radiossonda; if (!R || !R.niveis || !hasPos()) return null;
+    if (O.lat != null && (Math.abs(O.lat - S.mission.lat) > 0.05 || Math.abs(O.lon - S.mission.lon) > 0.05)) return null;
+    const utc = Date.parse(R.lancamento_utc) || Date.parse(R.nominal_utc);
+    const pts = R.niveis.filter(n => n[4] != null && n[5] != null).map(n => ({ z: n[1], kt: n[5], dir: n[4], p: n[0] }));
+    return { utc, pts, R, dist: R.dist_km, within: R.dist_km == null || R.dist_km <= ASSIM().rad, src: `radiossonda ${R.estacao} ${String(R.nominal_utc).slice(11, 13)}Z` };
   }
   /** Medição de vento feita na ZL (anemômetro/biruta/balão-piloto), informada pelo usuário. */
   function zlMed() {
@@ -1612,7 +1837,19 @@ const MET = (() => {
     const z = r.zl && r.zl.c750;
     if (z) {
       const zm7 = zm && zm.alt === '750' && zm.utc <= r.utc + 30 * 60e3 && (r.utc - zm.utc) / 3600e3 < P.hz ? zm : null;
-      if (zm7) {
+      const rs = rsObs(), rsOk = rs && rs.within && rs.utc <= r.utc + 30 * 60e3 && (r.utc - rs.utc) / 3600e3 < P.hz && (!zm7 || rs.utc > zm7.utc);
+      if (rsOk) {
+        // radiossonda: corrige ZL + 750 ft, 1ª camada e altura de lançamento pelo observado + variação prevista pelos modelos desde a sondagem
+        const a = alphaOf((r.utc - rs.utc) / 3600e3), mz = rawHour(rs.utc);
+        [['c750', r.zl.t750], ['cLayer', r.zl.cLayer && r.zl.cLayer.z], ['cLaunch', r.zl.tLaunch]].forEach(([k, zt]) => {
+          const cur = r.zl[k]; if (!cur || zt == null) return; const ow = M.windAt(rs.pts, zt); if (!ow || ow.below) return;
+          const mp = mz && mz.zl && mz.zl[k]; if (k === 'c750') A.rs750 = { kt: ow.kt, dir: ow.dir, mod: Object.assign({}, cur) };
+          const pKt = Math.max(0, ow.kt + (mp ? cur.kt - mp.kt : 0));
+          let pDir = ow.dir; if (mp && mp.dir != null && cur.dir != null && mp.kt >= 5 && cur.kt >= 5) pDir = (pDir + sAng(mp.dir, cur.dir) + 360) % 360;
+          cur.kt = a * pKt + (1 - a) * cur.kt; if (ow.kt >= 3) cur.dir = unitBlend(pDir, a, cur.dir, 1 - a);
+        });
+        A.z750 = { kind: 'rs', src: rs.src, a, dist: rs.dist };
+      } else if (zm7) {
         const a = alphaOf((r.utc - zm7.utc) / 3600e3), mz = rawHour(zm7.utc), zz = mz && mz.zl && mz.zl.c750;
         const pKt = Math.max(0, zm7.kt + (zz ? z.kt - zz.kt : 0));
         let pDir = zm7.dir; if (pDir != null && zz && zz.dir != null && z.dir != null && zz.kt >= 5 && z.kt >= 5) pDir = (pDir + sAng(zz.dir, z.dir) + 360) % 360;
@@ -1728,7 +1965,8 @@ const MET = (() => {
       if (no.length) X.push(`Tempo presente previsto pelos modelos (${no.join(', ')}) descartado: ${r.wxDisc[no[0]].why}.`); }
     if (A.precip && A.precip.wet === false) X.push(`Precipitação: ${wetSrc.join('; ')} — probabilidade e quantidade dos modelos reduzidas pelo peso da observação.`);
     if (A.tafDry) X.push(`TAF ${A.tafDry} sem precipitação neste horário — probabilidade dos modelos reduzida em ${fmt(P.wTaf * 100)}%.`);
-    if (r.conv.inmetOnly) X.push('Trovoada citada na previsão do INMET para o período, sem indício nos modelos, no TAF ou no METAR nesta hora — mantida como atenção.');
+    if (r.conv.inmetOnly) X.push(`Trovoada citada na previsão do INMET para o período, sem indício nos modelos, no TAF, no METAR${r.sat && r.sat.clear ? ' nem no satélite/raios' : ''} nesta hora — mantida como atenção.`);
+    if (r.sat && r.sat.clear) X.push(`Satélite GOES-19 e raios GLM (${M.hhmm(r.sat.tA, S.mission.tz)}): sem topos ≤ −32 °C e sem descargas num raio de 100 km.`);
     if (ioOk) A.inmetSt = io;
     // ---- confiança: a observação recente reduz a incerteza das variáveis assimiladas
     const byA = a => a >= 0.66 ? 'ALTA' : a >= 0.33 ? 'MÉDIA' : null, best = (x, y) => y == null ? x : x == null ? y : rank[x] <= rank[y] ? x : y;
@@ -1758,7 +1996,7 @@ const MET = (() => {
         const cov = H.filter(h => tafAtAd(u, h.utc)).length;
         st = `<ul class="opm-st">${u.metars.length ? `<li class="ok">${u.metars.length} METAR/SPECI · último ${M.ddmm(u.metars[0].utc, tz)} ${M.hhmm(u.metars[0].utc, tz)} (${M.hhmm(u.metars[0].utc, 'UTC')}Z)</li>` : '<li class="warn">Nenhum METAR reconhecido</li>'}
           ${u.tafs.length ? `<li class="${cov === H.length ? 'ok' : cov ? 'warn' : 'bad'}">TAF válido ${M.ddmm(u.tafs[0].validFrom, 'UTC')} ${M.hhmm(u.tafs[0].validFrom, 'UTC')}Z a ${M.ddmm(u.tafs[0].validTo, 'UTC')} ${M.hhmm(u.tafs[0].validTo, 'UTC')}Z · cobre ${cov}/${H.length} horários da janela</li>` : '<li class="warn">Nenhum TAF reconhecido</li>'}
-          <li>${u.dist != null ? `${fmt(u.dist, 1)} km da ZL${u.elev != null ? ' · elev. ' + fmt(u.elev) + ' ft' : ''}` : 'distância n/d (inclua o código em Missão → Aeródromos para obter do AISWEB)'}</li></ul>`;
+          <li>${u.dist != null ? `${fmt(u.dist, 1)} km da ZL${u.elev != null ? ' · elev. ' + fmt(u.elev) + ' ft' : ''} · coordenadas: ${esc(u.coordFonte || '—')}` : 'distância n/d (aeródromo fora da tabela; inclua o código em Missão → Aeródromos para obter do AISWEB)'}${u.auto ? ' · inclui mensagens coletadas automaticamente' : ''}</li></ul>`;
       }
       return `<div class="opm-c"><label>Aeródromo ${i + 1} (OACI)<input id="opm-icao-${i}" maxlength="4" value="${esc(icao)}" placeholder="SBxx" autocomplete="off"></label>
         <label>METAR / SPECI / TAF<textarea id="opm-txt-${i}" rows="6" spellcheck="false" placeholder="Cole aqui os METAR/SPECI das últimas horas e o TAF vigente, como publicados na REDEMET ou no AISWEB. Uma mensagem por linha.">${esc(s.txt || '')}</textarea></label>${st}</div>`;
@@ -1939,6 +2177,7 @@ const MET = (() => {
     bits.push(actLabel());
     if (m.zlElevFt != null && m.zlElevFt !== '') bits.push(`ZL ${fmt(+m.zlElevFt)} ft MSL`);
     bits.push(`Limite ${limitKt()} kt (${m.windRef === 'ZL750' ? 'ZL+750 ft' : '10 m'})`);
+    if (decl()) bits.push('Decl. mag. ' + declTxt());
     if (m.icao) bits.push('Estação ' + m.icao.toUpperCase());
     if (m.aerodromos) bits.push('AD ' + m.aerodromos);
     $('#hdr-meta').innerHTML = bits.map(b => `<span>${esc(b)}</span>`).join('');
@@ -1954,7 +2193,7 @@ const MET = (() => {
     $('#f-date').value = m.date || ''; $('#f-hour').value = String(m.hour); $('#f-tz').value = m.tz; $('#f-act').value = m.activity;
     $('#f-lim-eng').value = m.windLimitEng; $('#f-lim-slop').value = m.windLimitSlop; $('#f-launch').value = m.launchFtAGL ?? ''; $('#f-exit').value = m.exitFtMSL ?? '';
     $('#f-base').value = m.baseMinFt ?? ''; $('#f-icao').value = m.icao || ''; if ($('#f-ibge')) $('#f-ibge').value = m.ibge || '';
-    $('#f-w-gfs').value = m.weights.GFS; $('#f-w-ecmwf').value = m.weights.ECMWF; $('#f-w-icon').value = m.weights.ICON; if ($('#f-w-ukmo')) $('#f-w-ukmo').value = m.weights.UKMO ?? 1;
+    if ($('#f-wmode')) $('#f-wmode').value = m.weightMode || 'auto'; $('#f-w-gfs').value = m.weights.GFS; $('#f-w-ecmwf').value = m.weights.ECMWF; $('#f-w-icon').value = m.weights.ICON; if ($('#f-w-ukmo')) $('#f-w-ukmo').value = m.weights.UKMO ?? 1;
     $('#f-cape-m').value = m.capeMod; $('#f-cape-s').value = m.capeStrong;
     $('#f-zl').value = m.zlElevFt ?? ''; $('#f-wref').value = m.windRef || 'ZL750'; $('#f-ad').value = m.aerodromos || ''; $('#f-vis').value = m.visMin ?? '';
     toggleActFields();
@@ -1973,7 +2212,7 @@ const MET = (() => {
       name: $('#f-name').value.trim(), latStr: $('#f-lat').value.trim(), lonStr: $('#f-lon').value.trim(), lat, lon, date: $('#f-date').value, hour: +$('#f-hour').value, tz,
       activity: $('#f-act').value, windLimitEng: num('#f-lim-eng', 13), windLimitSlop: num('#f-lim-slop', 18), launchFtAGL: num('#f-launch', null), exitFtMSL: num('#f-exit', null),
       baseMinFt: num('#f-base', null), icao: $('#f-icao').value.trim().toUpperCase(), ibge: ($('#f-ibge') ? $('#f-ibge').value.trim().replace(/\D/g, '') : ''),
-      weights: { GFS: num('#f-w-gfs', 1), ECMWF: num('#f-w-ecmwf', 1), ICON: num('#f-w-icon', 1), UKMO: num('#f-w-ukmo', 1) }, capeMod: num('#f-cape-m', 1000), capeStrong: num('#f-cape-s', 2500), updatedAt: nowIso(),
+      weights: { GFS: num('#f-w-gfs', 1), ECMWF: num('#f-w-ecmwf', 1), ICON: num('#f-w-icon', 1), UKMO: num('#f-w-ukmo', 1) }, weightMode: $('#f-wmode') ? $('#f-wmode').value : 'auto', capeMod: num('#f-cape-m', 1000), capeStrong: num('#f-cape-s', 2500), updatedAt: nowIso(),
       zlElevFt: num('#f-zl', null), windRef: $('#f-wref').value, aerodromos: $('#f-ad').value.toUpperCase().split(/[\s,;]+/).filter(x => /^[A-Z0-9]{4}$/.test(x)).slice(0, 4).join(','), visMin: num('#f-vis', null),
     };
     return { m, err };
@@ -1988,7 +2227,7 @@ const MET = (() => {
     el.innerHTML = H.map(h => `<button class="vcell ${vClass(h.verdict)} ${S.selHour === h.k ? 'sel' : ''}" data-k="${h.k}" type="button" aria-pressed="${S.selHour === h.k}">
       <span class="vh">${h.label} <i>${M.hhmm(h.utc, S.mission.tz)}</i></span>
       <span class="vv">${esc(h.verdict)}</span>
-      <span class="vw">${h.c.wrefDir != null ? dir3(h.c.wrefDir) + '°' : '—'} / ${fmt(h.c.wref)} kt <small>${esc(h.c.wrefLbl || '')} · G10m ${fmt(h.c.gust)}</small></span>
+      <span class="vw">${h.c.wrefDir != null ? dir3(h.c.wrefDir) + '°V · ' + dirM(h.c.wrefDir) : '—'} / ${fmt(h.c.wref)} kt <small>${esc(h.c.wrefLbl || '')} · G10m ${fmt(h.c.gust)}</small></span>
       <span class="vr">${h.reasons && h.reasons.length ? esc(h.reasons[0]) + (h.reasons.length > 1 ? ` <em>+${h.reasons.length - 1}</em>` : '') : 'Nenhum fator restritivo identificado'}</span>
     </button>`).join('');
     $$('#verdicts .vcell').forEach(b => b.addEventListener('click', () => { S.selHour = +b.dataset.k; renderAll(); }));
@@ -2219,12 +2458,12 @@ const MET = (() => {
     const body = [
       row('Origem dos valores', 'observação · TAF · modelos', H.map(h => cell(h, h => { const A = h.assim || { cloud: 'MOD' }, w = A.wind;
             return `<span class="st st-${SRC_CLS[A.cloud]}">${SRC_LBL[A.cloud]}</span><small>nuvens: ${A.cloud === 'TAF' ? 'TAF ' + esc(A.taf.icao) : A.cloud.startsWith('OBS') ? 'METAR ' + esc(A.obs.icao) + (A.cloud === 'OBS+MOD' ? ' + tendência' : '') : A.cloud === 'MOD*' ? 'modelos corrigidos pelo METAR ' + esc(A.obs.icao) : 'modelos'}</small><small>vento: ${w && w.obs ? `${esc(/medição/.test(w.src) ? 'medição ZL' : w.src.replace(/ \d\d:\d\dZ$/, ''))} ${fmt(w.a * 100)}% + ${A.taf ? 'TAF/mod.' : 'mod.'} ${fmt(100 - w.a * 100)}%` : A.taf ? 'TAF ' + esc(A.taf.icao) + ' + mod.' : 'modelos'}</small>`; }))),
-      row('Vento solo — direção', '° verdadeiro · 10 m', H.map(h => cell(h, h => `${h.c.wind != null && Math.round(h.c.wind) < 1 ? 'calmo' : dir3(h.c.dir) + '°'} <small>${M.cardinal(h.c.dir)}${h.c.wind != null && Math.round(h.c.wind) < 3 ? ' · fraco, direção pouco definida' : ''}</small>${h.cm && h.cm.dir != null && h.c.dir != null && h.c.wind >= 3 && M.angDiff(h.cm.dir, h.c.dir) >= 30 ? `<small class="mdl">mod. ${dir3(h.cm.dir)}°</small>` : ''}`))),
+      row('Vento solo — direção', '° verdadeiro (V) e magnético (M) · 10 m', H.map(h => cell(h, h => `${h.c.wind != null && Math.round(h.c.wind) < 1 ? 'calmo' : dir3(h.c.dir) + '°V'} <small>${h.c.wind != null && Math.round(h.c.wind) >= 1 ? dirM(h.c.dir) + ' · ' : ''}${M.cardinal(h.c.dir)}${h.c.wind != null && Math.round(h.c.wind) < 3 ? ' · fraco, direção pouco definida' : ''}</small>${h.cm && h.cm.dir != null && h.c.dir != null && h.c.wind >= 3 && M.angDiff(h.cm.dir, h.c.dir) >= 30 ? `<small class="mdl">mod. ${dir3(h.cm.dir)}°</small>` : ''}`))),
       row('Vento solo — intensidade', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.wind > lim ? 'tbad' : h.c.wind >= 0.8 * lim ? 'twarn' : ''}">${fmt(h.c.wind)}</span>${i ? trendArrow(H[i - 1].c.wind, h.c.wind, 1) : ''}${md(h, 'wind', h.c.wind)}`))),
       row('Rajadas', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.gust > lim ? 'tbad' : ''}">${fmt(h.c.gust)}</span>${i ? trendArrow(H[i - 1].c.gust, h.c.gust, 1) : ''}${md(h, 'gust', h.c.gust)}`))),
       row('Vento ZL + 750 ft', '° verdadeiro / kt · modelos (+ medição na ZL)', H.map((h, i) => { const z = h.zl && h.zl.c750; if (!z) return '<span class="na">n/d</span>'; const pz = i && H[i - 1].zl && H[i - 1].zl.c750, q = h.assim && h.assim.z750;
-        const nt = !q ? '' : q.kind === 'med' ? `<small class="mdl">${esc(q.src)} · ${fmt(q.a * 100)}%</small>` : q.kind === 'up' ? `<small class="mdl">+${fmt(q.add)} kt (sup. obs. &gt; mod.)</small>` : `<small class="mdl">modelo mantido (sem obs. em altitude)</small>`;
-        return `<span class="${z.kt > lim ? 'tbad' : z.kt >= 0.8 * lim ? 'twarn' : ''}">${dir3(z.dir)}°/${fmt(z.kt)}</span>${pz ? trendArrow(pz.kt, z.kt, 1) : ''}<small>${M.cardinal(z.dir)}${S.mission.windRef === 'ZL750' ? ' · ref. parecer' : ''}</small>${nt}`; })),
+        const nt = !q ? '' : q.kind === 'rs' ? `<small class="mdl">${esc(q.src)} (${fmt(q.dist, 0)} km) · ${fmt(q.a * 100)}%${h.assim.rs750 ? ' · obs. ' + dir3(h.assim.rs750.dir) + '°/' + fmt(h.assim.rs750.kt) + ' · mod. ' + dir3(h.assim.rs750.mod.dir) + '°/' + fmt(h.assim.rs750.mod.kt) : ''}</small>` : q.kind === 'med' ? `<small class="mdl">${esc(q.src)} · ${fmt(q.a * 100)}%</small>` : q.kind === 'up' ? `<small class="mdl">+${fmt(q.add)} kt (sup. obs. &gt; mod.)</small>` : `<small class="mdl">modelo mantido (sem obs. em altitude)</small>`;
+        return `<span class="${z.kt > lim ? 'tbad' : z.kt >= 0.8 * lim ? 'twarn' : ''}">${dir3(z.dir)}°V/${fmt(z.kt)}</span>${pz ? trendArrow(pz.kt, z.kt, 1) : ''}<small>${dirM(z.dir)} · ${M.cardinal(z.dir)}${S.mission.windRef === 'ZL750' ? ' · ref. parecer' : ''}</small>${nt}`; })),
       row('Temperatura', '°C · 2 m · sensação térmica', H.map((h, i) => cell(h, h => `${fmt(h.c.temp)}${i ? trendArrow(H[i - 1].c.temp, h.c.temp, 0.5) : ''}<small>sensação ${h.c.at != null ? fmt(h.c.at) + ' °C' : 'n/d'}</small>${md(h, 'temp', h.c.temp, 0, ' °C')}`))),
       row('Prob. precipitação', '%', H.map(h => cell(h, h => `<span class="${h.c.pp >= 50 ? 'twarn' : ''}">${fmt(h.c.pp)}</span>`))),
       row('Precipitação', 'mm/h', H.map(h => cell(h, h => `${fmt(h.c.pr, 1)}${h.c.sh > 0 ? ' <small>conv.</small>' : ''}`))),
@@ -2246,7 +2485,7 @@ const MET = (() => {
     ].join('');
     const daPresent = [...new Set(H.map(h => daCat(h.daZl)).filter(Boolean).map(q => q.k))].sort();
     el.innerHTML = `<div class="tbl-wrap"><table class="hourly"><thead>${head}</thead><tbody>${body}</tbody></table></div>
-      <p class="note">${tag('OBSERVADO', 'obs')} ${tag('OBS. + TENDÊNCIA', 'obs')} ${tag('TAF', 'prev')} ${tag('MODELOS CORRIGIDOS', 'est')} ${tag(mod, S.models ? 'prev' : 'ind')} <b>Valores adotados = observação + previsão.</b> Quando há METAR (ou medição na ZL) de aeródromo a até ${fmt(P.rad)} km, o valor de cada hora é: peso α × (observado + variação prevista pelos modelos desde a observação) + (1 − α) × referência; α = 100% na hora do METAR e cai linearmente até 0% em ${fmt(P.hz)} h. Referência = mediana dos modelos${userOpmet().some(a => a.tafs.length) ? `, combinada ao TAF válido (peso ${fmt(P.wTaf * 100)}%)` : ''}. Nuvens: camadas do METAR na hora da observação; METAR + tendência dos modelos enquanto α ≥ 50%; depois, TAF válido ou modelos corrigidos pelo erro medido no METAR. “mod.” = valor só dos modelos. Vento ZL + 750 ft: não há observação em altitude nos METAR — só a medição na ZL o corrige; sem ela, o valor dos modelos é mantido e só aumenta quando a superfície observada está mais forte que os modelos (critério conservador). Modelos: ${esc(modelIds().join(', ') || 'nenhum')}, mediana ponderada. ${rodadasInfo() ? 'Rodadas: ' + esc(rodadasInfo().txt) + '. ' : ''}Parâmetros no painel “METAR e TAF”.</p>
+      <p class="note">${tag('OBSERVADO', 'obs')} ${tag('OBS. + TENDÊNCIA', 'obs')} ${tag('TAF', 'prev')} ${tag('MODELOS CORRIGIDOS', 'est')} ${tag(mod, S.models ? 'prev' : 'ind')} <b>Valores adotados = observação + previsão.</b> Quando há METAR (ou medição na ZL) de aeródromo a até ${fmt(P.rad)} km, o valor de cada hora é: peso α × (observado + variação prevista pelos modelos desde a observação) + (1 − α) × referência; α = 100% na hora do METAR e cai linearmente até 0% em ${fmt(P.hz)} h. Referência = mediana dos modelos${userOpmet().some(a => a.tafs.length) ? `, combinada ao TAF válido (peso ${fmt(P.wTaf * 100)}%)` : ''}. Nuvens: camadas do METAR na hora da observação; METAR + tendência dos modelos enquanto α ≥ 50%; depois, TAF válido ou modelos corrigidos pelo erro medido no METAR. “mod.” = valor só dos modelos. Vento ZL + 750 ft: não há observação em altitude nos METAR — só a medição na ZL o corrige; sem ela, o valor dos modelos é mantido e só aumenta quando a superfície observada está mais forte que os modelos (critério conservador). Modelos: ${esc(modelIds().join(', ') || 'nenhum')}, mediana ponderada. ${rodadasInfo() ? 'Rodadas: ' + esc(rodadasInfo().txt) + '. ' : ''}Parâmetros no painel “METAR e TAF”. ${declNote()}</p>
       <details class="howto" open><summary>Como ler esta tabela</summary><dl>
         <dt>Teto</dt><dd>Critério adotado nesta ferramenta: base da camada mais baixa, de <b>FEW</b> (1–2/8) a <b>OVC</b> (8/8), em pés sobre a ZL. (Na meteorologia aeronáutica, “teto” é a 1ª camada BKN/OVC; aqui qualquer camada conta.)${bmin != null ? ` Em vermelho quando abaixo do teto mínimo de ${fmt(bmin)} ft.` : ''}</dd>
         <dt>Base das nuvens</dt><dd>Todas as camadas: oitavos do céu + código com a base em centenas de pés. Ex.: <b>6/8 BKN030</b> = 6 oitavos, fragmentadas, base 3.000 ft. FEW 1–2/8 · SCT 3–4/8 · BKN 5–7/8 · OVC 8/8. ${tag('ESTIMADO', 'est')} cruzamento GFS/ECMWF/ICON/UKMO da cobertura por nível de pressão, base convectiva refinada pelo nível de condensação; resolução vertical de ~700 ft nos níveis baixos.</dd>
@@ -2572,7 +2811,7 @@ const MET = (() => {
           const o = S.models.models[id], g = v => (idx >= 0 && o[`${v}_${p}hPa`] ? o[`${v}_${p}hPa`][idx] : null);
           const z = g('geopotential_height');
           if (z == null && g('wind_speed') == null) return;
-          per[id] = { kt: g('wind_speed'), dir: g('wind_direction'), z, t: g('temperature'), w: S.mission.weights[id] ?? 1 };
+          per[id] = { kt: g('wind_speed'), dir: g('wind_direction'), z, t: g('temperature'), w: effW()[id] ?? 1 };
         });
         const ids = Object.keys(per); if (!ids.length) return;
         const v = f => ids.map(id => ({ v: per[id][f], w: per[id].w }));
@@ -2598,7 +2837,7 @@ const MET = (() => {
     const el = $('#upper');
     if (!hasPos()) { el.innerHTML = ''; return; }
     const k = S.selHour, u = upperRows(k), tz = S.mission.tz;
-    if (!u.model.length && !u.sounding.length) { el.innerHTML = `<div class="empty">Sem dados em altitude. Cole o JSON da Open-Meteo (níveis de pressão) e, para SLOp, a sondagem NOAA em “Fontes”.</div>`; return; }
+    if (!u.model.length && !u.sounding.length && !rsObs()) { el.innerHTML = `<div class="empty">Sem dados em altitude. Cole o JSON da Open-Meteo (níveis de pressão) e, para SLOp, a sondagem NOAA em “Fontes”.</div>`; return; }
     const ft = m => m == null ? '—' : fmt(m * 3.28084);
     const agl = m => (m == null || u.elev == null) ? '—' : fmt((m - u.elev) * 3.28084);
     const ids = modelIds();
@@ -2608,12 +2847,17 @@ const MET = (() => {
       html += `<div class="tbl-wrap"><table class="upper"><thead><tr><th>Nível</th><th>Alt. ft MSL</th><th>ft AGL</th>${ids.map(i => `<th>${i}</th>`).join('')}<th>Consolidado</th><th>Dispersão</th></tr></thead><tbody>` +
         u.model.map(l => `<tr><th scope="row">${l.p} hPa</th><td>${ft(l.z)}</td><td>${agl(l.z)}</td>${ids.map(i => l.per[i] ? `<td>${dir3(l.per[i].dir)}°/${fmt(l.per[i].kt)}</td>` : '<td class="na">—</td>').join('')}<td><b>${dir3(l.dir)}°/${fmt(l.kt)} kt</b><small>${fmt(l.t)} °C</small></td><td><span class="pill ${cClass(worst([confFromSpread(l.spKt, 5, 10, ids.length), confFromSpread(l.spDir, 30, 60, ids.length)]))}">${fmt(l.spKt)} kt · ${fmt(l.spDir)}°</span></td></tr>`).join('') + `</tbody></table></div>`;
     }
+    { const rs = rsObs(); if (rs) { const R = rs.R;
+      html += `<h4 class="sub">Radiossonda observada — ${esc(R.estacao)} ${esc(R.nome || '')} · ${M.ddmm(Date.parse(R.nominal_utc), 'UTC')} ${String(R.nominal_utc).slice(11, 13)}Z (lançamento ${M.hhmm(rs.utc, tz)} local) · ${fmt(R.dist_km, 1)} km da ZL</h4><div class="tbl-wrap"><table class="upper"><thead><tr><th>Pressão</th><th>Alt. ft MSL</th><th>ft AGL</th><th>Temp. °C</th><th>Td °C</th><th>Vento °V/kt</th><th>°M</th><th>Modelos (consolidado)</th></tr></thead><tbody>` +
+        R.niveis.filter(n => n[0] >= 500).map(n => { const ml = u.model.length ? (() => { const pts = u.model.filter(l => l.z != null).map(l => ({ z: l.z, kt: l.kt, dir: l.dir })); const w = M.windAt(pts, n[1]); return w && !w.below ? `${dir3(w.dir)}°/${fmt(w.kt)}` : '—'; })() : '—';
+          return `<tr><th scope="row">${fmt(n[0], n[0] % 1 ? 1 : 0)} hPa</th><td>${fmt(n[1] / FT)}</td><td>${agl(n[1])}</td><td>${fmt(n[2], 1)}</td><td>${fmt(n[3], 1)}</td><td><b>${n[4] == null ? '—' : dir3(n[4]) + '°/' + fmt(n[5])}</b></td><td>${n[4] == null ? '' : dirM(n[4])}</td><td class="small">${ml}</td></tr>`; }).join('') +
+        `</tbody></table></div><p class="note"><span class="st st-obs">OBSERVADO</span> ${esc(R.fonte)} — <a href="${esc(R.url)}" target="_blank" rel="noopener">dados</a>. Na janela, o vento a ZL + 750 ft, a 1ª camada e a altura de lançamento são corrigidos por esta sondagem (observado + variação prevista pelos modelos desde o lançamento), com peso decrescente até ${fmt(ASSIM().hz)} h; a medição na ZL, quando mais recente, tem prioridade.${rs.within ? '' : ' <b>Estação fora do raio de representatividade: só referência.</b>'}</p>`; } }
     if (u.sounding.length) {
       html += `<h4 class="sub">Sondagem NOAA ${esc((S.sounding.header || []).slice(0, 2).join(' · '))}</h4><div class="tbl-wrap"><table class="upper"><thead><tr><th>Pressão</th><th>Alt. ft MSL</th><th>Temp. °C</th><th>Td °C</th><th>Vento</th></tr></thead><tbody>` +
         u.sounding.map(l => `<tr><th scope="row">${fmt(l.p, l.p % 1 ? 1 : 0)} mb</th><td>${ft(l.hgtM)}</td><td>${fmt(l.tC, 1)}</td><td>${fmt(l.tdC, 1)}</td><td>${l.dir == null ? '—' : dir3(l.dir) + '°/' + fmt(l.kt) + ' kt'}</td></tr>`).join('') + `</tbody></table></div>`;
     }
     html += profileSvg(u) + `<div class="actions"><button type="button" id="exp-csv" class="btn">Exportar camadas (.csv) para planilha HAHO/CSL</button><button type="button" id="exp-tsv" class="btn ghost">Copiar camadas (colar no Excel)</button><span id="exp-msg" class="small" role="status"></span></div>
-      <p class="note">Direções em graus verdadeiros (sem correção de declinação magnética). Colunas exportadas: Pressão (mb); Altitude (m MSL); Altitude (ft MSL); Altitude (ft AGL); Temperatura (°C); Direção (°V); Velocidade (kt); Fonte; Validade. A ordem das colunas da planilha HAHO/CSL não foi confirmada — ajuste se necessário.${S.mission.activity === 'SLOP' && S.mission.exitFtMSL ? ` Altitude de saída informada: ${fmt(S.mission.exitFtMSL)} ft MSL.` : ''}</p>`;
+      <p class="note">Direções em graus verdadeiros (V); a exportação também sai em graus verdadeiros. ${declNote()} Colunas exportadas: Pressão (mb); Altitude (m MSL); Altitude (ft MSL); Altitude (ft AGL); Temperatura (°C); Direção (°V); Velocidade (kt); Fonte; Validade. A ordem das colunas da planilha HAHO/CSL não foi confirmada — ajuste se necessário.${S.mission.activity === 'SLOP' && S.mission.exitFtMSL ? ` Altitude de saída informada: ${fmt(S.mission.exitFtMSL)} ft MSL.` : ''}</p>`;
     el.innerHTML = html;
     $('#up-src').value = S.upperSrc;
     $('#up-src').addEventListener('change', e => { S.upperSrc = e.target.value; });
@@ -2719,12 +2963,20 @@ const MET = (() => {
   }
 
   /* ---------------- Confiabilidade ---------------- */
+  function perfHtml() {
+    const a = autoWeights(), ew = effW(), mode = S.mission.weightMode || 'auto';
+    const rows = WIDS.filter(id => modelIds().includes(id) || a.st[id].n).map(id => { const x = a.st[id];
+      return `<tr><th scope="row">${id}</th><td>${x.n}</td><td>${x.ew != null ? fmt(x.ew, 1) + ' kt' : '—'}</td><td>${x.et != null ? fmt(x.et, 1) + ' °C' : '—'}</td><td>${x.ec != null ? fmt(x.ec, 1) : '—'}</td><td>${a.ok && x.n >= NMIN ? fmt(a.w[id], 2) : '—'}</td><td><b>${fmt(ew[id] ?? 1, 2)}</b></td></tr>`; }).join('');
+    return `<h4 class="sub">Desempenho recente dos modelos — METAR × modelos</h4><div class="tbl-wrap"><table class="conf"><thead><tr><th>Modelo</th><th>Comparações</th><th>Erro médio vento 10 m</th><th>Erro médio temperatura</th><th>Erro nuvem baixa</th><th>Peso automático</th><th>Peso em uso</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <p class="note">${a.n} comparações acumuladas (até 800, últimos 60 dias): cada METAR de hora cheia de aeródromo no raio é comparado com a previsão de cada modelo para a mesma hora. Erro de nuvem baixa = diferença de oitavos da camada mais baixa abaixo de 5.000 ft + diferença de base (em milhares de pés, até 3). Peso automático = inverso da média dos erros normalizados (vento ÷ 3 kt, temperatura ÷ 2 °C, nuvem ÷ 2), com média 1 e limites 0,5–2; exige ≥ ${NMIN} comparações por modelo. Modo em uso: <b>${mode === 'auto' ? (a.ok ? 'automático' : 'automático — pesos iguais até haver dados suficientes') : 'manual'}</b> (altere em Missão → Peso dos modelos). Limitação: o aeródromo representa a ZL só aproximadamente, e o histórico cresce à medida que METAR são inseridos ou coletados.</p>`;
+  }
   function renderConf(H) {
     const el = $('#conf');
     if (!S.models) { el.innerHTML = `<p class="muted">Disponível após carregar os modelos.</p>`; return; }
     const vars = [['Vento médio', 'wind'], ['Rajadas', 'gust'], ['Direção', 'dir'], ['Temperatura', 'temp'], ['Prob. precip.', 'pp'], ['Precipitação', 'pr'], ['CAPE', 'cape']];
     el.innerHTML = `<div class="tbl-wrap"><table class="conf"><thead><tr><th></th>${H.map(h => `<th>${h.label}</th>`).join('')}</tr></thead><tbody>${vars.map(([n, k]) => `<tr><th scope="row">${n}</th>${H.map(h => { const c = h.conf[k], sp = h.spreads[k]; return `<td><span class="pill ${cClass(c)}" title="Dispersão entre modelos: ${sp == null ? 'n/d' : fmt(sp, k === 'pr' ? 1 : 0) + ' ' + CONF_RULES[k][2]}">${c || 'N/D'}</span></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
       <p class="note">ALTA / MÉDIA / BAIXA pela dispersão (máx − mín) entre modelos: vento ≤ 4 / ≤ 8 kt; rajadas ≤ 6 / ≤ 12 kt; direção ≤ 45° / ≤ 90° (vento &lt; 4 kt: direção pouco definida); temperatura ≤ 2 / ≤ 4 °C; prob. ≤ 20 / ≤ 40 p.p.; precipitação ≤ 1 / ≤ 3 mm; base ≤ 1.000 / ≤ 2.500 ft; cobertura ≤ 25 / ≤ 50 p.p. Uma única fonte = BAIXA. Critério de concordância, não probabilidade estatística. GFS, ECMWF, ICON e UKMO não são observações independentes.</p>`;
+    el.insertAdjacentHTML('beforeend', perfHtml());
   }
 
   /* ---------------- Alertas e síntese ---------------- */
@@ -2769,7 +3021,7 @@ const MET = (() => {
     const z0 = H.find(h => h.zl);
     if (!z0) { el.innerHTML = `<p class="muted">Disponível após carregar os modelos.</p>`; return; }
     const ftMsl = mm => mm == null ? '—' : fmt(mm / FT), ftAgl = mm => mm == null ? '—' : fmt((mm - z0.zl.zlM) / FT);
-    const wv = (x, hi) => x ? `<b class="${hi && x.kt > lim ? 'tbad' : hi && x.kt >= .8 * lim ? 'twarn' : ''}">${dir3(x.dir)}°/${fmt(x.kt)} kt</b>${x.sp != null ? `<small>disp. ${fmt(x.sp)} kt · ${x.n} mod.</small>` : ''}` : '<span class="na">—</span>';
+    const wv = (x, hi) => x ? `<b class="${hi && x.kt > lim ? 'tbad' : hi && x.kt >= .8 * lim ? 'twarn' : ''}">${dir3(x.dir)}°V/${fmt(x.kt)} kt</b><small>${dirM(x.dir)}</small>${x.sp != null ? `<small>disp. ${fmt(x.sp)} kt · ${x.n} mod.</small>` : ''}` : '<span class="na">—</span>';
     const ids = modelIds();
     const shear = h => { const a = h.zl && h.zl.c750, b = h.zl && h.zl.cLayer; if (!a || !b) return '<span class="na">—</span>'; const dk = b.kt - a.kt, dd = M.angDiff(a.dir, b.dir); return `${Math.abs(dk) < 0.5 ? '' : dk > 0 ? '+' : '−'}${fmt(Math.abs(dk))} kt · ${fmt(dd)}°`; };
     const launchLbl = m.activity === 'SLOP' ? (m.exitFtMSL ? `Saída ${fmt(+m.exitFtMSL)} ft MSL` : 'Saída (informe a altitude)') : `Lançamento ZL + ${fmt(+m.launchFtAGL || 1000)} ft`;
@@ -2784,7 +3036,7 @@ const MET = (() => {
     el.innerHTML = `<div class="tbl-wrap"><table class="hourly zlt"><thead><tr><th></th>${H.map(h => `<th scope="col" class="${S.selHour === h.k ? 'selc' : ''}">${h.label}<small>${M.hhmm(h.utc, tz)}</small></th>`).join('')}</tr></thead><tbody>
       ${rows.map(([n, u, cells], i) => `<tr class="${n.startsWith('↳') ? 'sub' : ''}"><th scope="row">${n}<small>${u}</small></th>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
       <p class="note"><span class="st st-prev">PREVISTO</span> Altitude da ZL ${z0.zl.zlFromModel ? `<b>não informada</b>: usada a elevação do terreno do modelo (${fmt(z0.zl.modelElev)} m). Informe a altitude da ZL na missão.` : `${fmt(+m.zlElevFt)} ft MSL; terreno do modelo ${fmt(z0.zl.modelElev / FT)} ft${Math.abs(z0.zl.zlM - z0.zl.modelElev) > 100 ? ' — <b>diferença acima de 330 ft: o modelo suaviza o relevo, interprete o vento junto ao solo com cautela</b>' : ''}.`}
-      Vento interpolado (componentes u/v, linear na altitude) entre os níveis 10/80/120/180 m sobre o terreno do modelo e os níveis de pressão 1000–300 hPa; “1ª camada” = primeiro nível de pressão acima de ZL + 750 ft. Parecer usa <b>${m.windRef === 'ZL750' ? 'ZL + 750 ft' : '10 m'}</b> como vento de referência (altere em Missão). Direções em graus verdadeiros.</p>`;
+      Vento interpolado (componentes u/v, linear na altitude) entre os níveis 10/80/120/180 m sobre o terreno do modelo e os níveis de pressão 1000–300 hPa; “1ª camada” = primeiro nível de pressão acima de ZL + 750 ft. ${declNote()} Parecer usa <b>${m.windRef === 'ZL750' ? 'ZL + 750 ft' : '10 m'}</b> como vento de referência (altere em Missão). Direções em graus verdadeiros.</p>`;
   }
 
   /* ---------------- Altitude de saída: temperatura e gelo ---------------- */
@@ -2967,7 +3219,7 @@ const MET = (() => {
   }
 
   /* ---------------- Persistência ---------------- */
-  const DOCS = { models_GFS: 'dados/modelos_GFS', models_ECMWF: 'dados/modelos_ECMWF', models_ICON: 'dados/modelos_ICON', models_UKMO: 'dados/modelos_UKMO', models_MODELO: 'dados/modelos_MODELO', models7: 'dados/modelos7', models7_GFS: 'dados/modelos7_GFS', models7_ECMWF: 'dados/modelos7_ECMWF', models7_ICON: 'dados/modelos7_ICON', mission: 'cfg/missao', sys: 'cfg/sistema', models: 'dados/modelos', sounding: 'dados/sondagem', obs: 'dados/obs', analysis: 'dados/analise', history: 'dados/historico', astro: 'dados/astro', oficiais: 'dados/oficiais', aer: 'dados/aerodromos' };
+  const DOCS = { models_GFS: 'dados/modelos_GFS', models_ECMWF: 'dados/modelos_ECMWF', models_ICON: 'dados/modelos_ICON', models_UKMO: 'dados/modelos_UKMO', models_MODELO: 'dados/modelos_MODELO', models7: 'dados/modelos7', models7_GFS: 'dados/modelos7_GFS', models7_ECMWF: 'dados/modelos7_ECMWF', models7_ICON: 'dados/modelos7_ICON', verif: 'dados/verificacao', mission: 'cfg/missao', sys: 'cfg/sistema', models: 'dados/modelos', sounding: 'dados/sondagem', obs: 'dados/obs', analysis: 'dados/analise', history: 'dados/historico', astro: 'dados/astro', oficiais: 'dados/oficiais', aer: 'dados/aerodromos' };
   async function save(name, data) {
     if (APP) { try { await api('/api/doc/' + name, data); return true; } catch (e) { flash('Falha ao gravar: ' + e.message, true); return false; } }
     if (!S.db) { try { const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}'); all[name] = data; localStorage.setItem(LS_KEY, JSON.stringify(all)); } catch (e) { } return true; }
@@ -3065,9 +3317,10 @@ const MET = (() => {
   }
 
   function renderAll() {
-    _raw.clear(); _full.clear();
+    _raw.clear(); _full.clear(); _aw = null;
+    try { if (updateVerif()) { _aw = null; _raw.clear(); _full.clear(); } } catch (e) { /* verificação é auxiliar */ }
     const H = hasPos() ? hours() : [];
-    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderD7(H); renderMsl(H); renderTrace(H); renderSources();
+    renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderSat(H); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderD7(H); renderMsl(H); renderTrace(H); renderSources();
     renderDeductions(H);
     updateSummaries(H);
     $('#sec-main').hidden = !hasPos();
@@ -3178,7 +3431,7 @@ const MET = (() => {
     const V = H.filter(h => h.n && h.zl); if (!V.length) return [];
     const tz = S.mission.tz, lim = limitKt(), out = [];
     const h0 = V[0], z = h0.zl;
-    if (z.c750) out.push({ s: 'info', t: `Em H, vento a ZL + 750 ft ${dir3(z.c750.dir)}°/${fmt(z.c750.kt)} kt: aproximação final e pouso com proa ${dir3(z.c750.dir)}° (${M.cardinal(z.c750.dir)}); deriva no sentido ${dir3((z.c750.dir + 180) % 360)}°.` });
+    if (z.c750) out.push({ s: 'info', t: `Em H, vento a ZL + 750 ft ${dir3(z.c750.dir)}°/${fmt(z.c750.kt)} kt: aproximação final e pouso com proa ${dir3(z.c750.dir)}°V / ${dirM(z.c750.dir)} (${M.cardinal(z.c750.dir)}); deriva no sentido ${dir3((z.c750.dir + 180) % 360)}°V / ${dirM((z.c750.dir + 180) % 360)}.` });
     if (z.cLayer && z.c750) { const dk = z.cLayer.kt - z.c750.kt, dd = M.angDiff(z.cLayer.dir, z.c750.dir); if (Math.abs(dk) >= 5 || dd >= 30) out.push({ s: z.cLayer.kt > lim ? 'bad' : 'warn', t: `1ª camada acima (${fmt(z.cLayer.p)} hPa): ${dir3(z.cLayer.dir)}°/${fmt(z.cLayer.kt)} kt — cisalhamento de ${fmt(Math.abs(dk))} kt e ${fmt(dd)}° em relação a 750 ft: mudança de deriva durante a descida; considerar no ponto de lançamento.` }); }
     if (isSlop() && z.cLaunch) out.push({ s: 'info', t: `Vento na altitude de saída ${dir3(z.cLaunch.dir)}°/${fmt(z.cLaunch.kt)} kt: no HAHO, o deslocamento sob velame será a favor de ${dir3((z.cLaunch.dir + 180) % 360)}° — ponto de lançamento a barlavento (${M.cardinal(z.cLaunch.dir)}) da ZL; calcular a distância na planilha HAHO/CSL com os ventos de camada.` });
     else if (z.cLaunch) out.push({ s: 'info', t: `Vento na altura de lançamento ${dir3(z.cLaunch.dir)}°/${fmt(z.cLaunch.kt)} kt: base para o cálculo do ponto de lançamento (deriva a sotavento ${dir3((z.cLaunch.dir + 180) % 360)}°).` });
@@ -3311,8 +3564,9 @@ const MET = (() => {
     addDed('#exit', dedExit(H), 'Deduzida para o salto — altitude de saída');
     addDed('#astro', dedAstro(H), 'Deduzida para o salto — luminosidade');
     addDed('#opm', dedOpm(H), 'Deduzida para o salto — METAR/TAF');
+    addDed('#sat', dedSat(), 'Deduzida para o salto — convecção observada');
     addDed('#days', dedDays(), 'Deduzida para o salto — situação sinótica e tendência');
-    addDed('#synth-ded', [...dedHourly(H).filter(i => i.s === 'bad'), ...dedClouds(H).filter(i => i.s === 'bad'), ...dedOpm(H).filter(i => i.s === 'bad')].slice(0, 6), 'Impeditivos para o MSL na janela');
+    addDed('#synth-ded', [...dedHourly(H).filter(i => i.s === 'bad'), ...dedClouds(H).filter(i => i.s === 'bad'), ...dedOpm(H).filter(i => i.s === 'bad'), ...dedSat().filter(i => i.s === 'bad')].slice(0, 6), 'Impeditivos para o MSL na janela');
   }
 
   /* ---------------- Tendência D a D+7: mudança de tempo, perigos e avisos (INMET + CPTEC + modelos) ---------------- */
@@ -3335,10 +3589,10 @@ const MET = (() => {
   let _d7memo = { key: null, val: null };
   function d7Series() {
     const SM = S.models7 || S.models; if (!SM) return null;
-    const m = S.mission, key = JSON.stringify([SM.fetchedAt, SM.time.length, m.date, m.tz, m.weights]);
+    const m = S.mission, key = JSON.stringify([SM.fetchedAt, SM.time.length, m.date, m.tz, effW()]);
     if (_d7memo.key === key) return _d7memo.val;
     const T0 = SM.time.indexOf(m.date + 'T00:00'); if (T0 < 0) return null;
-    const n = Math.min(8 * 24, SM.time.length - T0), ids = Object.keys(SM.models), W = m.weights || {};
+    const n = Math.min(8 * 24, SM.time.length - T0), ids = Object.keys(SM.models), W = effW();
     const per = {}; ids.forEach(id => { const o = SM.models[id]; const g = v => Array.from({ length: n }, (_, i) => o[v] ? o[v][T0 + i] : null);
       per[id] = { t: g('temperature_2m'), p: g('pressure_msl'), pr: g('precipitation'), sh: g('showers'), dir: g('wind_direction_10m'), kt: g('wind_speed_10m'), gust: g('wind_gusts_10m'), cape: g('cape'), wc: g('weather_code'), cc: g('cloud_cover') }; });
     const med = (v, i) => { const a = ids.map(id => ({ v: per[id][v][i], w: W[id] ?? 1 })).filter(x => x.v != null); return a.length ? M.weightedMedian(a) : null; };
@@ -3555,6 +3809,9 @@ const MET = (() => {
     safe('exit', () => { const e = H.find(h => h.exit && h.exit.top != null); if (!e) return null; const x = e.exit; return [x.iceLevels && x.iceLevels.length ? 'warn' : 'ok', `${fmt(x.t)} °C a ${fmt(x.top / FT)} ft${x.fzl != null ? ` · 0 °C a ${fmt(x.fzl / FT)} ft` : ''}${x.iceLevels && x.iceLevels.length ? ' · risco de gelo' : ''}`]; });
     safe('opm', () => { const U = userOpmet(); if (!U.length) return ['na', 'inserir METAR/TAF']; return [worstS(dedOpm(H)), U.map(a => `${a.icao} ${a.metars.length} METAR${a.tafs.length ? ' + TAF' : ''}`).join(' · ')]; });
     safe('aer', () => { const U = userOpmet(); if (!U.length) return ['na', 'sem mensagens inseridas']; const m0 = U[0].metars[0]; return ['ok', m0 ? `${U[0].icao}: teto ${M.ceilingFt(m0) != null ? fmt(M.ceilingFt(m0)) + ' ft' : 'sem nuvens'} · vis. ${visTxt(m0.vis) || '—'}` : `${U.length} aeródromo(s)`]; });
+    safe('sat', () => { const D = satData(); if (!D) return ['na', 'disponível após atualizar no aplicativo']; if (D.erro) return ['na', D.erro]; const A = D.A, G = D.G;
+      const bad = (G && G.n_30km) || (A && A.frio52 && A.frio52.dist_km <= 30), warn = (G && G.n_100km) || (A && A.frio32 && A.frio32.dist_km <= 100);
+      return [bad ? 'bad' : warn ? 'warn' : 'ok', [A ? (A.frio32 ? `topo ≤ −32 °C a ${fmt(A.frio32.dist_km)} km` : 'sem topos frios') : '', G ? (G.n_100km ? `${G.n_100km} raios em 100 km` : 'sem raios em 100 km') : ''].filter(Boolean).join(' · ')]; });
     safe('inmet', () => { const EP = S.oficiais && S.oficiais.inmet_prev && S.oficiais.inmet_prev.estacao; if (!EP || !EP.dados) return ['na', 'disponível após atualizar']; const d = EP.dados; return ['ok', `${EP.estacao.CODIGO} · ${fmt(+d.TEM_INS, 1)} °C · ${dir3(+d.VEN_DIR)}°/${fmt(+d.VEN_VEL * 1.943844)} kt`]; });
     safe('trend', () => { const IP = S.oficiais && S.oficiais.inmet_prev, av = IP && IP.avisos ? IP.avisos : []; const D7 = d7Series(); const fr = D7 ? d7Fronts(D7) : []; const days = D7 ? d7Days(D7) : [];
       const fav = days.filter(d => d.v === 'FAVORÁVEL'); const parts = [];
@@ -3590,7 +3847,7 @@ const MET = (() => {
   async function loadLocal() {
     const st = await api('/api/state');
     S.appInfo = st.app; S.cfg = st.config;
-    ['mission', 'obs', 'analysis', 'history', 'astro', 'oficiais', 'aer'].forEach(n => applyDoc(n, st[n]));
+    ['mission', 'obs', 'analysis', 'history', 'astro', 'oficiais', 'aer', 'verif'].forEach(n => applyDoc(n, st[n]));
     const newer = (a, b) => (a && a.fetchedAt || '') >= (b && b.fetchedAt || '');
     if (st.models && newer(st.models, st.models_raw)) S.models = st.models;
     else if (st.models_raw && st.models_raw.raw) { try { S.models = Object.assign(M.parseOpenMeteo(st.models_raw.raw), { fetchedAt: st.models_raw.fetchedAt, url: st.models_raw.url, rodadas: st.models_raw.rodadas || null }); } catch (e) { S.models = null; flash('Resposta dos modelos inválida: ' + e.message, true); } }

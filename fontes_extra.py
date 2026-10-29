@@ -398,3 +398,44 @@ def radiossonda(lat, lon, baixar, agora=None, raio_km=300):
                     "nominal_utc": t.isoformat(), "lancamento_utc": linhas[0][0].strip().replace(" ", "T") + "Z", "url": u,
                     "colunas": ["p_hPa", "z_m_MSL", "t_C", "td_C", "dir_graus_V", "vel_kt"], "niveis": red}
     return {"erro": "; ".join(erros) or "nenhuma estação no raio"}
+
+
+# ---------------- Radar meteorológico — REDEMET (exige a mesma chave da API REDEMET) ----------------
+def redemet_radar(lat, lon, baixar, chave, produto="maxcappi"):
+    """Imagens de radar do produto informado na hora atual (ou na anterior). A resposta da API é percorrida
+    de forma genérica: toda URL de imagem encontrada é guardada com o nome/código do radar e os limites, se houver."""
+    out = {"fonte": "REDEMET — API DECEA (radar)", "produto": produto, "chave": bool(chave)}
+    if not chave:
+        out["erro"] = "chave da API REDEMET não configurada"
+        return out
+    agora = dt.datetime.now(dt.timezone.utc)
+    imgs = []
+    def varre(x, ctx):
+        if isinstance(x, dict):
+            c = dict(ctx); c.update({k: v for k, v in x.items() if not isinstance(v, (dict, list))})
+            for v in x.values(): varre(v, c)
+        elif isinstance(x, list):
+            for v in x: varre(v, ctx)
+        elif isinstance(x, str) and re.search(r"\.(png|gif|jpe?g)(\?|$)", x, re.I) and x.startswith("http"):
+            lim = {k: ctx.get(k) for k in ("lat_min", "lat_max", "lon_min", "lon_max") if ctx.get(k) is not None}
+            imgs.append({"url": x, "nome": ctx.get("nome") or ctx.get("localidade") or ctx.get("radar") or "", "hora": ctx.get("data") or ctx.get("hora") or "", **lim})
+    for h in (0, 1):
+        q = {"api_key": chave, "data": (agora - dt.timedelta(hours=h)).strftime("%Y%m%d%H")}
+        st, corpo = baixar(f"https://api-redemet.decea.mil.br/produtos/radar/{produto}?" + urllib.parse.urlencode(q), tentativas=2, timeout=45)
+        if not st:
+            out["erro"] = str(corpo)[:200].replace(chave, "***"); continue
+        try:
+            varre(json.loads(corpo), {})
+        except Exception as e:
+            out["erro"] = "resposta não reconhecida: " + repr(e)[:120]; continue
+        if imgs: break
+    def dist(i):
+        try:
+            cla, clo = (float(i["lat_min"]) + float(i["lat_max"])) / 2, (float(i["lon_min"]) + float(i["lon_max"])) / 2
+            return (cla - lat) ** 2 + (clo - lon) ** 2
+        except Exception:
+            return 1e9
+    imgs.sort(key=dist)
+    out["imagens"] = imgs[:6]
+    if not imgs and "erro" not in out: out["erro"] = "nenhuma imagem de radar na resposta"
+    return out

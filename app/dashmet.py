@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from zoneinfo import ZoneInfo
 
 APP_NOME = "Dashboard Meteorológico de Salto"
-VERSAO = "2.4.0"
+VERSAO = "2.5.0"
 
 # --- caminhos -------------------------------------------------------------------------------
 BASE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
@@ -41,7 +41,7 @@ import coleta as C  # noqa: E402  (reaproveita a coleta do repositório)
 import fontes_extra as FX  # noqa: E402
 import aisweb as AW  # noqa: E402
 
-NOMES = {"mission", "models", "models7", "models7_raw", "sounding", "models_raw", "sounding_raw", "obs", "analysis", "history", "astro", "oficiais", "aer", "config"}
+NOMES = {"mission", "verif", "models", "models7", "models7_raw", "sounding", "models_raw", "sounding_raw", "obs", "analysis", "history", "astro", "oficiais", "aer", "config"}
 _lock = threading.Lock()
 STATUS = {"rodando": False, "etapas": [], "inicio": None, "fim": None, "erro": None}
 
@@ -195,6 +195,10 @@ def coletar():
         etapa("Radiossonda: " + (of["radiossonda"].get("nominal_utc", "")[:13] + "Z" if "niveis" in of["radiossonda"] else of["radiossonda"].get("erro", "indisponível")), "niveis" in of["radiossonda"])
     except Exception as e:
         of["radiossonda"] = {"erro": repr(e)}
+    try:
+        of["radar"] = FX.redemet_radar(lat, lon, C.baixar, cfg.get("redemet_api_key", ""))
+    except Exception as e:
+        of["radar"] = {"erro": repr(e)[:200]}
     etapa("Satélite GOES-19 (topos frios) e descargas elétricas GLM…")
     try:
         import conveccao as CV

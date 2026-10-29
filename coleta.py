@@ -274,7 +274,8 @@ def main():
         import conveccao
         return conveccao.coletar(lat, lon)
     for k, f in (("inmet_prev", lambda: fx.inmet_prev(lat, lon, baixar, os.environ.get("IBGE") or None)), ("cptec", lambda: fx.cptec(lat, lon, baixar)),
-                 ("radiossonda", lambda: fx.radiossonda(lat, lon, baixar)), ("satelite", _sat)):
+                 ("radiossonda", lambda: fx.radiossonda(lat, lon, baixar)), ("satelite", _sat),
+                 ("radar", lambda: fx.redemet_radar(lat, lon, baixar, os.environ.get("REDEMET_API_KEY", "")))):
         try:
             ob[k] = f()
         except Exception as e:

@@ -434,6 +434,41 @@ const MET = (() => {
   const ceilingFt = m => { const c = (m && m.clouds || []).filter(x => /FEW|SCT|BKN|OVC|VV/.test(x.cov) && x.base != null).map(x => x.base); return c.length ? Math.min(...c) : null; };
 
 
+
+  /* ---------- Declinação magnética — World Magnetic Model WMM2025 (NOAA/NCEI e BGS; válido 2025,0–2030,0) ----------
+     Coeficientes de Gauss g, h e variação secular (nT, nT/ano), n = 1..12, na ordem do arquivo WMM.COF oficial. */
+  const WMM2025 = { epoch: 2025.0, c: '-29351.8 0.0 12.0 0.0;-1410.8 4545.4 9.7 -21.5;-2556.6 0.0 -11.6 0.0;2951.1 -3133.6 -5.2 -27.7;1649.3 -815.1 -8.0 -12.1;1361.0 0.0 -1.3 0.0;-2404.1 -56.6 -4.2 4.0;1243.8 237.5 0.4 -0.3;453.6 -549.5 -15.6 -4.1;895.0 0.0 -1.6 0.0;799.5 278.6 -2.4 -1.1;55.7 -133.9 -6.0 4.1;-281.1 212.0 5.6 1.6;12.1 -375.6 -7.0 -4.4;-233.2 0.0 0.6 0.0;368.9 45.4 1.4 -0.5;187.2 220.2 0.0 2.2;-138.7 -122.9 0.6 0.4;-142.0 43.0 2.2 1.7;20.9 106.1 0.9 1.9;64.4 0.0 -0.2 0.0;63.8 -18.4 -0.4 0.3;76.9 16.8 0.9 -1.6;-115.7 48.8 1.2 -0.4;-40.9 -59.8 -0.9 0.9;14.9 10.9 0.3 0.7;-60.7 72.7 0.9 0.9;79.5 0.0 -0.0 0.0;-77.0 -48.9 -0.1 0.6;-8.8 -14.4 -0.1 0.5;59.3 -1.0 0.5 -0.8;15.8 23.4 -0.1 0.0;2.5 -7.4 -0.8 -1.0;-11.1 -25.1 -0.8 0.6;14.2 -2.3 0.8 -0.2;23.2 0.0 -0.1 0.0;10.8 7.1 0.2 -0.2;-17.5 -12.6 0.0 0.5;2.0 11.4 0.5 -0.4;-21.7 -9.7 -0.1 0.4;16.9 12.7 0.3 -0.5;15.0 0.7 0.2 -0.6;-16.8 -5.2 -0.0 0.3;0.9 3.9 0.2 0.2;4.6 0.0 -0.0 0.0;7.8 -24.8 -0.1 -0.3;3.0 12.2 0.1 0.3;-0.2 8.3 0.3 -0.3;-2.5 -3.3 -0.3 0.3;-13.1 -5.2 0.0 0.2;2.4 7.2 0.3 -0.1;8.6 -0.6 -0.1 -0.2;-8.7 0.8 0.1 0.4;-12.9 10.0 -0.1 0.1;-1.3 0.0 0.1 0.0;-6.4 3.3 0.0 0.0;0.2 0.0 0.1 -0.0;2.0 2.4 0.1 -0.2;-1.0 5.3 -0.0 0.1;-0.6 -9.1 -0.3 -0.1;-0.9 0.4 0.0 0.1;1.5 -4.2 -0.1 0.0;0.9 -3.8 -0.1 -0.1;-2.7 0.9 -0.0 0.2;-3.9 -9.1 -0.0 -0.0;2.9 0.0 0.0 0.0;-1.5 0.0 -0.0 -0.0;-2.5 2.9 0.0 0.1;2.4 -0.6 0.0 -0.0;-0.6 0.2 0.0 0.1;-0.1 0.5 -0.1 -0.0;-0.6 -0.3 0.0 -0.0;-0.1 -1.2 -0.0 0.1;1.1 -1.7 -0.1 -0.0;-1.0 -2.9 -0.1 0.0;-0.2 -1.8 -0.1 0.0;2.6 -2.3 -0.1 0.0;-2.0 0.0 0.0 0.0;-0.2 -1.3 0.0 -0.0;0.3 0.7 -0.0 0.0;1.2 1.0 -0.0 -0.1;-1.3 -1.4 -0.0 0.1;0.6 -0.0 -0.0 -0.0;0.6 0.6 0.1 -0.0;0.5 -0.1 -0.0 -0.0;-0.1 0.8 0.0 0.0;-0.4 0.1 0.0 -0.0;-0.2 -1.0 -0.1 -0.0;-1.3 0.1 -0.0 0.0;-0.7 0.2 -0.1 -0.1' };
+  let _wmm = null;
+  function wmmCoef() {
+    if (_wmm) return _wmm;
+    const g = [], h = [], gd = [], hd = []; let k = 0; const v = WMM2025.c.split(';').map(s => s.split(' ').map(Number));
+    for (let n = 1; n <= 12; n++) { g[n] = []; h[n] = []; gd[n] = []; hd[n] = []; for (let m = 0; m <= n; m++) { const r = v[k++]; g[n][m] = r[0]; h[n][m] = r[1]; gd[n][m] = r[2]; hd[n][m] = r[3]; } }
+    return (_wmm = { g, h, gd, hd });
+  }
+  /** Declinação (graus, + = leste) e componentes (nT) pelo WMM2025. lat/lon geodésicas (graus), altitude em km, data em ano decimal. */
+  function magDecl(lat, lon, hKm, year) {
+    if (lat == null || lon == null || year == null) return null;
+    const C = wmmCoef(), dt = year - WMM2025.epoch, rad = Math.PI / 180;
+    const a = 6378.137, f = 1 / 298.257223563, e2 = f * (2 - f), re = 6371.2;
+    const phi = lat * rad, lam = lon * rad, sp = Math.sin(phi), cp = Math.cos(phi);
+    const Rc = a / Math.sqrt(1 - e2 * sp * sp), p = (Rc + hKm) * cp, z = (Rc * (1 - e2) + hKm) * sp, r = Math.hypot(p, z), phic = Math.asin(z / r);
+    const th = Math.PI / 2 - phic, ct = Math.cos(th), st = Math.sin(th);
+    const P = [[1]], dP = [[0]];
+    for (let n = 1; n <= 12; n++) { P[n] = []; dP[n] = []; for (let m = 0; m <= n; m++) {
+      if (n === m) { if (n === 1) { P[1][1] = st; dP[1][1] = ct; } else { const k2 = Math.sqrt((2 * n - 1) / (2 * n)); P[n][n] = k2 * st * P[n - 1][n - 1]; dP[n][n] = k2 * (ct * P[n - 1][n - 1] + st * dP[n - 1][n - 1]); } }
+      else { const a1 = 2 * n - 1, b1 = Math.sqrt((n - 1) * (n - 1) - m * m), d1 = Math.sqrt(n * n - m * m), p2 = n - 2 >= m ? P[n - 2][m] : 0, dp2 = n - 2 >= m ? dP[n - 2][m] : 0;
+        P[n][m] = (a1 * ct * P[n - 1][m] - b1 * p2) / d1; dP[n][m] = (a1 * (ct * dP[n - 1][m] - st * P[n - 1][m]) - b1 * dp2) / d1; } } }
+    let X = 0, Y = 0, Z = 0;
+    for (let n = 1; n <= 12; n++) { const ar = Math.pow(re / r, n + 2); for (let m = 0; m <= n; m++) {
+      const gg = C.g[n][m] + dt * C.gd[n][m], hh = C.h[n][m] + dt * C.hd[n][m], cm = Math.cos(m * lam), sm = Math.sin(m * lam);
+      X += ar * (gg * cm + hh * sm) * dP[n][m]; Y += ar * m * (gg * sm - hh * cm) * P[n][m]; Z -= ar * (n + 1) * (gg * cm + hh * sm) * P[n][m]; } }
+    Y /= st;
+    const dp = phic - phi, Xg = X * Math.cos(dp) - Z * Math.sin(dp), Zg = X * Math.sin(dp) + Z * Math.cos(dp);
+    return { D: Math.atan2(Y, Xg) / rad, X: Xg, Y, Z: Zg, valid: year >= 2025 && year < 2030 };
+  }
+  /** Ano decimal de um instante UTC (ms). */
+  const decYear = ms => { const d = new Date(ms), y = d.getUTCFullYear(), a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1); return y + (ms - a) / (b - a); };
+
   /* ---------- Atmosfera padrão e altitude-densidade ---------- */
   /** Altitude-pressão (ft) a partir da elevação (ft) e do QNH (hPa): 1 hPa ≈ 27 ft próximo ao nível do mar (fórmula barométrica ISA). */
   function pressureAlt(elevFt, qnh) {
@@ -480,6 +515,6 @@ const MET = (() => {
     return { prev, vari };
   }
 
-  return { wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, janelaFim, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
+  return { magDecl, decYear, wmoWx, wxDesc, COVDESC, layersFrom, phaseNameDeg, pressureAlt, densityAlt, scalarAt, tafCond, windAt, components, tafWind, ceilingFt, toUV, fromUV, tzOffsetMin, zonedToUtc, localParts, hhmm, ddmm, localKey, isoDate, shiftDate, pad, parseCoord, fmtCoord, astronomy, sunAlt, moonAlt, moonIllum, phaseName, cardinal, angDiff, weightedMedian, circularMedoid, spread, coverCode, lclFt, MODELS, MODELS7, SURF, SURF7, LEVELS, LVARS, metaUrl, janelaFim, openMeteoUrl, parseOpenMeteo, soundingUrl, parseGSD, parseMetar, splitMessages, parseTaf, tafAt };
 })();
 if (typeof module !== 'undefined') module.exports = MET;
