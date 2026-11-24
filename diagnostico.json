@@ -1,0 +1,130 @@
+{
+ "versao": "2.6.1",
+ "web": true,
+ "efemeride": true,
+ "fuso": "America/Sao_Paulo",
+ "webview_versao": "?",
+ "webview": true,
+ "skyfield": true,
+ "eccodes": "ModuleNotFoundError(\"No module named 'eccodes'\")",
+ "tzdata": true,
+ "eccodes_versao": "ModuleNotFoundError(\"No module named 'eccodes'\")",
+ "astronomia": "2026-10-14T18:20",
+ "servidor": {
+  "versao": "2.6.1",
+  "dados": "D:\\a\\_temp\\teste\\DashMetPrecursores"
+ },
+ "pagina_bytes": 597025,
+ "coleta": [
+  {
+   "t": "2026-11-24T14:15:06+00:00",
+   "txt": "Rodadas dos modelos (horário de inicialização)…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:15:07+00:00",
+   "txt": "Janela H a H+5: GFS, ECMWF 9 km, ICON e UK Met Office 10 km…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:15:07+00:00",
+   "txt": "Modelos da janela carregados",
+   "ok": true
+  },
+  {
+   "t": "2026-11-24T14:15:07+00:00",
+   "txt": "Tendência D a D+7: GFS, ECMWF e ICON…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:15:07+00:00",
+   "txt": "Modelos da tendência carregados",
+   "ok": true
+  },
+  {
+   "t": "2026-11-24T14:15:07+00:00",
+   "txt": "Sondagem NOAA…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:15:59+00:00",
+   "txt": "NOMADS indisponível: ModuleNotFoundError(\"No module named 'eccodes'\")",
+   "ok": false
+  },
+  {
+   "t": "2026-11-24T14:15:59+00:00",
+   "txt": "Sondagem NOAA indisponível (o dashboard usa os níveis de pressão dos modelos)",
+   "ok": false
+  },
+  {
+   "t": "2026-11-24T14:15:59+00:00",
+   "txt": "Astronomia JPL/USNO…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:00+00:00",
+   "txt": "Efemérides JPL calculadas",
+   "ok": true
+  },
+  {
+   "t": "2026-11-24T14:16:01+00:00",
+   "txt": "AISWEB SBAF…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:04+00:00",
+   "txt": "AISWEB SBGL…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:07+00:00",
+   "txt": "INMET e REDEMET…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:08+00:00",
+   "txt": "INMET — avisos, previsão do município e estação; CPTEC 7 dias…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:15+00:00",
+   "txt": "Radiossonda observada (Galeão 83746)…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:22+00:00",
+   "txt": "Radiossonda: 2026-11-24T00Z",
+   "ok": true
+  },
+  {
+   "t": "2026-11-24T14:16:22+00:00",
+   "txt": "Satélite GOES-19 (topos frios) e descargas elétricas GLM…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:25+00:00",
+   "txt": "Satélite e raios: ok",
+   "ok": true
+  },
+  {
+   "t": "2026-11-24T14:16:25+00:00",
+   "txt": "METAR, TAF e SIGMET (NOAA/AWC)…",
+   "ok": null
+  },
+  {
+   "t": "2026-11-24T14:16:29+00:00",
+   "txt": "OPMET: 12 METAR, 2 TAF, 1 SIGMET",
+   "ok": true
+  }
+ ],
+ "docs": {
+  "models7_raw": 35400,
+  "models_raw": 100913,
+  "mission": 170,
+  "oficiais": 28421,
+  "aer": 7365,
+  "astro": 3030,
+  "obs": 35216,
+  "history": 151
+ }
+}
