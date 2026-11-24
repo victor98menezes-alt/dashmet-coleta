@@ -83,6 +83,13 @@ legend{font:600 .68rem var(--f-body);letter-spacing:.09em;text-transform:upperca
 
 /* Parecer */
 .sec-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.acttabs{display:flex;flex-wrap:wrap;align-items:stretch;gap:8px;margin:0 0 14px}
+.acttab{display:flex;flex-direction:column;align-items:flex-start;gap:2px;flex:1 1 0;max-width:240px;min-width:0;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;font:inherit;text-align:left}
+.acttab b{font-size:1.15rem;letter-spacing:.06em;color:var(--fg)} .acttab span{font-size:.78rem}
+.acttab[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 -3px 0 var(--accent);color:var(--fg);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+.acttab-rule{align-self:center;font-size:.82rem;color:var(--muted);flex:1 1 280px}
+@media (max-width:640px){.acttab-rule{flex-basis:100%}}
+body.act-ssa [data-col="upper"], body.act-ssa [data-col="exit"]{display:none}
 #verdicts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
 .vcell{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:6px;text-align:left;border:1px solid var(--line);background:var(--surface);padding:14px 16px 14px 20px;border-radius:14px;cursor:pointer;min-width:0;box-shadow:var(--shadow);transition:transform .15s ease,border-color .15s ease}
 .vcell::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--na)}
@@ -454,17 +461,21 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
       <div class="fld"><label for="f-tz">Fuso da coordenada</label><select id="f-tz">
         <option value="America/Sao_Paulo">America/Sao_Paulo (UTC−3)</option><option value="America/Bahia">America/Bahia (UTC−3)</option><option value="America/Fortaleza">America/Fortaleza (UTC−3)</option><option value="America/Recife">America/Recife (UTC−3)</option><option value="America/Belem">America/Belem (UTC−3)</option><option value="America/Araguaina">America/Araguaina (UTC−3)</option><option value="America/Santarem">America/Santarem (UTC−3)</option><option value="America/Noronha">America/Noronha (UTC−2)</option><option value="America/Manaus">America/Manaus (UTC−4)</option><option value="America/Cuiaba">America/Cuiaba (UTC−4)</option><option value="America/Campo_Grande">America/Campo_Grande (UTC−4)</option><option value="America/Porto_Velho">America/Porto_Velho (UTC−4)</option><option value="America/Boa_Vista">America/Boa_Vista (UTC−4)</option><option value="America/Rio_Branco">America/Rio_Branco (UTC−5)</option><option value="UTC">UTC (Z)</option>
       </select></div>
-      <div class="fld"><label for="f-act">Atividade</label><select id="f-act"><option value="ENG">Semiautomático enganchado</option><option value="SLOP">SLOp (HALO/HAHO)</option></select></div>
+      <div class="fld"><label for="f-act">Atividade</label><select id="f-act"><option value="ENG">SSA — Salto semiautomático (enganchado)</option><option value="SLOP">LL — Lançamento livre (SLOp HALO/HAHO)</option></select><span class="hint">também pelas abas SSA / LL no topo do parecer</span></div>
       <div class="fld" id="row-launch"><label for="f-launch">Altura de lançamento</label><input id="f-launch" inputmode="numeric"><span class="hint">ft AGL (padrão 1.000)</span></div>
       <div class="fld" id="row-exit" hidden><label for="f-exit">Altitude de saída</label><input id="f-exit" inputmode="numeric"><span class="hint">ft MSL, conforme a missão</span></div>
       <div class="fld"><label for="f-zl">Altitude da ZL</label><input id="f-zl" inputmode="numeric" placeholder="ex.: 112"><span class="hint">ft MSL · base para ZL + 750 ft</span></div>
-      <div class="fld"><label for="f-wref">Vento de referência do limite</label><select id="f-wref"><option value="ZL750">ZL + 750 ft (aferição)</option><option value="10M">10 m (superfície do modelo)</option></select></div>
+      <div class="fld" id="row-wref"><label for="f-wref">Vento de referência do limite (LL)</label><select id="f-wref"><option value="ZL750">ZL + 750 ft (vento de solo)</option><option value="10M">10 m (vento de superfície)</option></select><span class="hint">no SSA o limite é sempre aplicado ao vento de superfície (10 m)</span></div>
       <div class="fld"><label for="f-icao">Estação OACI de referência</label><input id="f-icao" placeholder="ex.: SBAF" maxlength="4" autocomplete="off"><span class="hint">METAR/TAF próximos da ZL</span></div>
       <div class="fld"><label for="f-ibge">Município (código IBGE)</label><input id="f-ibge" inputmode="numeric" placeholder="automático" maxlength="7" autocomplete="off"><span class="hint">Previsão e avisos do INMET · vazio = identificar pela coordenada</span></div>
       <div class="fld"><label for="f-ad">Aeródromos próximos</label><input id="f-ad" placeholder="ex.: SBAF, SBGL" autocomplete="off"><span class="hint">Até 4 · localização e distância à ZL (AISWEB)</span></div>
       <fieldset><legend>Limites e critérios</legend>
-        <div class="fld"><label for="f-lim-eng">Vento sup. máx. — enganchado</label><input id="f-lim-eng" inputmode="decimal"><span class="hint">kt (informado: 13)</span></div>
-        <div class="fld"><label for="f-lim-slop">Vento sup. máx. — SLOp</label><input id="f-lim-slop" inputmode="decimal"><span class="hint">kt (informado: 18)</span></div>
+        <div class="fld"><label for="f-lim-day">SSA — vento de superfície máx. diurno</label><input id="f-lim-day" inputmode="decimal"><span class="hint">kt · 10 m · qualquer ZL (informado: 13)</span></div>
+        <div class="fld"><label for="f-lim-night">SSA — vento de superfície máx. noturno</label><input id="f-lim-night" inputmode="decimal"><span class="hint">kt · 10 m · qualquer ZL (informado: 10)</span></div>
+        <div class="fld"><label for="f-lim-afonsos">SSA — ZL Afonsos, qualquer período</label><input id="f-lim-afonsos" inputmode="decimal"><span class="hint">kt · 10 m (informado: 10)</span></div>
+        <div class="fld"><label for="f-zlrule">Regra da ZL (SSA)</label><select id="f-zlrule"><option value="AUTO">Automática — Afonsos se a ZL estiver a até 3 km do SBAF ou se o nome contiver “Afonsos”</option><option value="AFONSOS">ZL Afonsos</option><option value="OUTRA">Demais ZL (diurno/noturno)</option></select></div>
+        <div class="fld"><label for="f-daycrit">Período diurno</label><select id="f-daycrit"><option value="SOL">Do nascer ao pôr do sol</option><option value="CIVIL">ICMC a FCVC (crepúsculo civil, −6°)</option><option value="NAUT">ICMN a FCVN (crepúsculo náutico, −12°)</option></select><span class="hint">calculado pela posição do Sol na ZL</span></div>
+        <div class="fld"><label for="f-lim-slop">LL — vento de superfície máx.</label><input id="f-lim-slop" inputmode="decimal"><span class="hint">kt (informado: 18)</span></div>
         <div class="fld"><label for="f-base">Teto mínimo (base mínima)</label><input id="f-base" inputmode="numeric"><span class="hint">ft sobre a ZL · camada FEW a OVC · vazio = não avaliar</span></div>
         <div class="fld"><label for="f-vis">Visibilidade mínima</label><input id="f-vis" inputmode="numeric"><span class="hint">m · vazio = não avaliar</span></div>
         <div class="fld"><label for="f-cape-m">CAPE moderado</label><input id="f-cape-m" inputmode="numeric"><span class="hint">J/kg (indicador)</span></div>
@@ -483,6 +494,11 @@ ul.hist b{font-family:var(--f-data);font-weight:600;margin-right:8px}
 
   <div id="brief" class="wrap" style="gap:20px">
     <section aria-labelledby="h-verd">
+      <div class="acttabs" role="tablist" aria-label="Tipo de lançamento">
+        <button type="button" role="tab" class="acttab" data-act="ENG" aria-selected="true"><b>SSA</b><span>Salto semiautomático</span></button>
+        <button type="button" role="tab" class="acttab" data-act="SLOP" aria-selected="false"><b>LL</b><span>Lançamento livre</span></button>
+        <span class="acttab-rule" id="acttab-rule"></span>
+      </div>
       <div class="sec-h"><h2 id="h-verd">Parecer por horário</h2><span class="small">clique em um horário para detalhar</span></div>
       <div id="verdicts"></div>
     </section>
@@ -1200,7 +1216,7 @@ const MET = (() => {
   function tomorrow(tz) { const p = M.localParts(Date.now() + 864e5, tz); return M.isoDate(p.y, p.mo, p.d); }
   const DEFAULT_MISSION = () => ({
     name: '', latStr: '', lonStr: '', lat: null, lon: null, date: tomorrow('America/Sao_Paulo'), hour: 10, tz: 'America/Sao_Paulo',
-    activity: 'ENG', launchFtAGL: 1000, exitFtMSL: null, windLimitEng: 13, windLimitSlop: 18, baseMinFt: 1000, icao: '', ibge: '', zlElevFt: null, windRef: 'ZL750', aerodromos: '', xwLimit: null, ceilMin: null, visMin: null,
+    activity: 'ENG', launchFtAGL: 1000, exitFtMSL: null, windLimitEng: 13, windLimitDay: 13, windLimitNight: 10, windLimitAfonsos: 10, zlRule: 'AUTO', dayCrit: 'SOL', windLimitSlop: 18, baseMinFt: 1000, icao: '', ibge: '', zlElevFt: null, windRef: 'ZL750', aerodromos: '', xwLimit: null, ceilMin: null, visMin: null,
     weights: { GFS: 1, ECMWF: 1, ICON: 1, UKMO: 1 }, weightMode: 'auto', capeMod: 1000, capeStrong: 2500, updatedAt: null,
   });
   const S = { mission: DEFAULT_MISSION(), models: null, sounding: null, obs: null, analysis: null, astro: null, oficiais: null, aer: null, sys: null, history: [], db: null, user: null, mcp: null, downloads: null, canWrite: true, selHour: 0, upperSrc: 'auto', tab: 'modelos' };
@@ -1208,8 +1224,25 @@ const MET = (() => {
   /* Coordenadas e elevação dos aeródromos brasileiros com indicador OACI SBxx (OurAirports, domínio público; consulta em 29/10/2026).
      Usadas só quando o AISWEB não foi consultado (HTML e painel no Claude), para a distância à ZL e a correção das bases das nuvens. */
   const AD_BR = (() => { const o = {}; 'SBAA:-8.3483,-49.3015,653|SBAC:-4.5689,-37.8051,128|SBAE:-22.1608,-49.0703,1962|SBAF:-22.8751,-43.3847,110|SBAM:2.0775,-50.8582,45|SBAN:-16.2292,-48.9643,3731|SBAQ:-21.8120,-48.1330,2334|SBAR:-10.9839,-37.0729,23|SBAT:-9.8664,-56.1063,948|SBAU:-21.1415,-50.4246,1358|SBAX:-19.5632,-46.9604,3276|SBBE:-1.3793,-48.4762,54|SBBG:-31.3905,-54.1122,600|SBBH:-19.8507,-43.9503,2589|SBBI:-25.4051,-49.2320,3057|SBBP:-22.9788,-46.5371,2887|SBBQ:-21.2672,-43.7610,3657|SBBR:-15.8692,-47.9208,3497|SBBU:-22.3450,-49.0538,2025|SBBV:2.8462,-60.6906,276|SBBW:-15.8614,-52.3890,1147|SBCA:-25.0003,-53.5012,2481|SBCB:-22.9215,-42.0719,22|SBCC:-9.3339,-54.9654,1777|SBCD:-26.7874,-50.9399,3376|SBCF:-19.6357,-43.9669,2721|SBCG:-20.4700,-54.6740,1833|SBCH:-27.1342,-52.6566,2154|SBCI:-7.3204,-47.4587,565|SBCJ:-6.1178,-50.0034,2064|SBCN:-17.7251,-48.6063,2307|SBCO:-29.9459,-51.1444,26|SBCP:-21.6983,-41.3017,59|SBCR:-19.0119,-57.6728,463|SBCT:-25.5285,-49.1758,2988|SBCX:-29.1972,-51.1876,2472|SBCY:-15.6529,-56.1167,617|SBCZ:-7.5999,-72.7695,637|SBDB:-21.2473,-56.4524,1180|SBDN:-22.1751,-51.4246,1477|SBDO:-22.2019,-54.9266,1503|SBEG:-3.0386,-60.0497,264|SBEK:-6.2332,-57.7769,295|SBES:-22.8129,-42.0926,61|SBFI:-25.5942,-54.4894,786|SBFL:-27.6703,-48.5525,16|SBFN:-3.8545,-32.4230,193|SBFT:-20.2787,-49.1876,1598|SBFZ:-3.7758,-38.5322,83|SBGL:-22.8100,-43.2506,28|SBGM:-10.7864,-65.2849,478|SBGO:-16.6320,-49.2207,2450|SBGP:-21.7737,-48.4051,1998|SBGR:-23.4313,-46.4700,2461|SBGV:-18.8959,-41.9829,561|SBGW:-22.7916,-45.2048,1761|SBHT:-3.2531,-52.2539,368|SBIC:-3.1265,-58.4817,142|SBIH:-4.2421,-56.0007,110|SBIL:-14.8159,-39.0335,15|SBIP:-19.4707,-42.4876,786|SBIT:-18.4447,-49.2134,1630|SBIZ:-5.5313,-47.4600,430|SBJA:-28.6753,-49.0596,120|SBJD:-23.1809,-46.9439,2470|SBJE:-2.9064,-40.3573,89|SBJF:-21.7915,-43.3861,2989|SBJH:-23.4269,-47.1657,2547|SBJI:-10.8707,-61.8467,598|SBJP:-7.1487,-34.9506,217|SBJR:-22.9868,-43.3722,10|SBJU:-7.2193,-39.2691,1342|SBJV:-26.2245,-48.7974,15|SBKG:-7.2697,-35.8961,1646|SBKP:-23.0074,-47.1345,2170|SBLE:-12.4823,-41.2770,1676|SBLJ:-27.7821,-50.2815,3065|SBLO:-23.3344,-51.1284,1867|SBLP:-13.2621,-43.4081,1454|SBLS:-19.6618,-43.8974,2795|SBMA:-5.3686,-49.1380,357|SBMD:-0.8898,-52.6022,677|SBME:-22.3430,-41.7660,8|SBMG:-23.4761,-52.0162,1801|SBMI:-22.9195,-42.8309,5|SBMK:-16.7069,-43.8189,2191|SBML:-22.1969,-49.9265,2134|SBMN:-3.1460,-59.9863,267|SBMO:-9.5126,-35.7918,387|SBMQ:0.0507,-51.0722,56|SBMS:-5.2019,-37.3643,76|SBMT:-23.5091,-46.6378,2371|SBMY:-5.8114,-61.2783,174|SBNF:-26.8794,-48.6510,18|SBNM:-28.2825,-54.1696,1056|SBNT:-5.9114,-35.2477,171|SBNV:-16.6258,-49.3488,2707|SBOA:-6.9745,-35.2522,440|SBOB:-16.3197,-47.2253,3215|SBOD:-7.4558,-49.1956,702|SBOE:-12.5874,-52.0952,1181|SBOF:-19.3184,-52.5346,1752|SBOG:-14.7848,-40.8170,3051|SBOH:-16.0009,-53.5436,2077|SBOI:3.8541,-51.7971,53|SBOJ:-6.8199,-56.8414,623|SBOK:-13.2902,-55.9755,1411|SBOL:-18.9203,-52.0014,1923|SBOM:-15.3769,-57.6821,630|SBON:-7.6159,-47.4521,764|SBOO:-20.8387,-56.5889,1555|SBOQ:-18.6220,-52.8331,2808|SBOR:-13.7320,-50.3576,814|SBOS:-13.1528,-58.1175,1594|SBOT:-3.6924,-45.2690,118|SBOU:-10.2703,-55.7861,919|SBOV:-14.1582,-54.9262,1489|SBOW:-4.1863,-56.0599,217|SBOX:-18.2611,-55.3737,548|SBOY:-17.4170,-56.1812,394|SBOZ:-16.1800,-57.2785,499|SBPA:-29.9940,-51.1675,11|SBPB:-2.8937,-41.7320,23|SBPC:-21.8425,-46.5698,4138|SBPF:-28.2440,-52.3278,2380|SBPG:-25.1845,-50.1438,2588|SBPJ:-10.2915,-48.3570,774|SBPK:-31.7172,-52.3278,59|SBPL:-9.3624,-40.5691,1263|SBPO:-26.2172,-52.6945,2697|SBPP:-22.5496,-55.7026,2156|SBPR:-19.9096,-43.9892,3044|SBPS:-16.4384,-39.0806,169|SBPV:-8.7085,-63.9023,295|SBQA:-16.5361,-49.8382,2274|SBQB:-13.2619,-45.0769,2533|SBQC:-13.3665,-55.8551,1421|SBQD:-9.5233,-56.2383,899|SBQE:-7.8043,-45.0576,1424|SBQG:-13.5131,-56.5983,1076|SBQH:-10.6990,-51.6147,728|SBQI:1.8439,-61.1218,184|SBQJ:-23.8464,-50.2084,2615|SBQK:-6.5391,-51.4423,778|SBQM:-22.7653,-53.9083,1214|SBQN:-15.5754,-57.3782,512|SBQO:-17.0275,-39.1761,59|SBQP:-7.7524,-44.3159,1526|SBQR:-16.8088,-44.9732,1617|SBQS:-15.4058,-54.9641,2208|SBQT:-15.8020,-53.5564,1877|SBQX:-13.5783,-57.9369,1841|SBRB:-9.8690,-67.8940,633|SBRD:-16.5843,-54.7248,1467|SBRF:-8.1275,-34.9230,33|SBRJ:-22.9104,-43.1628,11|SBRP:-21.1343,-47.7741,1805|SBSC:-22.9324,-43.7191,10|SBSG:-5.7698,-35.3666,273|SBSI:-11.8850,-55.5861,1227|SBSJ:-23.2292,-45.8615,2120|SBSL:-2.5864,-44.2350,178|SBSM:-29.7114,-53.6882,287|SBSN:-2.4224,-54.7931,198|SBSO:-12.4792,-55.6723,1266|SBSP:-23.6277,-46.6546,2631|SBSR:-20.8171,-49.4070,1784|SBST:-23.9282,-46.3002,13|SBSV:-12.9086,-38.3225,64|SBTA:-23.0401,-45.5162,1902|SBTB:-1.4896,-56.3968,167|SBTC:-15.3544,-38.9987,23|SBTD:-24.6863,-53.6975,1843|SBTE:-5.0602,-42.8237,219|SBTF:-3.3829,-64.7241,186|SBTG:-20.7526,-51.6820,1063|SBTK:-8.1555,-70.7830,646|SBTS:2.2245,-55.9447,1127|SBTT:-4.2557,-69.9358,263|SBTU:-3.7860,-49.7203,830|SBTV:-16.5414,-39.1081,164|SBUA:-0.1484,-66.9855,249|SBUF:-9.4009,-38.2506,883|SBUG:-29.7822,-57.0382,256|SBUL:-18.8836,-48.2259,3094|SBUR:-19.7650,-47.9648,2655|SBUY:-4.8843,-65.3554,210|SBVC:-14.9079,-40.9148,2940|SBVG:-21.5914,-45.4741,3025|SBVH:-12.6944,-60.0983,2018|SBVT:-20.2580,-40.2850,34|SBYA:0.6104,-69.1800,466|SBYS:-21.9847,-47.3412,1968|SBZM:-21.5131,-43.1731,1348'.split('|').forEach(s => { const [k, v] = s.split(':'), [la, lo, el] = v.split(','); o[k] = { lat: +la, lon: +lo, elev_ft: el === '' ? null : +el, fonte: 'OurAirports' }; }); return o; })();
-  const limitKt = () => S.mission.activity === 'SLOP' ? +S.mission.windLimitSlop : +S.mission.windLimitEng;
-  const actLabel = () => S.mission.activity === 'SLOP' ? 'SLOp (HALO/HAHO)' : 'Semiautomático enganchado';
+  /* Limites de vento de superfície (10 m) — SSA: diurno/noturno em qualquer ZL; ZL Afonsos: limite único em qualquer período.
+     LL: limite de superfície do lançamento livre. Valores informados pelo usuário (configuráveis em Missão → Limites). */
+  const AFONSOS = { lat: -22.8751, lon: -43.3847, raioKm: 3 }; // Campo dos Afonsos (SBAF) — OurAirports
+  const isAfonsos = () => { const m = S.mission; if (m.zlRule === 'AFONSOS') return true; if (m.zlRule === 'OUTRA') return false;
+    return /afonsos/i.test(m.name || '') || (hasPos() && haversine(m.lat, m.lon, AFONSOS.lat, AFONSOS.lon) <= AFONSOS.raioKm); };
+  const DAYCRIT = { SOL: [-0.833, 'nascer a pôr do sol'], CIVIL: [-6, 'ICMC a FCVC (crepúsculo civil)'], NAUT: [-12, 'ICMN a FCVN (crepúsculo náutico)'] };
+  const dayCrit = () => DAYCRIT[S.mission.dayCrit] || DAYCRIT.SOL;
+  const isDay = utc => !hasPos() || utc == null || M.sunAlt(utc, S.mission.lat, S.mission.lon) > dayCrit()[0];
+  const isSSA = () => S.mission.activity !== 'SLOP';
+  function limitKt(utc) {
+    const m = S.mission;
+    if (!isSSA()) return +m.windLimitSlop || 18;
+    if (isAfonsos()) return +(m.windLimitAfonsos ?? 10);
+    return isDay(utc ?? hourUtc(0)) ? +(m.windLimitDay ?? m.windLimitEng ?? 13) : +(m.windLimitNight ?? 10);
+  }
+  function limitWhy(utc) { if (!isSSA()) return 'LL'; if (isAfonsos()) return 'ZL Afonsos'; return isDay(utc ?? hourUtc(0)) ? 'diurno' : 'noturno'; }
+  const limitRule = () => { const m = S.mission; if (!isSSA()) return `LL: vento de superfície até ${+m.windLimitSlop || 18} kt`;
+    return isAfonsos() ? `SSA — ZL Afonsos: ${+(m.windLimitAfonsos ?? 10)} kt em qualquer período (10 m)` : `SSA: ${+(m.windLimitDay ?? m.windLimitEng ?? 13)} kt diurno / ${+(m.windLimitNight ?? 10)} kt noturno (10 m; dia = ${dayCrit()[1]})`; };
+  const actLabel = () => S.mission.activity === 'SLOP' ? 'LL — Lançamento livre (SLOp HALO/HAHO)' : 'SSA — Salto semiautomático (enganchado)';
   const hasPos = () => S.mission.lat != null && S.mission.lon != null && S.mission.date;
   const modelIds = () => S.models ? Object.keys(S.models.models) : [];
 
@@ -1344,24 +1377,25 @@ const MET = (() => {
     r.zl = zlWinds(r);
     // observação (METAR / medição na ZL) e TAF corrigem os valores dos modelos
     if (FULL && r.n) { assimilate(r); L = r.layers ? r.layers.cons : []; }
-    const useZl = S.mission.windRef === 'ZL750' && r.zl && r.zl.c750;
+    // SSA: impedimento pelo vento de superfície (10 m); ZL + 750 ft só para o planejamento do Precursor. LL: referência configurável.
+    const useZl = !isSSA() && S.mission.windRef === 'ZL750' && r.zl && r.zl.c750;
     c.wref = useZl ? r.zl.c750.kt : c.wind;
     c.wrefDir = useZl ? r.zl.c750.dir : c.dir;
     c.wrefLbl = useZl ? 'ZL + 750 ft' : '10 m';
     // parecer
-    const lim = limitKt(), reasons = [], restr = [];
+    const lim = limitKt(utc), reasons = [], restr = []; r.lim = lim; r.limWhy = limitWhy(utc);
     if (!r.n) { r.verdict = 'SEM DADOS'; r.reasons = ['Sem dados de modelo para este horário. Cole o JSON da Open-Meteo em "Fontes".']; return r; }
-    if (c.wref != null && c.wref > lim) reasons.push(`Vento (${c.wrefLbl}) ${fmt(c.wref, 1)} kt acima do limite de ${lim} kt`);
+    if (c.wref != null && c.wref > lim) reasons.push(`Vento (${c.wrefLbl}) ${fmt(c.wref, 1)} kt acima do limite de ${lim} kt (${r.limWhy})`);
     if (conv.level >= 3) reasons.push(conv.text);
     const bmin = +S.mission.baseMinFt || 0;
     const lowBad = bmin ? L.filter(x => x.baseFt < bmin) : [];
     if (lowBad.length) reasons.push(`Teto ${fmt(lowBad[0].baseFt)} ft (${okta(lowBad[0].pct, lowBad[0].cov)}/8 ${lowBad[0].code}) abaixo da base mínima de ${fmt(bmin)} ft`);
     const wxN = Object.keys(r.wx).filter(w => /TS|\+/.test(w) && r.wx[w].length >= 2);
     if (wxN.length) reasons.push(`Tempo presente previsto: ${wxN.map(M.wxDesc).join(', ')}`);
-    if (c.gust != null && c.gust > lim) restr.push(`Rajadas ${fmt(c.gust, 1)} kt acima do limite de ${lim} kt`);
+    if (c.gust != null && c.gust > lim) restr.push(`Rajadas ${fmt(c.gust, 1)} kt acima do limite de ${lim} kt (${r.limWhy})`);
     if (c.wref != null && c.wref <= lim && c.wref >= 0.8 * lim) restr.push(`Vento (${c.wrefLbl}) ${fmt(c.wref)} kt próximo do limite`);
     if (useZl && r.zl.cLayer && r.zl.cLayer.kt > lim) restr.push(`1ª camada (${r.zl.cLayer.p} hPa) ${fmt(r.zl.cLayer.kt)} kt acima do limite`);
-    if (S.mission.windRef === 'ZL750' && !useZl && r.n) restr.push('Vento ZL + 750 ft indisponível: parecer usa vento a 10 m');
+    if (!isSSA() && S.mission.windRef === 'ZL750' && !useZl && r.n) restr.push('Vento ZL + 750 ft indisponível: parecer usa vento a 10 m');
     if (c.pp != null && c.pp >= 50) restr.push(`Prob. de precipitação ${fmt(c.pp)}%`);
     if (c.pr != null && c.pr >= 1) restr.push(`Precipitação ${fmt(c.pr, 1)} mm/h`);
     if (conv.level === 2 || conv.level === 1) restr.push(conv.text);
@@ -1648,7 +1682,7 @@ const MET = (() => {
     const out = [], lim = limitKt();
     H.forEach((h, i) => {
       const c = h.c, p = H[i - 1], t = M.hhmm(h.utc, S.mission.tz);
-      if (c.gust != null && c.gust > lim) out.push({ sev: 'bad', t, txt: `Rajadas de ${fmt(c.gust)} kt (limite ${lim} kt)` });
+      if (c.gust != null && c.gust > h.lim) out.push({ sev: 'bad', t, txt: `Rajadas de ${fmt(c.gust)} kt (limite ${h.lim} kt, ${h.limWhy})` });
       else if (c.gust != null && c.wind != null && c.gust - c.wind >= 10) out.push({ sev: 'warn', t, txt: `Diferença rajada/vento médio de ${fmt(c.gust - c.wind)} kt (turbulência mecânica provável junto ao solo)` });
       if (p && p.c.dir != null && c.dir != null && p.c.wind >= 4 && c.wind >= 4 && M.angDiff(p.c.dir, c.dir) >= 60) out.push({ sev: 'warn', t, txt: `Giro do vento de ${dir3(p.c.dir)}° para ${dir3(c.dir)}° em 1 h` });
       if (p && p.c.pr != null && c.pr != null && c.pr - p.c.pr >= 1) out.push({ sev: 'warn', t, txt: `Aumento da precipitação: ${fmt(p.c.pr, 1)} → ${fmt(c.pr, 1)} mm/h` });
@@ -2072,16 +2106,17 @@ const MET = (() => {
     const add = (sev, cat, w, txt) => items.push({ sev, cat, w, t0: w ? w.hs[0].k : -1, txt });
     const lbl = V[0].c.wrefLbl;
     // vento
-    windows(H, h => h.c.wref != null && h.c.wref > lim).forEach(w => add('bad', 'Vento', w, `Vento (${lbl}) acima do limite de ${lim} kt: ${rng(w.hs.map(h => h.c.wref), 1)} kt`));
-    windows(H, h => h.c.wref != null && h.c.wref <= lim && h.c.wref >= 0.8 * lim).forEach(w => add('warn', 'Vento', w, `Vento (${lbl}) próximo do limite: ${rng(w.hs.map(h => h.c.wref))} kt`));
+    const LW = w => [...new Set(w.hs.map(h => h.lim))].join('/') + ' kt (' + [...new Set(w.hs.map(h => h.limWhy))].join('/') + ')';
+    windows(H, h => h.c.wref != null && h.c.wref > h.lim).forEach(w => add('bad', 'Vento', w, `Vento (${lbl}) acima do limite de ${LW(w)}: ${rng(w.hs.map(h => h.c.wref), 1)} kt`));
+    windows(H, h => h.c.wref != null && h.c.wref <= h.lim && h.c.wref >= 0.8 * h.lim).forEach(w => add('warn', 'Vento', w, `Vento (${lbl}) próximo do limite: ${rng(w.hs.map(h => h.c.wref))} kt`));
     const pk = V.filter(h => h.c.wref != null).sort((a, b) => b.c.wref - a.c.wref)[0];
     if (pk) add('info', 'Vento', { hs: [pk] }, `Vento mais forte da janela: ${dir3(pk.c.wrefDir)}°/${fmt(pk.c.wref)} kt (${lbl}), rajada a 10 m ${fmt(pk.c.gust)} kt`);
     const w0 = V[0].c.wref, w1 = V[V.length - 1].c.wref;
     if (w0 != null && w1 != null && Math.abs(w1 - w0) >= 3) add('info', 'Vento', { hs: V }, `Tendência de ${w1 > w0 ? 'intensificação' : 'enfraquecimento'}: ${fmt(w0)} → ${fmt(w1)} kt`);
     const dirs = V.filter(h => h.c.wrefDir != null && h.c.wref >= 4);
     for (let i = 1; i < dirs.length; i++) if (M.angDiff(dirs[i - 1].c.wrefDir, dirs[i].c.wrefDir) >= 45) add('warn', 'Vento', { hs: [dirs[i]] }, `Giro do vento: ${dir3(dirs[i - 1].c.wrefDir)}° → ${dir3(dirs[i].c.wrefDir)}°`);
-    windows(H, h => h.c.gust != null && h.c.gust > lim).forEach(w => add('bad', 'Rajadas', w, `Rajadas a 10 m acima do limite de ${lim} kt: ${rng(w.hs.map(h => h.c.gust), 1)} kt`));
-    windows(H, h => h.zl && h.zl.cLayer && h.zl.cLayer.kt > lim).forEach(w => add('warn', 'Vento', w, `1ª camada acima da ZL + 750 ft com ${rng(w.hs.map(h => h.zl.cLayer.kt))} kt`));
+    windows(H, h => h.c.gust != null && h.c.gust > h.lim).forEach(w => add('bad', 'Rajadas', w, `Rajadas a 10 m acima do limite de ${LW(w)}: ${rng(w.hs.map(h => h.c.gust), 1)} kt`));
+    if (!isSSA()) windows(H, h => h.zl && h.zl.cLayer && h.zl.cLayer.kt > h.lim).forEach(w => add('warn', 'Vento', w, `1ª camada acima da ZL + 750 ft com ${rng(w.hs.map(h => h.zl.cLayer.kt))} kt`));
     // teto e base
     const bmin = numOrNull(m.baseMinFt);
     const tl = h => (h.layers ? h.layers.cons : [])[0];
@@ -2135,9 +2170,9 @@ const MET = (() => {
     // matriz por categoria × horário
     const cell = (h, f) => h.n ? f(h) : { s: 'na', t: '—' };
     const matrix = [
-      ['Vento solo (10 m)', h => ({ s: h.c.wind > lim ? 'bad' : h.c.wind >= 0.8 * lim ? 'warn' : 'ok', t: `${dir3(h.c.dir)}°/${fmt(h.c.wind)}` })],
-      ['Vento ZL + 750 ft', h => { const z = h.zl && h.zl.c750; return z ? { s: z.kt > lim ? 'bad' : z.kt >= 0.8 * lim ? 'warn' : 'ok', t: `${dir3(z.dir)}°/${fmt(z.kt)}` } : { s: 'na', t: 'n/d' }; }],
-      ['Rajadas 10 m', h => ({ s: h.c.gust > lim ? 'bad' : h.c.gust - h.c.wind >= 10 ? 'warn' : 'ok', t: fmt(h.c.gust) })],
+      ['Vento de superfície (10 m)', h => ({ s: h.c.wind > h.lim ? 'bad' : h.c.wind >= 0.8 * h.lim ? 'warn' : 'ok', t: `${dir3(h.c.dir)}°/${fmt(h.c.wind)}` })],
+      [isSSA() ? 'Vento de solo ZL + 750 ft (planejamento)' : 'Vento de solo (ZL + 750 ft)', h => { const z = h.zl && h.zl.c750; return z ? { s: z.kt > h.lim ? (isSSA() ? 'warn' : 'bad') : z.kt >= 0.8 * h.lim ? 'warn' : 'ok', t: `${dir3(z.dir)}°/${fmt(z.kt)}` } : { s: 'na', t: 'n/d' }; }],
+      ['Rajadas 10 m', h => ({ s: h.c.gust > h.lim ? 'bad' : h.c.gust - h.c.wind >= 10 ? 'warn' : 'ok', t: fmt(h.c.gust) })],
       ['Teto (FEW a OVC)', h => { const L = tl(h); return { s: !L ? 'ok' : bmin != null && L.baseFt < bmin ? 'bad' : 'ok', t: L ? `${fmt(L.baseFt)} ft · ${okta(L.pct, L.cov)}/8 ${L.cov}` : 'sem nuvens' }; }],
       ['Base das nuvens', h => { const L = h.layers ? h.layers.cons : []; return { s: 'ok', t: L.length ? L.map(x => `${okta(x.pct, x.cov)}/8 ${x.code}`).join(' ') : '0/8' }; }],
       ['Visibilidade', h => { const vmin = numOrNull(m.visMin); return h.c.vis == null ? { s: 'na', t: 'n/d' } : { s: vmin != null && h.c.vis < vmin ? 'bad' : h.c.vis < 5000 ? 'warn' : 'ok', t: h.c.vis >= 10000 ? '≥10 km' : fmt(h.c.vis / 1000, 1) + ' km' }; }],
@@ -2176,7 +2211,7 @@ const MET = (() => {
     bits.push(`H = ${M.pad(m.hour)}:00 ${tzShort(m.tz)}`);
     bits.push(actLabel());
     if (m.zlElevFt != null && m.zlElevFt !== '') bits.push(`ZL ${fmt(+m.zlElevFt)} ft MSL`);
-    bits.push(`Limite ${limitKt()} kt (${m.windRef === 'ZL750' ? 'ZL+750 ft' : '10 m'})`);
+    bits.push(isSSA() ? limitRule().replace(/ \(10 m; dia = .*\)$/, ' (10 m)') : `Limite LL ${limitKt()} kt (${m.windRef === 'ZL750' ? 'ZL+750 ft' : '10 m'})`);
     if (decl()) bits.push('Decl. mag. ' + declTxt());
     if (m.icao) bits.push('Estação ' + m.icao.toUpperCase());
     if (m.aerodromos) bits.push('AD ' + m.aerodromos);
@@ -2191,14 +2226,14 @@ const MET = (() => {
     const m = S.mission;
     $('#f-name').value = m.name || ''; $('#f-lat').value = m.latStr || (m.lat ?? ''); $('#f-lon').value = m.lonStr || (m.lon ?? '');
     $('#f-date').value = m.date || ''; $('#f-hour').value = String(m.hour); $('#f-tz').value = m.tz; $('#f-act').value = m.activity;
-    $('#f-lim-eng').value = m.windLimitEng; $('#f-lim-slop').value = m.windLimitSlop; $('#f-launch').value = m.launchFtAGL ?? ''; $('#f-exit').value = m.exitFtMSL ?? '';
+    $('#f-lim-day').value = m.windLimitDay ?? m.windLimitEng ?? 13; $('#f-lim-night').value = m.windLimitNight ?? 10; $('#f-lim-afonsos').value = m.windLimitAfonsos ?? 10; $('#f-zlrule').value = m.zlRule || 'AUTO'; $('#f-daycrit').value = m.dayCrit || 'SOL'; $('#f-lim-slop').value = m.windLimitSlop; $('#f-launch').value = m.launchFtAGL ?? ''; $('#f-exit').value = m.exitFtMSL ?? '';
     $('#f-base').value = m.baseMinFt ?? ''; $('#f-icao').value = m.icao || ''; if ($('#f-ibge')) $('#f-ibge').value = m.ibge || '';
     if ($('#f-wmode')) $('#f-wmode').value = m.weightMode || 'auto'; $('#f-w-gfs').value = m.weights.GFS; $('#f-w-ecmwf').value = m.weights.ECMWF; $('#f-w-icon').value = m.weights.ICON; if ($('#f-w-ukmo')) $('#f-w-ukmo').value = m.weights.UKMO ?? 1;
     $('#f-cape-m').value = m.capeMod; $('#f-cape-s').value = m.capeStrong;
     $('#f-zl').value = m.zlElevFt ?? ''; $('#f-wref').value = m.windRef || 'ZL750'; $('#f-ad').value = m.aerodromos || ''; $('#f-vis').value = m.visMin ?? '';
     toggleActFields();
   }
-  function toggleActFields() { const slop = $('#f-act').value === 'SLOP'; $('#row-exit').hidden = !slop; $('#row-launch').hidden = slop; }
+  function toggleActFields() { const slop = $('#f-act').value === 'SLOP'; $('#row-exit').hidden = !slop; $('#row-launch').hidden = slop; if ($('#row-wref')) $('#row-wref').hidden = !slop; }
   function readForm() {
     const lat = M.parseCoord($('#f-lat').value, true), lon = M.parseCoord($('#f-lon').value, false);
     const err = [];
@@ -2210,7 +2245,7 @@ const MET = (() => {
     const num = (id, def) => { const v = $(id).value.trim(); return v === '' ? def : Number(v.replace(',', '.')); };
     const m = {
       name: $('#f-name').value.trim(), latStr: $('#f-lat').value.trim(), lonStr: $('#f-lon').value.trim(), lat, lon, date: $('#f-date').value, hour: +$('#f-hour').value, tz,
-      activity: $('#f-act').value, windLimitEng: num('#f-lim-eng', 13), windLimitSlop: num('#f-lim-slop', 18), launchFtAGL: num('#f-launch', null), exitFtMSL: num('#f-exit', null),
+      activity: $('#f-act').value, windLimitDay: num('#f-lim-day', 13), windLimitEng: num('#f-lim-day', 13), windLimitNight: num('#f-lim-night', 10), windLimitAfonsos: num('#f-lim-afonsos', 10), zlRule: $('#f-zlrule').value, dayCrit: $('#f-daycrit').value, windLimitSlop: num('#f-lim-slop', 18), launchFtAGL: num('#f-launch', null), exitFtMSL: num('#f-exit', null),
       baseMinFt: num('#f-base', null), icao: $('#f-icao').value.trim().toUpperCase(), ibge: ($('#f-ibge') ? $('#f-ibge').value.trim().replace(/\D/g, '') : ''),
       weights: { GFS: num('#f-w-gfs', 1), ECMWF: num('#f-w-ecmwf', 1), ICON: num('#f-w-icon', 1), UKMO: num('#f-w-ukmo', 1) }, weightMode: $('#f-wmode') ? $('#f-wmode').value : 'auto', capeMod: num('#f-cape-m', 1000), capeStrong: num('#f-cape-s', 2500), updatedAt: nowIso(),
       zlElevFt: num('#f-zl', null), windRef: $('#f-wref').value, aerodromos: $('#f-ad').value.toUpperCase().split(/[\s,;]+/).filter(x => /^[A-Z0-9]{4}$/.test(x)).slice(0, 4).join(','), visMin: num('#f-vis', null),
@@ -2458,12 +2493,12 @@ const MET = (() => {
     const body = [
       row('Origem dos valores', 'observação · TAF · modelos', H.map(h => cell(h, h => { const A = h.assim || { cloud: 'MOD' }, w = A.wind;
             return `<span class="st st-${SRC_CLS[A.cloud]}">${SRC_LBL[A.cloud]}</span><small>nuvens: ${A.cloud === 'TAF' ? 'TAF ' + esc(A.taf.icao) : A.cloud.startsWith('OBS') ? 'METAR ' + esc(A.obs.icao) + (A.cloud === 'OBS+MOD' ? ' + tendência' : '') : A.cloud === 'MOD*' ? 'modelos corrigidos pelo METAR ' + esc(A.obs.icao) : 'modelos'}</small><small>vento: ${w && w.obs ? `${esc(/medição/.test(w.src) ? 'medição ZL' : w.src.replace(/ \d\d:\d\dZ$/, ''))} ${fmt(w.a * 100)}% + ${A.taf ? 'TAF/mod.' : 'mod.'} ${fmt(100 - w.a * 100)}%` : A.taf ? 'TAF ' + esc(A.taf.icao) + ' + mod.' : 'modelos'}</small>`; }))),
-      row('Vento solo — direção', '° verdadeiro (V) e magnético (M) · 10 m', H.map(h => cell(h, h => `${h.c.wind != null && Math.round(h.c.wind) < 1 ? 'calmo' : dir3(h.c.dir) + '°V'} <small>${h.c.wind != null && Math.round(h.c.wind) >= 1 ? dirM(h.c.dir) + ' · ' : ''}${M.cardinal(h.c.dir)}${h.c.wind != null && Math.round(h.c.wind) < 3 ? ' · fraco, direção pouco definida' : ''}</small>${h.cm && h.cm.dir != null && h.c.dir != null && h.c.wind >= 3 && M.angDiff(h.cm.dir, h.c.dir) >= 30 ? `<small class="mdl">mod. ${dir3(h.cm.dir)}°</small>` : ''}`))),
-      row('Vento solo — intensidade', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.wind > lim ? 'tbad' : h.c.wind >= 0.8 * lim ? 'twarn' : ''}">${fmt(h.c.wind)}</span>${i ? trendArrow(H[i - 1].c.wind, h.c.wind, 1) : ''}${md(h, 'wind', h.c.wind)}`))),
-      row('Rajadas', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.gust > lim ? 'tbad' : ''}">${fmt(h.c.gust)}</span>${i ? trendArrow(H[i - 1].c.gust, h.c.gust, 1) : ''}${md(h, 'gust', h.c.gust)}`))),
-      row('Vento ZL + 750 ft', '° verdadeiro / kt · modelos (+ medição na ZL)', H.map((h, i) => { const z = h.zl && h.zl.c750; if (!z) return '<span class="na">n/d</span>'; const pz = i && H[i - 1].zl && H[i - 1].zl.c750, q = h.assim && h.assim.z750;
+      row('Vento de superfície — direção', '° verdadeiro (V) e magnético (M) · 10 m', H.map(h => cell(h, h => `${h.c.wind != null && Math.round(h.c.wind) < 1 ? 'calmo' : dir3(h.c.dir) + '°V'} <small>${h.c.wind != null && Math.round(h.c.wind) >= 1 ? dirM(h.c.dir) + ' · ' : ''}${M.cardinal(h.c.dir)}${h.c.wind != null && Math.round(h.c.wind) < 3 ? ' · fraco, direção pouco definida' : ''}</small>${h.cm && h.cm.dir != null && h.c.dir != null && h.c.wind >= 3 && M.angDiff(h.cm.dir, h.c.dir) >= 30 ? `<small class="mdl">mod. ${dir3(h.cm.dir)}°</small>` : ''}`))),
+      row('Vento de superfície — intensidade', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.wind > h.lim ? 'tbad' : h.c.wind >= 0.8 * h.lim ? 'twarn' : ''}">${fmt(h.c.wind)}</span>${i ? trendArrow(H[i - 1].c.wind, h.c.wind, 1) : ''}${md(h, 'wind', h.c.wind)}`))),
+      row('Rajadas', 'kt · 10 m', H.map((h, i) => cell(h, h => `<span class="${h.c.gust > h.lim ? 'tbad' : ''}">${fmt(h.c.gust)}</span>${i ? trendArrow(H[i - 1].c.gust, h.c.gust, 1) : ''}${md(h, 'gust', h.c.gust)}`))),
+      row(isSSA() ? 'Vento de solo (ZL + 750 ft) — planejamento' : 'Vento de solo (ZL + 750 ft)', '° verdadeiro / kt · modelos (+ radiossonda / medição na ZL)', H.map((h, i) => { const z = h.zl && h.zl.c750; if (!z) return '<span class="na">n/d</span>'; const pz = i && H[i - 1].zl && H[i - 1].zl.c750, q = h.assim && h.assim.z750;
         const nt = !q ? '' : q.kind === 'rs' ? `<small class="mdl">${esc(q.src)} (${fmt(q.dist, 0)} km) · ${fmt(q.a * 100)}%${h.assim.rs750 ? ' · obs. ' + dir3(h.assim.rs750.dir) + '°/' + fmt(h.assim.rs750.kt) + ' · mod. ' + dir3(h.assim.rs750.mod.dir) + '°/' + fmt(h.assim.rs750.mod.kt) : ''}</small>` : q.kind === 'med' ? `<small class="mdl">${esc(q.src)} · ${fmt(q.a * 100)}%</small>` : q.kind === 'up' ? `<small class="mdl">+${fmt(q.add)} kt (sup. obs. &gt; mod.)</small>` : `<small class="mdl">modelo mantido (sem obs. em altitude)</small>`;
-        return `<span class="${z.kt > lim ? 'tbad' : z.kt >= 0.8 * lim ? 'twarn' : ''}">${dir3(z.dir)}°V/${fmt(z.kt)}</span>${pz ? trendArrow(pz.kt, z.kt, 1) : ''}<small>${dirM(z.dir)} · ${M.cardinal(z.dir)}${S.mission.windRef === 'ZL750' ? ' · ref. parecer' : ''}</small>${nt}`; })),
+        return `<span class="${z.kt > h.lim ? (isSSA() ? 'twarn' : 'tbad') : z.kt >= 0.8 * h.lim ? 'twarn' : ''}">${dir3(z.dir)}°V/${fmt(z.kt)}</span>${pz ? trendArrow(pz.kt, z.kt, 1) : ''}<small>${dirM(z.dir)} · ${M.cardinal(z.dir)}${h.c.wrefLbl === 'ZL + 750 ft' ? ' · ref. parecer' : isSSA() ? ' · planejamento do Precursor' : ''}</small>${nt}`; })),
       row('Temperatura', '°C · 2 m · sensação térmica', H.map((h, i) => cell(h, h => `${fmt(h.c.temp)}${i ? trendArrow(H[i - 1].c.temp, h.c.temp, 0.5) : ''}<small>sensação ${h.c.at != null ? fmt(h.c.at) + ' °C' : 'n/d'}</small>${md(h, 'temp', h.c.temp, 0, ' °C')}`))),
       row('Prob. precipitação', '%', H.map(h => cell(h, h => `<span class="${h.c.pp >= 50 ? 'twarn' : ''}">${fmt(h.c.pp)}</span>`))),
       row('Precipitação', 'mm/h', H.map(h => cell(h, h => `${fmt(h.c.pr, 1)}${h.c.sh > 0 ? ' <small>conv.</small>' : ''}`))),
@@ -2776,7 +2811,7 @@ const MET = (() => {
   function renderWindChart(H) {
     const el = $('#windchart');
     if (!S.models) { el.innerHTML = ''; return; }
-    const lim = limitKt(), W = 640, Hh = 340, L = 40, R = 16, T = 28, B = 36;
+    const lim = Math.max(...H.map(h => h.lim || limitKt(h.utc))), W = 640, Hh = 340, L = 40, R = 16, T = 28, B = 36;
     const all = []; H.forEach(h => { all.push(h.c.wind, h.c.gust); Object.values(h.per).forEach(p => all.push(p.wind, p.gust)); });
     const max = Math.ceil(Math.max(lim + 2, ...all.filter(v => v != null)) + 1);
     const y = v => T + (Hh - T - B) * (1 - v / max), cw = (W - L - R) / Math.max(1, H.length), x = i => L + cw * i + cw / 2;
@@ -2785,10 +2820,13 @@ const MET = (() => {
     let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Vento e rajadas por horário">`;
     ticks.forEach(v => { const k5 = v % 5 === 0; s += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" class="grid${k5 ? '' : ' g1'}"/><text x="${L - 6}" y="${y(v) + 3.5}" class="ax${k5 ? '' : ' ax1'}" text-anchor="end">${v}</text>`; });
     s += `<text x="${L - 6}" y="${T - 6}" class="ax1" text-anchor="end">kt</text>`;
-    s += `<line x1="${L}" x2="${W - R}" y1="${y(lim)}" y2="${y(lim)}" class="lim"/><text x="${W - R}" y="${y(lim) - 5}" class="limt" text-anchor="end">limite ${lim} kt</text>`;
+    { const ls = H.map(h => h.lim || limitKt(h.utc)), same = ls.every(v => v === ls[0]);
+      if (same) s += `<line x1="${L}" x2="${W - R}" y1="${y(ls[0])}" y2="${y(ls[0])}" class="lim"/><text x="${W - R}" y="${y(ls[0]) - 5}" class="limt" text-anchor="end">limite ${ls[0]} kt (${esc(H[0].limWhy || '')})</text>`;
+      else { let d = ''; ls.forEach((v, i) => { const x0 = L + cw * i, x1 = x0 + cw; d += `${i ? 'L' : 'M'}${x0} ${y(v)} L${x1} ${y(v)} `; }); s += `<path d="${d}" class="lim" fill="none"/>`;
+        H.forEach((h, i) => { if (!i || ls[i] !== ls[i - 1]) s += `<text x="${L + cw * i + 4}" y="${y(ls[i]) - 5}" class="limt">limite ${ls[i]} kt (${esc(h.limWhy || '')})</text>`; }); } }
     H.forEach((h, i) => {
       const bw = cw * 0.34;
-      if (h.c.wind != null) s += `<rect x="${x(i) - bw / 2}" y="${y(h.c.wind)}" width="${bw}" height="${Math.max(0, y(0) - y(h.c.wind))}" class="bar ${h.c.wind > lim ? 'over' : ''}" rx="2"/>`;
+      if (h.c.wind != null) s += `<rect x="${x(i) - bw / 2}" y="${y(h.c.wind)}" width="${bw}" height="${Math.max(0, y(0) - y(h.c.wind))}" class="bar ${h.c.wind > (h.lim || lim) ? 'over' : ''}" rx="2"/>`;
       if (h.c.gust != null) s += `<line x1="${x(i) - bw / 2 - 4}" x2="${x(i) + bw / 2 + 4}" y1="${y(h.c.gust)}" y2="${y(h.c.gust)}" class="gust"/>`;
       if (h.cm && h.cm.wind != null && h.c.wind != null && Math.abs(h.cm.wind - h.c.wind) >= 0.5) s += `<path d="M${x(i)} ${y(h.cm.wind) - 5}l5 5l-5 5l-5 -5z" class="wmed"><title>Mediana só dos modelos: ${fmt(h.cm.wind, 1)} kt · adotado: ${fmt(h.c.wind, 1)} kt</title></path>`;
       Object.entries(h.per).forEach(([id, p], j) => { if (p.wind != null) s += `<circle cx="${x(i) + bw / 2 + 10 + j * 7}" cy="${y(p.wind)}" r="3" fill="${colors[id] || 'var(--muted)'}"><title>${id}: ${fmt(p.wind)} kt (rajada ${fmt(p.gust)})</title></circle>`; });
@@ -3009,7 +3047,7 @@ const MET = (() => {
     const lowVars = [...new Set(v.flatMap(h => Object.entries(h.conf).filter(([k, q]) => q === 'BAIXA' && ['wind', 'gust', 'dir', 'pp', 'base'].includes(k)).map(([k]) => ({ wind: 'vento', gust: 'rajadas', dir: 'direção', pp: 'probabilidade de chuva', base: 'base das nuvens' }[k]))))];
     parts.push(lows.length ? `Confiança baixa em ${lows.join(', ')} (${lowVars.join(', ')}: divergência entre modelos não resolvida pela observação).` : `Confiança predominante ${worst(v.map(h => h.overall)) === 'ALTA' ? 'alta' : 'média'}.`);
     const verd = v.map(h => h.verdict); const worstV = verd.includes('DESFAVORÁVEL') ? 'DESFAVORÁVEL em ' + v.filter(h => h.verdict === 'DESFAVORÁVEL').map(h => h.label).join(', ') : verd.includes('FAVORÁVEL COM RESTRIÇÕES') ? 'FAVORÁVEL COM RESTRIÇÕES' : 'FAVORÁVEL';
-    parts.push(`Avaliação meteorológica da janela (${actLabel()}, limite ${limitKt()} kt): ${worstV}.`);
+    parts.push(`Avaliação meteorológica da janela (${actLabel()}; ${limitRule()}): ${worstV}.`);
     el.textContent = parts.join(' ');
   }
 
@@ -3021,15 +3059,15 @@ const MET = (() => {
     const z0 = H.find(h => h.zl);
     if (!z0) { el.innerHTML = `<p class="muted">Disponível após carregar os modelos.</p>`; return; }
     const ftMsl = mm => mm == null ? '—' : fmt(mm / FT), ftAgl = mm => mm == null ? '—' : fmt((mm - z0.zl.zlM) / FT);
-    const wv = (x, hi) => x ? `<b class="${hi && x.kt > lim ? 'tbad' : hi && x.kt >= .8 * lim ? 'twarn' : ''}">${dir3(x.dir)}°V/${fmt(x.kt)} kt</b><small>${dirM(x.dir)}</small>${x.sp != null ? `<small>disp. ${fmt(x.sp)} kt · ${x.n} mod.</small>` : ''}` : '<span class="na">—</span>';
+    const wv = (x, hi) => x ? `<b class="${hi && x.kt > hi ? (isSSA() ? 'twarn' : 'tbad') : hi && x.kt >= .8 * hi ? 'twarn' : ''}">${dir3(x.dir)}°V/${fmt(x.kt)} kt</b><small>${dirM(x.dir)}</small>${x.sp != null ? `<small>disp. ${fmt(x.sp)} kt · ${x.n} mod.</small>` : ''}` : '<span class="na">—</span>';
     const ids = modelIds();
     const shear = h => { const a = h.zl && h.zl.c750, b = h.zl && h.zl.cLayer; if (!a || !b) return '<span class="na">—</span>'; const dk = b.kt - a.kt, dd = M.angDiff(a.dir, b.dir); return `${Math.abs(dk) < 0.5 ? '' : dk > 0 ? '+' : '−'}${fmt(Math.abs(dk))} kt · ${fmt(dd)}°`; };
     const launchLbl = m.activity === 'SLOP' ? (m.exitFtMSL ? `Saída ${fmt(+m.exitFtMSL)} ft MSL` : 'Saída (informe a altitude)') : `Lançamento ZL + ${fmt(+m.launchFtAGL || 1000)} ft`;
     const rows = [
-      ['Vento 10 m', 'adotado · observação + modelos', H.map(h => h.n ? `${dir3(h.c.dir)}°/${fmt(h.c.wind)} kt` : '—')],
-      ['Vento ZL + 750 ft', `${ftMsl(z0.zl.t750)} ft MSL`, H.map(h => wv(h.zl && h.zl.c750, true))],
+      ['Vento de superfície (10 m)', `adotado · ${isSSA() ? 'decide o SSA' : 'observação + modelos'}`, H.map(h => h.n ? `<b class="${isSSA() && h.c.wind > h.lim ? 'tbad' : isSSA() && h.c.wind >= .8 * h.lim ? 'twarn' : ''}">${dir3(h.c.dir)}°V/${fmt(h.c.wind)} kt</b><small>${dirM(h.c.dir)} · limite ${h.lim} kt (${esc(h.limWhy)})</small>` : '—')],
+      ['Vento de solo (ZL + 750 ft)', `${ftMsl(z0.zl.t750)} ft MSL${isSSA() ? ' · planejamento do Precursor' : ''}`, H.map(h => wv(h.zl && h.zl.c750, h.lim))],
       ...ids.map(id => [`↳ ${id}`, 'ZL + 750 ft', H.map(h => { const p = h.zl && h.zl.per[id] && h.zl.per[id].w750; return p ? `${dir3(p.dir)}°/${fmt(p.kt)}` : '—'; })]),
-      ['1ª camada acima', 'nível padrão', H.map(h => { const l = h.zl && h.zl.cLayer; return l ? `${wv(l, true)}<small>${fmt(l.p)} hPa · ${ftMsl(l.z)} ft MSL · ${ftAgl(l.z)} ft AGL</small>` : '<span class="na">—</span>'; })],
+      ['1ª camada acima', 'nível padrão', H.map(h => { const l = h.zl && h.zl.cLayer; return l ? `${wv(l, isSSA() ? false : h.lim)}<small>${fmt(l.p)} hPa · ${ftMsl(l.z)} ft MSL · ${ftAgl(l.z)} ft AGL</small>` : '<span class="na">—</span>'; })],
       ['Cisalhamento', '750 ft → 1ª camada', H.map(shear)],
       [launchLbl, m.activity === 'SLOP' ? 'altitude de saída' : 'altura de lançamento', H.map(h => wv(h.zl && h.zl.cLaunch, false))],
     ];
@@ -3243,6 +3281,11 @@ const MET = (() => {
 
   /* ---------------- Eventos ---------------- */
   function bind() {
+    $$('.acttab').forEach(b => b.addEventListener('click', async () => {
+      const act = b.dataset.act; if (S.mission.activity === act) return;
+      S.mission = Object.assign({}, S.mission, { activity: act, updatedAt: nowIso() }); if ($('#f-act')) { $('#f-act').value = act; toggleActFields(); }
+      renderAll(); await save('mission', S.mission);
+    }));
     $('#f-act').addEventListener('change', () => { toggleActFields(); if ($('#f-act').value === 'ENG' && !$('#f-base').value) $('#f-base').value = $('#f-launch').value || 1000; });
     $('#mission-form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -3316,8 +3359,14 @@ const MET = (() => {
     finally { document.body.classList.remove('exp-all'); btn.disabled = false; btn.textContent = 'Exportar PNG do briefing'; }
   }
 
+  function renderTabs() {
+    const ssa = isSSA(); document.body.classList.toggle('act-ssa', ssa); document.body.classList.toggle('act-ll', !ssa);
+    $$('.acttab').forEach(b => b.setAttribute('aria-selected', String((b.dataset.act === 'SLOP') === !ssa)));
+    const r = $('#acttab-rule'); if (r) r.innerHTML = ssa ? `<b>${esc(limitRule())}</b> — impedimento pelo vento de superfície; vento de solo (ZL + 750 ft) só para o planejamento do Precursor; vento em altitude oculto (só interessa ao LL).` : `<b>${esc(limitRule())}</b> (referência: ${S.mission.windRef === 'ZL750' ? 'ZL + 750 ft' : '10 m'}) — vento em altitude e altitude de saída exibidos.`;
+  }
   function renderAll() {
     _raw.clear(); _full.clear(); _aw = null;
+    try { renderTabs(); } catch (e) { /* abas são auxiliares */ }
     try { if (updateVerif()) { _aw = null; _raw.clear(); _full.clear(); } } catch (e) { /* verificação é auxiliar */ }
     const H = hasPos() ? hours() : [];
     renderHeader(); renderVerdicts(H); renderProj(H); renderOpm(H); renderAstro(H); renderInmet(); renderSat(H); renderTable(H); renderZl(H); renderExit(H); renderAer(H); renderAlerts(H); renderUpper(); renderDays(); renderConf(H); renderSynth(H); renderD7(H); renderMsl(H); renderTrace(H); renderSources();
@@ -3352,10 +3401,20 @@ const MET = (() => {
     const wmax = V.reduce((a, h) => h.c.wind > a.c.wind ? h : a), gmax = V.reduce((a, h) => (h.c.gust || 0) > (a.c.gust || 0) ? h : a);
     const z = V.filter(h => h.zl && h.zl.c750), zmax = z.length ? z.reduce((a, h) => h.zl.c750.kt > a.zl.c750.kt ? h : a) : null;
     // vento
-    if (zmax && zmax.zl.c750.kt > lim) out.push({ s: 'bad', t: `Vento a ZL + 750 ft chega a <b>${fmt(zmax.zl.c750.kt)} kt</b> ${hrs([zmax], tz)}, acima do limite de ${lim} kt: <b>impeditivo</b> para o ${actTxt()} nesse horário.` });
-    else if (zmax) out.push({ s: zmax.zl.c750.kt >= 0.8 * lim ? 'warn' : 'ok', t: `Vento a ZL + 750 ft até ${fmt(zmax.zl.c750.kt)} kt (${hrs([zmax], tz)}) — ${zmax.zl.c750.kt >= 0.8 * lim ? 'próximo do limite: maior deriva, aproximação mais exigente e pouso com mais velocidade em relação ao solo' : 'dentro do limite'}. Pousar com proa para ${dir3(zmax.zl.c750.dir)}° (de onde vem o vento).` });
+    if (isSSA()) {
+      // SSA: o impedimento é decidido pelo vento de superfície (10 m)
+      const over = V.filter(h => h.c.wind != null && h.c.wind > h.lim), near = V.filter(h => h.c.wind != null && h.c.wind <= h.lim && h.c.wind >= 0.8 * h.lim);
+      const lims = [...new Set(V.map(h => `${h.lim} kt ${h.limWhy}`))].join(' / ');
+      if (over.length) out.push({ s: 'bad', t: `Vento de superfície (10 m) acima do limite ${hrs(over, tz)} — até <b>${fmt(Math.max(...over.map(h => h.c.wind)))} kt</b> (limite ${lims}): <b>impeditivo</b> para o salto semiautomático nesse horário.` });
+      else if (near.length) out.push({ s: 'warn', t: `Vento de superfície (10 m) próximo do limite ${hrs(near, tz)} (até ${fmt(Math.max(...near.map(h => h.c.wind)))} kt; limite ${lims}): maior deriva e pouso com mais velocidade em relação ao solo.` });
+      else out.push({ s: 'ok', t: `Vento de superfície (10 m) até ${fmt(wmax.c.wind)} kt (${hrs([wmax], tz)}) — dentro do limite (${lims}).` });
+      if (zmax) out.push({ s: 'ok', t: `Vento de solo (ZL + 750 ft) até ${fmt(zmax.zl.c750.kt)} kt (${hrs([zmax], tz)}): dado para o planejamento do Precursor (deriva, ponto de lançamento e balizamento) — não decide o SSA.` });
+    } else {
+    if (zmax && zmax.zl.c750.kt > zmax.lim) out.push({ s: 'bad', t: `Vento a ZL + 750 ft chega a <b>${fmt(zmax.zl.c750.kt)} kt</b> ${hrs([zmax], tz)}, acima do limite de ${zmax.lim} kt: <b>impeditivo</b> para o ${actTxt()} nesse horário.` });
+    else if (zmax) out.push({ s: zmax.zl.c750.kt >= 0.8 * zmax.lim ? 'warn' : 'ok', t: `Vento a ZL + 750 ft até ${fmt(zmax.zl.c750.kt)} kt (${hrs([zmax], tz)}) — ${zmax.zl.c750.kt >= 0.8 * zmax.lim ? 'próximo do limite: maior deriva, aproximação mais exigente e pouso com mais velocidade em relação ao solo' : 'dentro do limite'}. Pousar com proa para ${dir3(zmax.zl.c750.dir)}° (de onde vem o vento).` });
+    }
     const gs = V.filter(h => h.c.gust != null && h.c.wind != null && h.c.gust - h.c.wind >= 10);
-    if (gmax.c.gust > lim) out.push({ s: 'bad', t: `Rajadas de ${fmt(gmax.c.gust, 1)} kt a 10 m ${hrs([gmax], tz)}: pouso com risco de arrasto e colapso do velame — impeditivo nesse horário.` });
+    if (gmax.c.gust > gmax.lim) out.push({ s: 'bad', t: `Rajadas de ${fmt(gmax.c.gust, 1)} kt a 10 m ${hrs([gmax], tz)} (limite ${gmax.lim} kt, ${gmax.limWhy}): pouso com risco de arrasto e colapso do velame — impeditivo nesse horário.` });
     if (gs.length) out.push({ s: 'warn', t: `Diferença rajada/vento médio ≥ 10 kt ${hrs(gs, tz)}: turbulência mecânica junto ao solo — oscilação na aproximação final e no flare.` });
     const sh = V.filter(h => h.zl && h.zl.c750 && h.c.wind != null && (Math.abs(h.zl.c750.kt - h.c.wind) >= 6 || (h.c.wind >= 4 && M.angDiff(h.zl.c750.dir, h.c.dir) >= 45)));
     if (sh.length) out.push({ s: 'warn', t: `Vento a 750 ft difere do vento de solo ${hrs(sh, tz)} (intensidade ou direção): o paraquedista encontra outro vento na aproximação final — atenção ao gradiente perto do solo.` });
@@ -3432,7 +3491,7 @@ const MET = (() => {
     const tz = S.mission.tz, lim = limitKt(), out = [];
     const h0 = V[0], z = h0.zl;
     if (z.c750) out.push({ s: 'info', t: `Em H, vento a ZL + 750 ft ${dir3(z.c750.dir)}°/${fmt(z.c750.kt)} kt: aproximação final e pouso com proa ${dir3(z.c750.dir)}°V / ${dirM(z.c750.dir)} (${M.cardinal(z.c750.dir)}); deriva no sentido ${dir3((z.c750.dir + 180) % 360)}°V / ${dirM((z.c750.dir + 180) % 360)}.` });
-    if (z.cLayer && z.c750) { const dk = z.cLayer.kt - z.c750.kt, dd = M.angDiff(z.cLayer.dir, z.c750.dir); if (Math.abs(dk) >= 5 || dd >= 30) out.push({ s: z.cLayer.kt > lim ? 'bad' : 'warn', t: `1ª camada acima (${fmt(z.cLayer.p)} hPa): ${dir3(z.cLayer.dir)}°/${fmt(z.cLayer.kt)} kt — cisalhamento de ${fmt(Math.abs(dk))} kt e ${fmt(dd)}° em relação a 750 ft: mudança de deriva durante a descida; considerar no ponto de lançamento.` }); }
+    if (z.cLayer && z.c750) { const dk = z.cLayer.kt - z.c750.kt, dd = M.angDiff(z.cLayer.dir, z.c750.dir); if (Math.abs(dk) >= 5 || dd >= 30) out.push({ s: !isSSA() && z.cLayer.kt > lim ? 'bad' : 'warn', t: `1ª camada acima (${fmt(z.cLayer.p)} hPa): ${dir3(z.cLayer.dir)}°/${fmt(z.cLayer.kt)} kt — cisalhamento de ${fmt(Math.abs(dk))} kt e ${fmt(dd)}° em relação a 750 ft: mudança de deriva durante a descida; considerar no ponto de lançamento.` }); }
     if (isSlop() && z.cLaunch) out.push({ s: 'info', t: `Vento na altitude de saída ${dir3(z.cLaunch.dir)}°/${fmt(z.cLaunch.kt)} kt: no HAHO, o deslocamento sob velame será a favor de ${dir3((z.cLaunch.dir + 180) % 360)}° — ponto de lançamento a barlavento (${M.cardinal(z.cLaunch.dir)}) da ZL; calcular a distância na planilha HAHO/CSL com os ventos de camada.` });
     else if (z.cLaunch) out.push({ s: 'info', t: `Vento na altura de lançamento ${dir3(z.cLaunch.dir)}°/${fmt(z.cLaunch.kt)} kt: base para o cálculo do ponto de lançamento (deriva a sotavento ${dir3((z.cLaunch.dir + 180) % 360)}°).` });
     const turn = V.filter((h, i) => i && h.zl.c750 && V[i - 1].zl.c750 && M.angDiff(h.zl.c750.dir, V[i - 1].zl.c750.dir) >= 45 && h.zl.c750.kt >= 4);
@@ -3803,8 +3862,8 @@ const MET = (() => {
       return [worstS(dedClouds(H)), lo ? `base mín. ${fmt(lo.layers.cons[0].baseFt)} ft (${okta(lo.layers.cons[0].pct, lo.layers.cons[0].cov)}/8 ${lo.layers.cons[0].cov}) às ${M.hhmm(lo.utc, tz)}` : 'sem nuvens na janela']; });
     safe('temp', () => { if (!V.length) return null; const t = V.map(h => h.c.temp).filter(v => v != null), pr = V.reduce((a, h) => a + (h.c.pr || 0), 0);
       return [worstS(dedTemp(H)), `${fmt(Math.min(...t))}–${fmt(Math.max(...t))} °C · chuva ${fmt(pr, 1)} mm na janela`]; });
-    safe('wsurf', () => { if (!V.length) return null; const w = Math.max(...V.map(h => h.c.wind || 0)), g = Math.max(...V.map(h => h.c.gust || 0)); return [g > lim ? 'bad' : w >= 0.8 * lim ? 'warn' : 'ok', `máx. ${fmt(w)} kt · rajada ${fmt(g)} kt · limite ${lim} kt`]; });
-    safe('zl', () => { const h = V.find(x => x.zl && x.zl.c750); if (!h) return null; const z = h.zl.c750; return [worstS(dedWinds(H).concat(z.kt > lim ? [{ s: 'bad' }] : [])), `ZL + 750 ft em H: ${dir3(z.dir)}°/${fmt(z.kt)} kt`]; });
+    safe('wsurf', () => { if (!V.length) return null; const w = Math.max(...V.map(h => h.c.wind || 0)), g = Math.max(...V.map(h => h.c.gust || 0)); return [V.some(h => (isSSA() ? h.c.wind : h.c.gust) > h.lim) ? 'bad' : V.some(h => h.c.wind >= 0.8 * h.lim || h.c.gust > h.lim) ? 'warn' : 'ok', `máx. ${fmt(w)} kt · rajada ${fmt(g)} kt · limite ${lim} kt`]; });
+    safe('zl', () => { const h = V.find(x => x.zl && x.zl.c750); if (!h) return null; const z = h.zl.c750; return [worstS(dedWinds(H).concat(z.kt > h.lim ? [{ s: isSSA() ? 'warn' : 'bad' }] : [])), `${isSSA() ? 'solo (planej.)' : 'ZL + 750 ft'} em H: ${dir3(z.dir)}°/${fmt(z.kt)} kt`]; });
     safe('upper', () => { const h = V.find(x => x.zl && x.zl.cLaunch); if (!h) return null; return ['ok', `${isSlop() ? 'saída' : 'lançamento'}: ${dir3(h.zl.cLaunch.dir)}°/${fmt(h.zl.cLaunch.kt)} kt`]; });
     safe('exit', () => { const e = H.find(h => h.exit && h.exit.top != null); if (!e) return null; const x = e.exit; return [x.iceLevels && x.iceLevels.length ? 'warn' : 'ok', `${fmt(x.t)} °C a ${fmt(x.top / FT)} ft${x.fzl != null ? ` · 0 °C a ${fmt(x.fzl / FT)} ft` : ''}${x.iceLevels && x.iceLevels.length ? ' · risco de gelo' : ''}`]; });
     safe('opm', () => { const U = userOpmet(); if (!U.length) return ['na', 'inserir METAR/TAF']; return [worstS(dedOpm(H)), U.map(a => `${a.icao} ${a.metars.length} METAR${a.tafs.length ? ' + TAF' : ''}`).join(' · ')]; });

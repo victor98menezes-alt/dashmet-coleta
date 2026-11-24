@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from zoneinfo import ZoneInfo
 
 APP_NOME = "Dashboard Meteorológico de Salto"
-VERSAO = "2.5.0"
+VERSAO = "2.6.0"
 
 # --- caminhos -------------------------------------------------------------------------------
 BASE = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
